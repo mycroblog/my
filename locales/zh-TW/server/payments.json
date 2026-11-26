@@ -1,4 +1,12 @@
 {
+  "payments.checkout.title": {
+    "defaultMessage": "訂閱支持者方案「{plan}」",
+    "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
+  },
+  "payments.error.declined": {
+    "defaultMessage": "信用卡被拒絕，沒有收取任何費用。請改用其他信用卡。",
+    "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
+  },
   "payments.error.form": {
     "defaultMessage": "請檢查電子郵件地址、持卡人姓名和信用卡資料。",
     "description": "Error of the PAY.JP checkout and card pages when a field is missing or invalid."
@@ -7,9 +15,17 @@
     "defaultMessage": "這個頁面已過期。請從你原本的畫面重新開始。",
     "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
   },
+  "payments.error.three_d_secure": {
+    "defaultMessage": "無法驗證信用卡（3-D Secure），沒有收取任何費用。請重試或改用其他信用卡。",
+    "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
+  },
   "payments.error.title": {
     "defaultMessage": "付款",
     "description": "Title of the error page of the PAY.JP checkout and card pages."
+  },
+  "payments.error.unavailable": {
+    "defaultMessage": "PAY.JP 沒有回應。請稍後再試。若已有扣款，訂閱會顯示在你來源的畫面上。",
+    "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
   "payments.fake.failed": {
     "defaultMessage": "已依要求讓付款失敗。請付款或取消。",
@@ -23,6 +39,10 @@
     "defaultMessage": "已更換信用卡。",
     "description": "Notice of the PAY.JP card page after a card change."
   },
+  "payments.portal.resume_failed": {
+    "defaultMessage": "信用卡已更換，但恢復訂閱的付款失敗，所以訂閱仍處於暫停狀態。請改用其他信用卡。",
+    "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
+  },
   "payments.portal.resumed": {
     "defaultMessage": "已更換信用卡，訂閱已恢復。",
     "description": "Notice of the PAY.JP card page after a card change resumed a paused subscription."
@@ -32,7 +52,7 @@
     "description": "Title of the PAY.JP card page (the customer portal)."
   },
   "payments.tip_description": {
-    "defaultMessage": "{server} 的小費",
+    "defaultMessage": "{server} 的贊助",
     "description": "Line item of the payment provider's checkout of a tip, a one-time payment to the server's operation with nothing in return (ADR-0162 §1). {server} is the name of the server. Never word it as a donation."
   }
 }

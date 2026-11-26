@@ -1,0 +1,154 @@
+{
+  "report.title_account": {
+    "defaultMessage": "Denunciar {handle}",
+    "description": "The title of the panel that reports an account to the moderators. {handle} is the account's handle (@name@server)."
+  },
+  "report.title_room": {
+    "defaultMessage": "Denunciar a sala “{name}”",
+    "description": "The title of the panel that reports a voice chat room to the moderators. {name} is the room's name as its host wrote it."
+  },
+  "report.title_event": {
+    "defaultMessage": "Denunciar o evento “{name}”",
+    "description": "The title of the panel that reports an event to the moderators. {name} is the event's title as its organizer wrote it."
+  },
+  "report.close": {
+    "defaultMessage": "Fechar",
+    "description": "The name of the button that closes the report panel without sending it."
+  },
+  "report.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "The button of the report panel that closes it without sending the report."
+  },
+  "report.intro": {
+    "defaultMessage": "{kind, select, room {Os moderadores de {instance} leem sua denúncia. Ela não é pública, e {handle}, anfitrião da sala, nunca fica sabendo quem a enviou.} event {Os moderadores de {instance} leem sua denúncia. Ela não é pública, e {handle}, organizador do evento, nunca fica sabendo quem a enviou.} other {Os moderadores de {instance} leem sua denúncia. Ela não é pública, e {handle} nunca fica sabendo quem a enviou.}}",
+    "description": "The first sentences of the report panel: who reads the report, and that the reported account never learns who sent it. {kind} is room (a voice chat room, reported with its host), event (an event, reported with its organizer) or account. {instance} is the server's display name, or its domain name. {handle} is the account's handle."
+  },
+  "report.intro.unavailable": {
+    "defaultMessage": "Os moderadores de {instance} leem sua denúncia. Ela não é pública, e o organizador do evento nunca fica sabendo quem a enviou.",
+    "description": "The first sentences of the panel that reports an event whose organizer the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who reads the report, and that the organizer never learns who sent it; report.intro otherwise. {instance} is the server's display name, or its domain name."
+  },
+  "report.category": {
+    "defaultMessage": "Por que você está denunciando isto?",
+    "description": "The heading of the choice of why the reader reports the account, the room or the event."
+  },
+  "report.category_name": {
+    "defaultMessage": "{category, select, spam {Spam} legal {Conteúdo ilegal} violation {Viola as regras do servidor} other {Outro motivo}}",
+    "description": "The name of a reason for a report, one choice of the report panel. {category} is spam, legal (content that breaks the law), violation (breaks the server's rules, which the reader then chooses) or other."
+  },
+  "report.spam_hint": {
+    "defaultMessage": "Anúncios indesejados, a mesma publicação repetida ou links enganosos",
+    "description": "What the reason Spam covers, under its name in the report panel; the other reasons have none."
+  },
+  "report.category_missing": {
+    "defaultMessage": "Escolha o motivo da denúncia.",
+    "description": "The error under the reasons of the report panel, when the reader sends it without choosing one."
+  },
+  "report.rules": {
+    "defaultMessage": "Quais regras isto viola?",
+    "description": "The heading of the choice of the server's rules that the reported account breaks, shown once the reader chose that reason."
+  },
+  "report.rules_missing": {
+    "defaultMessage": "Escolha pelo menos uma regra violada.",
+    "description": "The error under the server's rules in the report panel, when the reader sends it without choosing any."
+  },
+  "report.posts": {
+    "defaultMessage": "Publicações a incluir",
+    "description": "The heading of the choice of the account's posts that the report points the moderators at."
+  },
+  "report.posts_hint": {
+    "defaultMessage": "{count, plural, =0 {Escolha até {max} publicações. Nenhuma escolhida ainda.} one {Escolha até {max} publicações. # escolhida.} many {Escolha até {max} publicações. # de escolhidas.} other {Escolha até {max} publicações. # escolhidas.}}",
+    "description": "Under the heading of the posts to include in a report: how many may be chosen ({max}, 20) and how many are ({count})."
+  },
+  "report.posts_loading": {
+    "defaultMessage": "Carregando publicações…",
+    "description": "Said in the place of the account's posts in the report panel while they load."
+  },
+  "report.posts_none": {
+    "defaultMessage": "Não há publicações para incluir. Você ainda pode enviar a denúncia.",
+    "description": "Said in the place of the account's posts in the report panel when the reader sees none of them."
+  },
+  "report.posts_failed": {
+    "defaultMessage": "Não foi possível carregar as publicações. Verifique sua conexão e tente novamente.",
+    "description": "Said in the place of the account's posts in the report panel when they could not be read; Try again follows it."
+  },
+  "report.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "The button that reads the account's posts again in the report panel."
+  },
+  "report.post_warning": {
+    "defaultMessage": "Aviso de conteúdo: {warning}",
+    "description": "A post behind a content warning, among the posts to include in a report: its warning in place of its text. {warning} is the warning its author wrote."
+  },
+  "report.post_no_text": {
+    "defaultMessage": "Uma publicação sem texto",
+    "description": "A post that has no text (its images alone), among the posts to include in a report."
+  },
+  "report.comment": {
+    "defaultMessage": "Comentário para os moderadores",
+    "description": "The label of the field of the report panel where the reader writes to the moderators."
+  },
+  "report.comment_hint": {
+    "defaultMessage": "Opcional. Até {max, number} caracteres.",
+    "description": "The hint under the comment of a report. {max} is 1000."
+  },
+  "report.comment_rule": {
+    "defaultMessage": "Encurte o comentário para {max, number} caracteres ou menos.",
+    "description": "The error under the comment of a report when it is too long. {max} is 1000."
+  },
+  "report.forward": {
+    "defaultMessage": "Enviar a denúncia também aos moderadores de {domain}",
+    "description": "The checkbox of the report panel, for an account of another server: send the report to that server's moderators too. {domain} is that server's domain name."
+  },
+  "report.forward_hint": {
+    "defaultMessage": "Seu nome não é enviado junto.",
+    "description": "Under the checkbox that sends a report to another server's moderators: the report goes without naming the reader."
+  },
+  "report.send": {
+    "defaultMessage": "Enviar denúncia",
+    "description": "The button that sends the report to the moderators."
+  },
+  "report.sent_title": {
+    "defaultMessage": "Denúncia enviada",
+    "description": "The title of the report panel once the report was sent."
+  },
+  "report.also": {
+    "defaultMessage": "O que mais você pode fazer sobre {handle}",
+    "description": "The heading over muting and blocking the reported account, once the report was sent. {handle} is the account's handle."
+  },
+  "report.mute": {
+    "defaultMessage": "Silenciar {handle}",
+    "description": "The name for assistive technology of the button Mute once the report was sent: it mutes the reported account. {handle} is the account's handle."
+  },
+  "report.mute_short": {
+    "defaultMessage": "Silenciar",
+    "description": "The button that mutes the reported account once the report was sent; the heading over it names the account."
+  },
+  "report.block": {
+    "defaultMessage": "Bloquear {handle}…",
+    "description": "The name for assistive technology of the button Block… once the report was sent: it blocks the reported account, after a confirmation. {handle} is the account's handle."
+  },
+  "report.block_short": {
+    "defaultMessage": "Bloquear…",
+    "description": "The button that blocks the reported account once the report was sent, after a confirmation; the heading over it names the account."
+  },
+  "report.muted": {
+    "defaultMessage": "Você silenciou {handle}.",
+    "description": "Said in the place of the mute button once the reported account was muted."
+  },
+  "report.blocked": {
+    "defaultMessage": "Você bloqueou {handle}.",
+    "description": "Said in the place of the block button once the reported account was blocked."
+  },
+  "report.mute_failed": {
+    "defaultMessage": "Não foi possível silenciar {handle}. Verifique sua conexão e tente novamente.",
+    "description": "Said over the mute button when muting the reported account failed."
+  },
+  "report.block_failed": {
+    "defaultMessage": "Não foi possível bloquear {handle}. Verifique sua conexão e tente novamente.",
+    "description": "Said over the block button when blocking the reported account failed."
+  },
+  "report.done": {
+    "defaultMessage": "Concluir",
+    "description": "The button that closes the report panel once the report was sent."
+  }
+}

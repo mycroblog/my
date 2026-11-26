@@ -1,0 +1,70 @@
+{
+  "announcements.label": {
+    "defaultMessage": "Annonces",
+    "description": "The name of the list of the server's announcements, for assistive technology."
+  },
+  "announcements.loading": {
+    "defaultMessage": "Chargement des annonces…",
+    "description": "What the list of announcements says while the first of them load."
+  },
+  "announcements.loading_more": {
+    "defaultMessage": "Chargement d’autres annonces…",
+    "description": "What the list of announcements says under them while more load."
+  },
+  "announcements.failed": {
+    "defaultMessage": "Les annonces n’ont pas pu être chargées.",
+    "description": "What the list of announcements says when they could not be loaded, beside a button to try again."
+  },
+  "announcements.failed_more": {
+    "defaultMessage": "D’autres annonces n’ont pas pu être chargées.",
+    "description": "What the list of announcements says under them when more could not be loaded, beside a button to try again."
+  },
+  "announcements.empty": {
+    "defaultMessage": "Aucune annonce pour le moment.",
+    "description": "What the list of announcements says when the server has made none."
+  },
+  "announcements.unread": {
+    "defaultMessage": "Non lue",
+    "description": "The mark of an announcement the reader has not read, for assistive technology."
+  },
+  "announcements.mark_read": {
+    "defaultMessage": "Marquer comme lue",
+    "description": "The action under an unread announcement in the list that marks it read."
+  },
+  "announcements.ended": {
+    "defaultMessage": "Terminée",
+    "description": "Said under an announcement in the list whose showing period is over."
+  },
+  "announcements.untitled": {
+    "defaultMessage": "Annonce",
+    "description": "The title of an announcement whose administrators gave it none."
+  },
+  "announcements.period_open": {
+    "defaultMessage": "Affichée depuis le {from}",
+    "description": "Under an announcement on its page: since when it shows ({from}, a date written out in the reader's language), with no end set."
+  },
+  "announcements.period_until": {
+    "defaultMessage": "Affichée du {from} au {until}",
+    "description": "Under an announcement on its page: when it started to show and when it stops ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.period_ended": {
+    "defaultMessage": "Affichée du {from} au {until}",
+    "description": "Under an announcement on its page whose showing period is over: when it showed ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.back": {
+    "defaultMessage": "Annonces",
+    "description": "The button at the top of an announcement's page that goes back to the list of announcements."
+  },
+  "announcements.loading_one": {
+    "defaultMessage": "Chargement de l’annonce…",
+    "description": "What an announcement's page says while it loads."
+  },
+  "announcements.not_found": {
+    "defaultMessage": "Cette annonce ne peut pas être affichée. Elle a peut-être été retirée.",
+    "description": "What an announcement's page says when the server has no such announcement (never shown, or withdrawn), beside a link to the list."
+  },
+  "announcements.all": {
+    "defaultMessage": "Voir toutes les annonces",
+    "description": "The link after the not-found notice of an announcement's page that opens the list of announcements."
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "viewer.label": {
+    "defaultMessage": "媒体",
+    "description": "The screen reader's name of the media viewer, a dialog over the page that shows a post's pictures and videos whole, one at a time."
+  },
+  "viewer.position": {
+    "defaultMessage": "第 {index} 个，共 {count} 个",
+    "description": "Which of a post's media the viewer shows, such as 2 of 4, at the start of its bar; a screen reader announces it each time the reader moves to another. Not shown for a single picture."
+  },
+  "viewer.shown": {
+    "defaultMessage": "第 {index} 个，共 {count} 个，{description}",
+    "description": "What a screen reader announces when the reader moves to another of a post's media in the media viewer: where it is among them (viewer.position) and the start of its description (alternative text), in any language, cut short with … when long."
+  },
+  "viewer.shown_kind": {
+    "defaultMessage": "第 {index} 个，共 {count} 个，{kind, select, gifv {GIF} video {视频} other {图片}}",
+    "description": "What a screen reader announces when the reader moves to another of a post's media in the media viewer and it has no description: where it is among them (viewer.position) and its kind; gifv is a short silent loop."
+  },
+  "viewer.close": {
+    "defaultMessage": "关闭",
+    "description": "The button that closes the media viewer."
+  },
+  "viewer.previous": {
+    "defaultMessage": "上一个",
+    "description": "The button of the media viewer that shows the post's previous picture or video."
+  },
+  "viewer.next": {
+    "defaultMessage": "下一个",
+    "description": "The button of the media viewer that shows the post's next picture or video."
+  },
+  "viewer.zoom_in": {
+    "defaultMessage": "放大",
+    "description": "The button of the media viewer that zooms into the picture."
+  },
+  "viewer.zoom_out": {
+    "defaultMessage": "缩小",
+    "description": "The button of the media viewer, while zoomed into a picture, that shows the whole picture again."
+  }
+}

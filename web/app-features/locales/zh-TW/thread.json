@@ -1,0 +1,58 @@
+{
+  "thread.back": {
+    "defaultMessage": "返回",
+    "description": "The button at the top of a post's screen that goes back to where the reader came from."
+  },
+  "thread.label": {
+    "defaultMessage": "討論串",
+    "description": "The name of the feed of a post with what it replies to and its replies, for assistive technology."
+  },
+  "thread.earlier": {
+    "defaultMessage": "{count, plural, other {顯示先前的 # 則貼文}}",
+    "description": "The fold, in a thread, of the posts between its first post and the two the focused post replies to closest; pressing it shows them. count is how many."
+  },
+  "thread.replies": {
+    "defaultMessage": "回覆",
+    "description": "The heading of the replies under the focused post of a thread."
+  },
+  "thread.more_replies": {
+    "defaultMessage": "{count, plural, other {顯示另外 # 則回覆}}",
+    "description": "The fold at the end of a thread's replies; pressing it shows more of them. count is how many."
+  },
+  "thread.no_replies": {
+    "defaultMessage": "還沒有回覆。",
+    "description": "What a post's screen says under a post that has no replies."
+  },
+  "thread.loading": {
+    "defaultMessage": "正在載入貼文…",
+    "description": "What a post's screen says while the post and its thread load."
+  },
+  "thread.failed": {
+    "defaultMessage": "無法載入貼文。",
+    "description": "What a post's screen, and the list of who reacted to a post, say when the post could not be loaded (the server did not answer, or failed), beside a button to try again."
+  },
+  "thread.not_found": {
+    "defaultMessage": "找不到這則貼文。它可能已被刪除，或連結有誤。請檢查連結，或返回上一頁。",
+    "description": "In place of a post's screen, or of the list of who reacted to it, when the server answers that the post is not there: it never was, was deleted, or the reader may not see it (never say which), under a button back."
+  },
+  "thread.retry": {
+    "defaultMessage": "重試",
+    "description": "The button that loads the post again after it failed."
+  },
+  "thread.reactors_loading": {
+    "defaultMessage": "正在載入回應…",
+    "description": "What the list of who reacted to a post with one emoji says while the first of them load."
+  },
+  "thread.reactors_failed": {
+    "defaultMessage": "無法載入回應。",
+    "description": "What the list of who reacted to a post with one emoji says when the first of them could not be loaded, beside a button to try again."
+  },
+  "thread.reactors_empty": {
+    "defaultMessage": "還沒有人用這個表情符號回應。",
+    "description": "What the list of who reacted to a post with one emoji says when it is empty (the reactions were taken back)."
+  },
+  "thread.reactors_back": {
+    "defaultMessage": "返回貼文",
+    "description": "The button at the top of the list of who reacted to a post that goes back to the post's own page."
+  }
+}

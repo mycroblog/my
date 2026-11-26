@@ -11,6 +11,10 @@
     "defaultMessage": "已關閉 – {server}",
     "description": "<title> of the static closure page. {server} is the server's name, or its host name."
   },
+  "closure.notice": {
+    "defaultMessage": "管理員的通知",
+    "description": "Heading over the administrators' message of the closure announcement on the static closure page."
+  },
   "closure.status_page": {
     "defaultMessage": "查看服務狀態",
     "description": "Text of the link to the instance's status page (status_page_url) on the static closure page."

@@ -1,0 +1,218 @@
+{
+  "finance.loading": {
+    "defaultMessage": "正在載入總計…",
+    "description": "In place of the finance totals while they load."
+  },
+  "finance.failed": {
+    "defaultMessage": "無法載入總計。",
+    "description": "In place of the finance totals when they could not be loaded, beside a button to try again."
+  },
+  "finance.retry": {
+    "defaultMessage": "重試",
+    "description": "The button after the sentence that says the finance totals could not be loaded."
+  },
+  "finance.period": {
+    "defaultMessage": "期間",
+    "description": "The name of the choice of how long a period of the finance totals is: a week, a month or a year."
+  },
+  "finance.period.week": {
+    "defaultMessage": "週",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the weeks in the totals' table."
+  },
+  "finance.period.month": {
+    "defaultMessage": "月",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the months in the totals' table."
+  },
+  "finance.period.year": {
+    "defaultMessage": "年",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the years in the totals' table."
+  },
+  "finance.basis": {
+    "defaultMessage": "付款的計算方式",
+    "description": "The name of the choice of how a payment that covers more than a month counts in the finance totals: spread over what it covers, or on the day it was paid."
+  },
+  "finance.basis.amortized": {
+    "defaultMessage": "依週期分攤",
+    "description": "An option of how the finance totals count a payment that covers more than a month: a share on each day it covers (the default)."
+  },
+  "finance.basis.cash": {
+    "defaultMessage": "計入付款當期",
+    "description": "An option of how the finance totals count a payment: all of it on the day it was paid."
+  },
+  "finance.basis.amortized_about": {
+    "defaultMessage": "涵蓋超過一個月的付款，會依涵蓋的時間按日分攤，以顯示每月的成本。",
+    "description": "Under the choice of how payments count, while Spread over their cycle is chosen: what it means."
+  },
+  "finance.basis.cash_about": {
+    "defaultMessage": "每筆付款計入付款當天，如同對帳單。",
+    "description": "Under the choice of how payments count, while In the period paid is chosen: what it means."
+  },
+  "finance.totals": {
+    "defaultMessage": "{granularity, select, week {每週總計} month {每月總計} other {每年總計}}",
+    "description": "The name of the table of the finance totals, for assistive technology, by the period chosen ({granularity}: week, month or year)."
+  },
+  "finance.column.costs": {
+    "defaultMessage": "成本",
+    "description": "The name of the column of a period's costs in the finance totals' table."
+  },
+  "finance.column.income": {
+    "defaultMessage": "收入",
+    "description": "The name of the column of a period's income (after the payment provider's fees) in the finance totals' table."
+  },
+  "finance.column.balance": {
+    "defaultMessage": "結餘",
+    "description": "The name of the column of a period's income less its costs in the finance totals' table."
+  },
+  "finance.column.provider": {
+    "defaultMessage": "供應商",
+    "description": "The name of the column of the providers (a cloud, a registrar) that a server's costs are paid to, in a table of a period's costs."
+  },
+  "finance.column.category": {
+    "defaultMessage": "類別",
+    "description": "The name of the column of what a cost is for (servers, storage, email…), in a table of a period's costs."
+  },
+  "finance.column.amount": {
+    "defaultMessage": "金額",
+    "description": "The name of the column of the amounts, in a table of a period's costs."
+  },
+  "finance.column.item": {
+    "defaultMessage": "項目",
+    "description": "The name of the column of the cost items' names (as the operators wrote them), in the table of a period's cost items."
+  },
+  "finance.column.plan": {
+    "defaultMessage": "方案",
+    "description": "The name of the column of the supporter plans, in the table of how many members each plan has."
+  },
+  "finance.column.members": {
+    "defaultMessage": "成員",
+    "description": "The name of the column of how many members a supporter plan has now."
+  },
+  "finance.total": {
+    "defaultMessage": "總計",
+    "description": "The head of the last row of a period's costs by provider, which sums them, a figure a currency."
+  },
+  "finance.estimate": {
+    "defaultMessage": "估計",
+    "description": "Read with a figure of the finance totals that comes from a bill its provider has not closed yet."
+  },
+  "finance.none": {
+    "defaultMessage": "無",
+    "description": "In a cell of the finance totals' table for a period with no costs, or no income."
+  },
+  "finance.so_far": {
+    "defaultMessage": "目前為止",
+    "description": "Under the period of today in the finance totals' table: its figures are up to today."
+  },
+  "finance.week_label": {
+    "defaultMessage": "{year} 年第 {week} 週",
+    "description": "The head of a week's row in the finance totals: its ISO 8601 week number ({week}) and the year that week belongs to ({year})."
+  },
+  "finance.week_dates_so_far": {
+    "defaultMessage": "{dates}，目前為止",
+    "description": "Under this week in the finance totals' table: its dates ({dates}, a range such as Nov 16 – 22) and that its figures are up to today."
+  },
+  "finance.showing": {
+    "defaultMessage": "顯示 {from} 至 {to}。",
+    "description": "After Earlier and Later under the finance totals, muted, and said to assistive technology again after the reader changed the period, how payments count, or moved to earlier or later periods: the first and last periods shown ({from}, {to}: a week, a month or a year as the table heads them)."
+  },
+  "finance.breakdown": {
+    "defaultMessage": "{period}依供應商",
+    "description": "The heading and the table name of a period's costs by provider, category and currency ({period}: a week, a month or a year as the totals' table heads it)."
+  },
+  "finance.items": {
+    "defaultMessage": "{period}依項目",
+    "description": "The heading and the table name of a period's cost items, with their names or notes where the server shows them ({period}: a week, a month or a year as the totals' table heads it)."
+  },
+  "finance.category": {
+    "defaultMessage": "{category, select, compute {伺服器} database {資料庫} storage {儲存空間} network {網路} domain {網域} email {電子郵件} software {軟體} other {其他}}",
+    "description": "What a cost is for, in a cell of the Category column ({category}: compute, database, storage, network, domain, email, software or other)."
+  },
+  "finance.rules.dates": {
+    "defaultMessage": "期間以不含時區的日曆日期計算，每週從星期一開始。",
+    "description": "Under the finance totals: how their periods are cut."
+  },
+  "finance.rules.currencies": {
+    "defaultMessage": "每種貨幣分別計算，不會換算。",
+    "description": "Under the finance totals: amounts in different currencies are never added together."
+  },
+  "finance.rules.billing": {
+    "defaultMessage": "{provider} 依 {zone} 的曆月計費，其帳單以開立帳單時計算。",
+    "description": "Under the finance totals, one a provider whose bills are imported: the time zone of its billing months ({provider}: a name such as AWS; {zone}: an IANA time zone such as UTC)."
+  },
+  "finance.rules.income_zone": {
+    "defaultMessage": "透過 {provider} 的收入以 {zone} 的日期計算。",
+    "description": "Under the finance totals, one a payment provider: the time zone in which its payments fall on their dates ({provider}: a name such as Stripe; {zone}: an IANA time zone such as UTC)."
+  },
+  "finance.rules.net": {
+    "defaultMessage": "收入為付款扣除支付服務商的手續費，退款則從退款當期扣除。",
+    "description": "Under the finance totals while income is shown: what the income figures are."
+  },
+  "finance.rules.payers": {
+    "defaultMessage": "不會顯示誰付了多少。",
+    "description": "Under the finance totals while income is shown: nobody's own payments are shown, only totals."
+  },
+  "finance.unpublished": {
+    "defaultMessage": "此伺服器不公開它的成本或收入。",
+    "description": "On the page of the server's costs and income when it publishes neither."
+  },
+  "finance.unpublished_costs": {
+    "defaultMessage": "此伺服器不公開它的成本。",
+    "description": "On the page of the server's costs and income when it publishes its income but not its costs."
+  },
+  "finance.unpublished_income": {
+    "defaultMessage": "此伺服器不公開它的收入。",
+    "description": "On the page of the server's costs and income when it publishes its costs but not its income."
+  },
+  "finance.forbidden": {
+    "defaultMessage": "只有獲准查看此伺服器財務的人才能看到此頁面。若要查看，請聯絡伺服器管理員。",
+    "description": "On the finance page for a signed-in reader who may not read the server's finances."
+  },
+  "finance.plans": {
+    "defaultMessage": "各方案的成員",
+    "description": "The heading and the table name of how many members each supporter plan has now."
+  },
+  "finance.members": {
+    "defaultMessage": "{count, plural, other {# 位成員}}",
+    "description": "In the Members column: how many members a supporter plan has now."
+  },
+  "finance.tips": {
+    "defaultMessage": "收入包含贊助。",
+    "description": "Under the members by plan while the server takes tips, which its income totals include."
+  },
+  "finance.meter": {
+    "defaultMessage": "本月的資金",
+    "description": "The heading of the section of the funding meter on the page of the server's costs and income."
+  },
+  "finance.meter.label": {
+    "defaultMessage": "本月成本已涵蓋的比例",
+    "description": "The name of the funding meter, for assistive technology: how much of the server's costs this month its income covers."
+  },
+  "finance.meter.caption": {
+    "defaultMessage": "{covered, select, yes {{month}已涵蓋} other {{month}成本已涵蓋的比例}}",
+    "description": "Under the share of the funding meter: the month it is about ({month}, a month name in the reader's language), and whether its costs are covered."
+  },
+  "finance.meter.estimated": {
+    "defaultMessage": "本月的成本包含估計值，所以可能會變動。",
+    "description": "Under the funding meter while this month's costs include a bill the provider has not closed yet."
+  },
+  "finance.meter.amounts": {
+    "defaultMessage": "{income} / {target}",
+    "description": "Under the funding meter where the server publishes its amounts: this month's income ({income}) and the target ({target}), each an amount in its currency."
+  },
+  "finance.meter.target_costs": {
+    "defaultMessage": "目標為本月的成本。",
+    "description": "Under the funding meter's amounts when the target is this month's costs rather than an amount the operators set."
+  },
+  "finance.meter.caption_in": {
+    "defaultMessage": "{covered, select, yes {{month}已涵蓋，以 {currency} 計算} other {{month}成本已涵蓋的比例，以 {currency} 計算}}",
+    "description": "Under the share of the funding meter where the server publishes its amounts: the month it is about ({month}, a month name in the reader's language), whether its costs are covered, and the currency the share is counted in ({currency}, an ISO 4217 code such as JPY), since income in other currencies does not count."
+  },
+  "finance.plans_none": {
+    "defaultMessage": "還沒有任何方案有成員。",
+    "description": "In place of the table of members by plan when no plan has members now."
+  },
+  "finance.unpublished_totals": {
+    "defaultMessage": "此伺服器不公開它的總計。",
+    "description": "On the page of the server's costs and income, under the funding meter, when the server publishes the meter but neither its costs nor its income."
+  }
+}

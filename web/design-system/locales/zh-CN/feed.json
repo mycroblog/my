@@ -1,0 +1,6 @@
+{
+  "feed.loading_newer": {
+    "defaultMessage": "正在加载最新内容…",
+    "description": "Read to assistive technology over a list of posts or notifications (a timeline) while what is newest in it is read again, after the reader pulled it down at its top on a phone; the list's items stay in view meanwhile."
+  }
+}

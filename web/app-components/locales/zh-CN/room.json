@@ -1,0 +1,18 @@
+{
+  "room.count": {
+    "defaultMessage": "{count, plural, other {房间里有 # 人}}",
+    "description": "How many are in a voice chat room, for assistive technology, beside the people glyph and the figure: in a room's line of a list, its title and the call's bar."
+  },
+  "room.hosted_by": {
+    "defaultMessage": "主持人：{host}",
+    "description": "Under a voice chat room's name in a list of rooms (the rooms' screen, a hashtag's page): who hosts it ({host}, a display name)."
+  },
+  "room.entry_hosting": {
+    "defaultMessage": "正在主持",
+    "description": "Under the name of the voice chat room on the profile of the account that hosts it: they are hosting it now."
+  },
+  "room.entry_speaking": {
+    "defaultMessage": "正在发言",
+    "description": "Under the name of the voice chat room on the profile of an account that speaks in it: they are a speaker in it now."
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "log.details": {
+    "defaultMessage": "Detalles",
+    "description": "The button under an entry of a log (the audit log, a webhook's deliveries, a job's attempts) that shows or hides what more there is about it: the payload, the request and its response. Its state, shown or hidden, is read with it."
+  }
+}

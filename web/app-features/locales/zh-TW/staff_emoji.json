@@ -1,0 +1,502 @@
+{
+  "staff_emoji.entry": {
+    "defaultMessage": "自訂表情符號",
+    "description": "The name of the screen of the custom emoji and the requests for new ones, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_emoji.entry.count": {
+    "defaultMessage": "{count, plural, other {# 項申請等待審核}}",
+    "description": "For assistive technology, what the badge at the end of Custom emoji in the list at /admin counts: the requests for custom emoji waiting for review. Read by administrators."
+  },
+  "staff_emoji.no_image": {
+    "defaultMessage": "沒有圖片",
+    "description": "In the place of a custom emoji's image when it cannot be shown (another server's media the server rejects). Read by administrators."
+  },
+  "staff_emoji.state.enabled": {
+    "defaultMessage": "已啟用",
+    "description": "The state of a custom emoji that shows where it is used. Read by administrators."
+  },
+  "staff_emoji.state.disabled": {
+    "defaultMessage": "已停用",
+    "description": "The state of a custom emoji that is disabled: its :shortcode: stays text everywhere. Read by administrators."
+  },
+  "staff_emoji.state.failed": {
+    "defaultMessage": "沒有任何變更。請檢查網路連線後再試一次。",
+    "description": "In the section of a custom emoji's actions when disabling or enabling it failed. Read by administrators."
+  },
+  "staff_emoji.state.hidden": {
+    "defaultMessage": "不在選擇器中",
+    "description": "The state of a local custom emoji that is shown where it is used but that the emoji picker leaves out, in its row and on its page. Read by administrators."
+  },
+  "staff_emoji.origin": {
+    "defaultMessage": "伺服器",
+    "description": "The filter of the custom emoji by where they come from, and the fact of an emoji's server. Read by administrators."
+  },
+  "staff_emoji.origin.any": {
+    "defaultMessage": "所有伺服器",
+    "description": "The value of the server filter of the custom emoji that keeps them all. Read by administrators."
+  },
+  "staff_emoji.origin.local": {
+    "defaultMessage": "此伺服器",
+    "description": "A custom emoji of this server, as a filter's value and an emoji's fact. Read by administrators."
+  },
+  "staff_emoji.origin.remote": {
+    "defaultMessage": "其他伺服器",
+    "description": "The filter's value that keeps the custom emoji of other servers; also an emoji of another server whose domain is not known. Read by administrators."
+  },
+  "staff_emoji.tab.emoji": {
+    "defaultMessage": "表情符號",
+    "description": "The first tab of Custom emoji: the emoji themselves. Read by administrators."
+  },
+  "staff_emoji.tab.requests": {
+    "defaultMessage": "申請",
+    "description": "The second tab of Custom emoji: the requests for new emoji, while none waits. Read by administrators."
+  },
+  "staff_emoji.tab.pending": {
+    "defaultMessage": "{count, plural, other {# 項等待審核}}",
+    "description": "For assistive technology, what the badge on the Requests tab of Custom emoji counts: the requests waiting for review. Read by administrators."
+  },
+  "staff_emoji.tab.pending.more": {
+    "defaultMessage": "{count} 項以上等待審核",
+    "description": "For assistive technology, what the badge on the Requests tab counts when more requests wait than the first page holds. Read by administrators."
+  },
+  "staff_emoji.add": {
+    "defaultMessage": "登記表情符號",
+    "description": "The button at the end of the title of Custom emoji that opens the form of a new local emoji. Read by administrators."
+  },
+  "staff_emoji.filters": {
+    "defaultMessage": "篩選自訂表情符號",
+    "description": "For assistive technology, the bar of filters over the custom emoji. Read by administrators."
+  },
+  "staff_emoji.search": {
+    "defaultMessage": "依短代碼尋找",
+    "description": "The search field of the custom emoji, which finds those whose shortcode holds the words. Read by administrators."
+  },
+  "staff_emoji.search.clear": {
+    "defaultMessage": "清除搜尋",
+    "description": "The button that empties the search field of the custom emoji. Read by administrators."
+  },
+  "staff_emoji.column.image": {
+    "defaultMessage": "圖片",
+    "description": "The column of the custom emoji's images in their tables. Read by administrators."
+  },
+  "staff_emoji.column.shortcode": {
+    "defaultMessage": "短代碼",
+    "description": "The column of the custom emoji's shortcodes, each between colons, in their tables. Read by administrators."
+  },
+  "staff_emoji.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of the state of a custom emoji or of a request, in their tables. Read by administrators."
+  },
+  "staff_emoji.table": {
+    "defaultMessage": "自訂表情符號",
+    "description": "For assistive technology, the table of the custom emoji. Read by administrators."
+  },
+  "staff_emoji.row.category": {
+    "defaultMessage": "類別：{category}",
+    "description": "A fact under a local custom emoji's shortcode: its category in the picker, as the staff wrote it. Read by administrators."
+  },
+  "staff_emoji.row.aliases": {
+    "defaultMessage": "別名：{aliases}",
+    "description": "A fact under a local custom emoji's shortcode: its aliases, each between colons. Read by administrators."
+  },
+  "staff_emoji.loading": {
+    "defaultMessage": "正在載入自訂表情符號…",
+    "description": "At /admin/custom-emojis while the emoji are read. Read by administrators."
+  },
+  "staff_emoji.failed": {
+    "defaultMessage": "無法載入自訂表情符號。",
+    "description": "At /admin/custom-emojis when the emoji could not be read, before Try again. Read by administrators."
+  },
+  "staff_emoji.empty": {
+    "defaultMessage": "目前沒有自訂表情符號。",
+    "description": "At /admin/custom-emojis when the server has no custom emoji at all. Read by administrators."
+  },
+  "staff_emoji.empty.filtered": {
+    "defaultMessage": "沒有符合這些篩選條件的自訂表情符號。",
+    "description": "At /admin/custom-emojis when the filters or the search keep none, over Clear filters. Read by administrators."
+  },
+  "staff_emoji.new": {
+    "defaultMessage": "新增自訂表情符號",
+    "description": "The title of the form of a new local custom emoji. Read by administrators."
+  },
+  "staff_emoji.register": {
+    "defaultMessage": "登記",
+    "description": "The button of the submit bar of a new custom emoji's form. Read by administrators."
+  },
+  "staff_emoji.save": {
+    "defaultMessage": "儲存",
+    "description": "The button of the submit bar of a custom emoji's place in the picker. Read by administrators."
+  },
+  "staff_emoji.this": {
+    "defaultMessage": "表情符號",
+    "description": "The heading of the section of a new custom emoji's shortcode and image. Read by administrators."
+  },
+  "staff_emoji.shortcode": {
+    "defaultMessage": "短代碼",
+    "description": "The field of a new custom emoji's shortcode, which texts write between colons. Read by administrators."
+  },
+  "staff_emoji.shortcode.rule": {
+    "defaultMessage": "2 到 30 個字母（A 到 Z、a 到 z）、數字與 _。區分大小寫，之後無法變更。",
+    "description": "Under the shortcode of a new custom emoji: the rule its value follows, also when it was refused. Read by administrators."
+  },
+  "staff_emoji.shortcode.taken": {
+    "defaultMessage": "這個伺服器的另一個表情符號已使用這個短代碼，或有等待決定的申請佔用它。請選擇其他短代碼。",
+    "description": "Under a shortcode the server refused because a local emoji or a pending request has it. Read by administrators."
+  },
+  "staff_emoji.image": {
+    "defaultMessage": "圖片",
+    "description": "The field of a new custom emoji's image. Read by administrators."
+  },
+  "staff_emoji.image.hint": {
+    "defaultMessage": "PNG、GIF 或 WebP，長邊不超過 1,024 像素。",
+    "description": "Under the image field of a custom emoji: what the server takes. Read by administrators."
+  },
+  "staff_emoji.image.heavy": {
+    "defaultMessage": "這張圖片超過 100 KB：部分伺服器（GoToSocial）不會擷取這麼大的表情符號。",
+    "description": "Under the image field of a custom emoji when the picked file is over 100 KB. Read by administrators."
+  },
+  "staff_emoji.image.choose": {
+    "defaultMessage": "選擇圖片",
+    "description": "The button of the image field of a custom emoji that opens the file picker. Read by administrators."
+  },
+  "staff_emoji.image.another": {
+    "defaultMessage": "選擇其他圖片",
+    "description": "The button of the image field of a new custom emoji once one is picked. Read by administrators."
+  },
+  "staff_emoji.image.none": {
+    "defaultMessage": "尚未選擇圖片",
+    "description": "In the place of the file's name in the image field of a new custom emoji while none is picked. Read by administrators."
+  },
+  "staff_emoji.image.current": {
+    "defaultMessage": "在你選擇其他圖片之前，會保留目前的圖片",
+    "description": "In the place of a file's name in the field that replaces a custom emoji's image, before one is picked. Read by administrators."
+  },
+  "staff_emoji.image.replace": {
+    "defaultMessage": "新圖片",
+    "description": "The field that replaces a local custom emoji's image at once. Read by administrators."
+  },
+  "staff_emoji.image.replaced": {
+    "defaultMessage": "圖片已更換。其他伺服器會重新擷取。",
+    "description": "In the section of a custom emoji's actions once its image was replaced. Read by administrators."
+  },
+  "staff_emoji.image.missing": {
+    "defaultMessage": "請選擇表情符號的圖片。",
+    "description": "Under the image field of a new custom emoji when Register was pressed without one. Read by administrators."
+  },
+  "staff_emoji.image.format": {
+    "defaultMessage": "請選擇 PNG、GIF 或 WebP 圖片。",
+    "description": "Under the image field of a custom emoji when the server refused the file's format. Read by administrators."
+  },
+  "staff_emoji.image.too_large": {
+    "defaultMessage": "這個檔案超過伺服器接受的表情符號大小。請選擇較小的檔案。",
+    "description": "Under the image field of a custom emoji when the file is over the server's size limit. Read by administrators."
+  },
+  "staff_emoji.image.too_big": {
+    "defaultMessage": "請選擇長邊不超過 1,024 像素的圖片。",
+    "description": "Under the image field of a custom emoji when the image is too wide or tall. Read by administrators."
+  },
+  "staff_emoji.image.failed": {
+    "defaultMessage": "無法讀取圖片。請選擇其他圖片或再試一次。",
+    "description": "Under the image field of a custom emoji when the upload could not be processed. Read by administrators."
+  },
+  "staff_emoji.image.replace.press": {
+    "defaultMessage": "更換",
+    "description": "The button, once a new image of a local emoji is chosen, that asks to replace its image, and the confirmation of that question. Read by administrators."
+  },
+  "staff_emoji.image.replace.title": {
+    "defaultMessage": "要更換 :{shortcode}: 的圖片嗎？",
+    "description": "The question before the image of a local emoji (its shortcode) is replaced. Read by administrators."
+  },
+  "staff_emoji.image.replace.text": {
+    "defaultMessage": "所有使用它的貼文與個人檔案都會顯示新圖片，其他伺服器也會重新擷取。舊圖片不會保留。",
+    "description": "Under the question before an emoji's image is replaced. Read by administrators."
+  },
+  "staff_emoji.image.replace.cancel": {
+    "defaultMessage": "保留圖片",
+    "description": "The button that closes the question before an emoji's image is replaced, keeping the image. Read by administrators."
+  },
+  "staff_emoji.picker": {
+    "defaultMessage": "在選擇器中",
+    "description": "The heading of the section of a local custom emoji's category, aliases and whether the picker offers it. Read by administrators."
+  },
+  "staff_emoji.category": {
+    "defaultMessage": "類別",
+    "description": "The field of a custom emoji's category in the picker; empty for none. Read by administrators."
+  },
+  "staff_emoji.category.rule": {
+    "defaultMessage": "最多寫 {max} 字元。",
+    "description": "Under the category of a custom emoji when it is too long. Read by administrators."
+  },
+  "staff_emoji.aliases": {
+    "defaultMessage": "別名",
+    "description": "The field of a custom emoji's other names, which the picker finds it by. Read by administrators."
+  },
+  "staff_emoji.aliases.hint": {
+    "defaultMessage": "以空格分隔。",
+    "description": "Under the aliases of a custom emoji: how several are written in the one field. Read by administrators."
+  },
+  "staff_emoji.aliases.rule": {
+    "defaultMessage": "最多寫 {max} 個別名，每個 2 到 30 個字母、數字與 _。",
+    "description": "Under the aliases of a custom emoji when one breaks the rules of a shortcode or there are too many. Read by administrators."
+  },
+  "staff_emoji.visible": {
+    "defaultMessage": "在選擇器中提供",
+    "description": "The setting of whether the emoji picker offers a local custom emoji. Read by administrators."
+  },
+  "staff_emoji.save.refused": {
+    "defaultMessage": "尚未儲存任何內容。請修正標示的部分後再儲存。",
+    "description": "Beside Save or Register of a custom emoji when a field was refused, which is marked under it. Read by administrators."
+  },
+  "staff_emoji.save.failed": {
+    "defaultMessage": "尚未儲存任何內容。請檢查網路連線後再試一次。",
+    "description": "Beside Save or Register of a custom emoji when the save failed with no field named. Read by administrators."
+  },
+  "staff_emoji.actions": {
+    "defaultMessage": "圖片與狀態",
+    "description": "The heading of the first section of a custom emoji's page: its image, Disable or Enable, and a new image. Read by administrators."
+  },
+  "staff_emoji.disable": {
+    "defaultMessage": "停用",
+    "description": "The button that disables a custom emoji. Read by administrators."
+  },
+  "staff_emoji.enable": {
+    "defaultMessage": "啟用",
+    "description": "The button that enables a disabled custom emoji. Read by administrators."
+  },
+  "staff_emoji.disabled": {
+    "defaultMessage": "表情符號已停用。",
+    "description": "In the section of a custom emoji's actions once it was disabled. Read by administrators."
+  },
+  "staff_emoji.enabled": {
+    "defaultMessage": "表情符號已啟用。",
+    "description": "In the section of a custom emoji's actions once it was enabled. Read by administrators."
+  },
+  "staff_emoji.facts": {
+    "defaultMessage": "詳細資料",
+    "description": "The heading of the facts of a custom emoji. Read by administrators."
+  },
+  "staff_emoji.created_by": {
+    "defaultMessage": "建立者",
+    "description": "The fact of who made a local custom emoji. Read by administrators."
+  },
+  "staff_emoji.created_by.none": {
+    "defaultMessage": "命令列",
+    "description": "The value of Made by for a local custom emoji made with the server's command line. Read by administrators."
+  },
+  "staff_emoji.uri": {
+    "defaultMessage": "位址",
+    "description": "The fact of a custom emoji's ActivityPub address, which other servers know it by. Read by administrators."
+  },
+  "staff_emoji.created": {
+    "defaultMessage": "登記時間",
+    "description": "The fact of when a local custom emoji was registered. Read by administrators."
+  },
+  "staff_emoji.seen": {
+    "defaultMessage": "首次發現",
+    "description": "The fact of when the server first saw another server's custom emoji. Read by administrators."
+  },
+  "staff_emoji.updated": {
+    "defaultMessage": "圖片設定時間",
+    "description": "The fact of when a custom emoji's current image was set. Read by administrators."
+  },
+  "staff_emoji.copy": {
+    "defaultMessage": "複製到這個伺服器",
+    "description": "The heading of the section of another server's custom emoji that copies it into a local one. Read by administrators."
+  },
+  "staff_emoji.copy.shortcode": {
+    "defaultMessage": "副本的短代碼",
+    "description": "The field of the shortcode the copy of another server's custom emoji takes, the remote one's at first. Read by administrators."
+  },
+  "staff_emoji.copy.press": {
+    "defaultMessage": "複製",
+    "description": "The button that copies another server's custom emoji into a local one. Read by administrators."
+  },
+  "staff_emoji.copy.no_image": {
+    "defaultMessage": "這裡無法顯示它的圖片，因此無法複製。",
+    "description": "In the copy section of another server's custom emoji whose image cannot be shown. Read by administrators."
+  },
+  "staff_emoji.copy.fetch_failed": {
+    "defaultMessage": "無法從它的伺服器擷取圖片，因此沒有複製任何內容。請稍後再試。",
+    "description": "In the copy section when the server could not fetch the remote emoji's image. Read by administrators."
+  },
+  "staff_emoji.delete": {
+    "defaultMessage": "刪除表情符號",
+    "description": "The heading of the last section of a local custom emoji's page, apart, which deletes it. Read by administrators."
+  },
+  "staff_emoji.delete.about": {
+    "defaultMessage": "曾使用它的貼文與個人檔案會以文字顯示它的 :shortcode:，使用它的回應也不再顯示。",
+    "description": "Under the heading of the section that deletes a custom emoji. Read by administrators."
+  },
+  "staff_emoji.delete.press": {
+    "defaultMessage": "刪除",
+    "description": "The button that deletes a custom emoji, and the confirmation of its question. Read by administrators."
+  },
+  "staff_emoji.delete.title": {
+    "defaultMessage": "要刪除 {shortcode} 嗎？",
+    "description": "The question before deleting a custom emoji (its shortcode between colons). Read by administrators."
+  },
+  "staff_emoji.delete.text": {
+    "defaultMessage": "表情符號與它的圖片會被永久刪除。請輸入它的短代碼以刪除。",
+    "description": "Under the question before deleting a custom emoji, over the field of its shortcode to type. Read by administrators."
+  },
+  "staff_emoji.delete.cancel": {
+    "defaultMessage": "保留表情符號",
+    "description": "The button that closes the question before deleting a custom emoji, keeping it. Read by administrators."
+  },
+  "staff_emoji.delete.failed": {
+    "defaultMessage": "表情符號尚未刪除。請檢查網路連線後再試一次。",
+    "description": "In the section that deletes a custom emoji when the deletion failed. Read by administrators."
+  },
+  "staff_emoji.irreversible": {
+    "defaultMessage": "這無法復原。",
+    "description": "The mark beside the button that deletes a custom emoji. Read by administrators."
+  },
+  "staff_emoji.one.loading": {
+    "defaultMessage": "正在載入表情符號…",
+    "description": "On a custom emoji's page while it is read. Read by administrators."
+  },
+  "staff_emoji.one.failed": {
+    "defaultMessage": "無法載入這個表情符號。",
+    "description": "On a custom emoji's page when it could not be read, before Try again. Read by administrators."
+  },
+  "staff_emoji.missing": {
+    "defaultMessage": "這個網址沒有自訂表情符號。它可能已被刪除。",
+    "description": "At /admin/custom-emojis/{id} for an ID the server has no emoji of, before the link to all. Read by administrators."
+  },
+  "staff_emoji.all": {
+    "defaultMessage": "所有自訂表情符號",
+    "description": "The link to /admin/custom-emojis under the sentence that an address names no emoji. Read by administrators."
+  },
+  "staff_emoji.request.state": {
+    "defaultMessage": "{state, select, pending {等待決定} approved {已核准} rejected {已拒絕} withdrawn {已撤回} lapsed {已失效：表情符號已被刪除} other {{state}}}",
+    "description": "The state of a request for a custom emoji. Lapsed: a request for a new image of an emoji that was deleted. Read by administrators."
+  },
+  "staff_emoji.request.state.term": {
+    "defaultMessage": "狀態",
+    "description": "The filter of the requests by their state, and the fact of a request's state. Read by administrators."
+  },
+  "staff_emoji.request.state.any": {
+    "defaultMessage": "所有狀態",
+    "description": "The value of the state filter of the requests that keeps them all; the list shows pending ones by default. Read by administrators."
+  },
+  "staff_emoji.request.filters": {
+    "defaultMessage": "篩選申請",
+    "description": "For assistive technology, the bar of filters over the requests for custom emoji. Read by administrators."
+  },
+  "staff_emoji.request.table": {
+    "defaultMessage": "自訂表情符號申請",
+    "description": "For assistive technology, the table of the requests for custom emoji. Read by administrators."
+  },
+  "staff_emoji.request.kind": {
+    "defaultMessage": "申請內容",
+    "description": "The fact of what a request for a custom emoji asks. Read by administrators."
+  },
+  "staff_emoji.request.kind.name": {
+    "defaultMessage": "{kind, select, create {新的表情符號} image {新的圖片} other {{kind}}}",
+    "description": "What a request asks: a new custom emoji, or a new image of one the requester made. Read by administrators."
+  },
+  "staff_emoji.request.requester": {
+    "defaultMessage": "申請者",
+    "description": "The column and the fact of who asked for a custom emoji. Read by administrators."
+  },
+  "staff_emoji.request.created": {
+    "defaultMessage": "申請時間",
+    "description": "The column and the fact of when a request for a custom emoji was made. Read by administrators."
+  },
+  "staff_emoji.request.decided_at": {
+    "defaultMessage": "裁決時間",
+    "description": "The fact of when a request was approved, rejected, withdrawn or lapsed. Read by administrators."
+  },
+  "staff_emoji.request.image": {
+    "defaultMessage": "圖片",
+    "description": "The fact of a request's image. Read by administrators."
+  },
+  "staff_emoji.request.facts": {
+    "defaultMessage": "申請內容",
+    "description": "For assistive technology, the facts of a request for a custom emoji. Read by administrators."
+  },
+  "staff_emoji.request.reason.term": {
+    "defaultMessage": "原因",
+    "description": "The fact of why a request was rejected, as the administrator wrote it. Read by administrators."
+  },
+  "staff_emoji.request.reason.hint": {
+    "defaultMessage": "提出申請的人會讀到。最多 {max} 字元，也可以留空。",
+    "description": "Under the reason of a rejection. Read by administrators."
+  },
+  "staff_emoji.request.reason.rule": {
+    "defaultMessage": "請將原因寫在 {max} 字元以內。",
+    "description": "Beside Reject when the reason is too long. Read by administrators."
+  },
+  "staff_emoji.request.close": {
+    "defaultMessage": "關閉",
+    "description": "The button that closes a request opened over the list. Read by administrators."
+  },
+  "staff_emoji.request.loading": {
+    "defaultMessage": "正在載入申請…",
+    "description": "At /admin/custom-emojis/requests while the requests are read. Read by administrators."
+  },
+  "staff_emoji.request.failed": {
+    "defaultMessage": "無法載入申請。",
+    "description": "At /admin/custom-emojis/requests when they could not be read, before Try again. Read by administrators."
+  },
+  "staff_emoji.request.empty": {
+    "defaultMessage": "沒有等待決定的申請。",
+    "description": "At /admin/custom-emojis/requests when no request is pending. Read by administrators."
+  },
+  "staff_emoji.request.empty.state": {
+    "defaultMessage": "沒有處於這個狀態的申請。",
+    "description": "At /admin/custom-emojis/requests when no request is in the state filtered, over Clear filters. Read by administrators."
+  },
+  "staff_emoji.request.approve": {
+    "defaultMessage": "核准",
+    "description": "The button that approves a request, making the emoji with the requester as its creator. Read by administrators."
+  },
+  "staff_emoji.request.reject": {
+    "defaultMessage": "拒絕",
+    "description": "The button that opens the reason of a rejection of a request. Read by administrators."
+  },
+  "staff_emoji.request.reject.confirm": {
+    "defaultMessage": "拒絕申請",
+    "description": "The button that rejects a request with the reason written over it. Read by administrators."
+  },
+  "staff_emoji.request.reason": {
+    "defaultMessage": "原因",
+    "description": "The field of why a request is rejected, which the requester reads; it may stay empty. Read by administrators."
+  },
+  "staff_emoji.request.approved": {
+    "defaultMessage": "{shortcode} 的申請已核准。",
+    "description": "Over the requests once one was approved (the emoji's shortcode between colons). Read by administrators."
+  },
+  "staff_emoji.request.rejected": {
+    "defaultMessage": "{shortcode} 的申請已拒絕。",
+    "description": "Over the requests once one was rejected (the shortcode between colons). Read by administrators."
+  },
+  "staff_emoji.request.cannot_create": {
+    "defaultMessage": "提出申請的人可能已無法建立自訂表情符號，因此無法核准這項申請。你可以拒絕它。",
+    "description": "Beside Reject of a request when the server refused its approval because the requester lost the permission. Read by administrators."
+  },
+  "staff_emoji.request.taken": {
+    "defaultMessage": "這個伺服器現在已有短代碼為 {shortcode} 的表情符號，因此無法核准這項申請。你可以拒絕它。",
+    "description": "Beside Reject of a request when a local emoji took its shortcode since. Read by administrators."
+  },
+  "staff_emoji.request.decided": {
+    "defaultMessage": "這項申請已在此期間被決定或撤回。請關閉以查看目前的清單。",
+    "description": "In a request opened over the list when it is no longer pending. Read by administrators."
+  },
+  "staff_emoji.request.failed.write": {
+    "defaultMessage": "尚未做出決定。請檢查網路連線後再試一次。",
+    "description": "Beside Approve and Reject when the decision failed with no reason. Read by administrators."
+  },
+  "staff_emoji.request.review": {
+    "defaultMessage": "審核",
+    "description": "The button of a pending custom emoji request's row that opens it over the list, with Approve and Reject. Read by administrators."
+  },
+  "staff_emoji.request.view": {
+    "defaultMessage": "詳細資料",
+    "description": "The button of a decided custom emoji request's row that opens what it was and how it was decided. Read by administrators."
+  },
+  "staff_emoji.request.review.column": {
+    "defaultMessage": "決定",
+    "description": "The heading of the column of the buttons that open a custom emoji request (Review, Details) in the table of requests. Read by administrators."
+  }
+}

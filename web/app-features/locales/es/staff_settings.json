@@ -1,0 +1,1722 @@
+{
+  "staff_settings.save": {
+    "defaultMessage": "Guardar",
+    "description": "The button of the submit bar of a form of the server's settings, texts or rules. Read by administrators."
+  },
+  "staff_settings.save.refused": {
+    "defaultMessage": "No se guardó nada. Corrige lo que está marcado y vuelve a guardar.",
+    "description": "Beside Save when the server or the form refused a field, which is marked under it. Read by administrators."
+  },
+  "staff_settings.save.failed": {
+    "defaultMessage": "No se guardó nada. Revisa tu conexión e inténtalo de nuevo.",
+    "description": "Beside Save when the save failed with no field named (the network, or the server's error without words). Read by administrators."
+  },
+  "staff_settings.loading": {
+    "defaultMessage": "Cargando la configuración…",
+    "description": "In a settings screen of /admin while the settings are read. Read by administrators."
+  },
+  "staff_settings.failed": {
+    "defaultMessage": "No se pudo cargar la configuración.",
+    "description": "In a settings screen of /admin when the settings could not be read, before Try again. Read by administrators."
+  },
+  "staff_settings.missing": {
+    "defaultMessage": "No hay ninguna página de configuración en esta dirección.",
+    "description": "At /admin/settings/<topic> or /admin/documents/<document> for an address that names none. Read by administrators."
+  },
+  "staff_settings.leave.title": {
+    "defaultMessage": "¿Salir sin guardar?",
+    "description": "The question when the reader leaves a form of the server's settings with changes not saved. Read by administrators."
+  },
+  "staff_settings.leave.text": {
+    "defaultMessage": "Se pierden los cambios que hiciste aquí.",
+    "description": "The text of the question before leaving a form with changes not saved. Read by administrators."
+  },
+  "staff_settings.leave.confirm": {
+    "defaultMessage": "Salir",
+    "description": "The button that leaves a form with changes not saved, losing them. Read by administrators."
+  },
+  "staff_settings.leave.cancel": {
+    "defaultMessage": "Seguir editando",
+    "description": "The button that stays on a form with changes not saved. Read by administrators."
+  },
+  "staff_settings.ask.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "The button that cancels a question before saving or before an action on the administration screens. Read by administrators."
+  },
+  "staff_settings.ask.scope.title": {
+    "defaultMessage": "¿Federar solo con los servidores permitidos?",
+    "description": "The question before saving federation_scope switched to the allowlist. Read by administrators."
+  },
+  "staff_settings.ask.scope.unknown": {
+    "defaultMessage": "Terminan todos los seguimientos con un servidor que no está en la lista de permitidos. No se pudo leer la cifra. No se puede deshacer.",
+    "description": "The text of the question before switching to the allowlist while the server's count is not known. Read by administrators."
+  },
+  "staff_settings.ask.scope.confirm": {
+    "defaultMessage": "Cambiar",
+    "description": "The button that saves the switch to the allowlist. Read by administrators."
+  },
+  "staff_settings.ask.scope.text": {
+    "defaultMessage": "Terminan {follows, plural, one {# seguimiento} other {# seguimientos}} con {servers, plural, one {# otro servidor} other {# otros servidores}}, y {accounts, plural, one {# cuenta} other {# cuentas}} de aquí pierden alguno. La mayoría son con {top}. No se puede deshacer.",
+    "description": "The text of the question before switching to the allowlist, with the server's count; top is a list of domains. Read by administrators."
+  },
+  "staff_settings.ask.providers_only.title": {
+    "defaultMessage": "¿Limitar el inicio de sesión a los proveedores de inicio de sesión?",
+    "description": "The question before saving login_providers_only turned on. Read by administrators."
+  },
+  "staff_settings.ask.providers_only.unknown": {
+    "defaultMessage": "Las personas sin un proveedor vinculado no podrán volver a iniciar sesión cuando terminen sus sesiones. No se pudo leer la cifra.",
+    "description": "The text of the question before turning login_providers_only on while the count is not known. Read by administrators."
+  },
+  "staff_settings.ask.providers_only.confirm": {
+    "defaultMessage": "Limitar el inicio de sesión",
+    "description": "The button that saves login_providers_only turned on. Read by administrators."
+  },
+  "staff_settings.ask.providers_only.text": {
+    "defaultMessage": "{providers, select, none {No hay ningún proveedor de inicio de sesión activado, así que el límite aún no se aplica. Cuando lo haya,} other {Mientras se aplique,}} {count, plural, one {# persona activa} other {# personas activas}} sin un proveedor vinculado no podrán volver a iniciar sesión cuando terminen sus sesiones.{you, select, yes { Eres una de ellas.} other {}}",
+    "description": "The text of the question before turning login_providers_only on, with the server's count; whether the reader is among them is said plainly. Read by administrators."
+  },
+  "staff_settings.ask.auto_delete_max.title": {
+    "defaultMessage": "¿Eliminar las publicaciones antiguas de todos?",
+    "description": "The question before saving a maximum age of the server's posts that is new or shorter. Read by administrators."
+  },
+  "staff_settings.ask.auto_delete_max.confirm": {
+    "defaultMessage": "Guardar y eliminar",
+    "description": "The button that saves a maximum age of the server's posts. Read by administrators."
+  },
+  "staff_settings.ask.auto_delete_max.text": {
+    "defaultMessage": "Se eliminan las publicaciones de este servidor con más de {days, plural, one {# día} other {# días}}, a partir de {grace, plural, =0 {ahora mismo} one {# día después de avisar a cada persona} other {# días después de avisar a cada persona}}. No se puede deshacer.",
+    "description": "The text of the question before saving a maximum age of posts. Read by administrators."
+  },
+  "staff_settings.copied": {
+    "defaultMessage": "Copiado",
+    "description": "Beside the button that copied a value (a callback URL) on the administration screens. Read by administrators."
+  },
+  "staff_settings.copy_failed": {
+    "defaultMessage": "El navegador no lo copió. Selecciónalo y cópialo tú.",
+    "description": "Beside the copy button when the browser refused to copy. Read by administrators."
+  },
+  "staff_settings.bool": {
+    "defaultMessage": "{value, select, true {Activado} other {Desactivado}}",
+    "description": "An option of a setting that is on or off, in the select of its row. Read by administrators."
+  },
+  "staff_settings.unit": {
+    "defaultMessage": "{unit, select, days {días} hours {horas} minutes {minutos} characters {caracteres} posts {publicaciones} mebibytes {MiB} invites {invitaciones} people {personas} images {imágenes} times {veces} pins {fijadas} percent {%} other {}}",
+    "description": "What a number of a setting counts, after its field. Read by administrators."
+  },
+  "staff_settings.rule": {
+    "defaultMessage": "{kind, select, int {Introduce un número entero de {min} a {max}.} email {Introduce una dirección de correo como admin@example.com o déjalo vacío.} uri {Introduce una dirección https: o mailto: o déjalo vacío.} account {Introduce el nombre de usuario de una cuenta de este servidor o déjalo vacío.} accounts {Introduce hasta 20 nombres de usuario de cuentas de este servidor, separados por espacios.} client_limits {Introduce pares client_id=solicitudes, separados por comas, o déjalo vacío.} locale {Elige un idioma de la lista.} media {Elige otra imagen.} other {Elige una de las opciones.}}",
+    "description": "Under a setting the server refused or the form found empty: the rule its value follows, by the setting's kind. Read by administrators."
+  },
+  "staff_settings.single_user.hidden": {
+    "defaultMessage": "Este es un servidor de una sola persona: nadie más puede registrarse. Desactívalo abajo para que otros se unan.",
+    "description": "In place of the settings of signing up and of member invites while the server is a one-person server. Read by administrators."
+  },
+  "staff_settings.image.choose": {
+    "defaultMessage": "{set, select, yes {Reemplazar} other {Elegir una imagen}}",
+    "description": "The button of an image setting (the thumbnail, the link preview image): choosing one, or replacing the one shown. Read by administrators."
+  },
+  "staff_settings.image.remove": {
+    "defaultMessage": "Quitar",
+    "description": "The button after an image setting's button that removes the image. Read by administrators."
+  },
+  "staff_settings.topic.general": {
+    "defaultMessage": "General",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.branding": {
+    "defaultMessage": "Icono y logotipo",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.registration": {
+    "defaultMessage": "Registro",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.content": {
+    "defaultMessage": "Publicaciones, cronologías y eventos",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.federation": {
+    "defaultMessage": "Federación",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.hooks": {
+    "defaultMessage": "Revisión externa",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.discovery": {
+    "defaultMessage": "Búsqueda y rastreadores",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.voice": {
+    "defaultMessage": "Chat de voz",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.auto_delete": {
+    "defaultMessage": "Eliminación de publicaciones",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.records": {
+    "defaultMessage": "Apelaciones y conservación de registros",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.group.server": {
+    "defaultMessage": "Este servidor",
+    "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
+  },
+  "staff_settings.group.content": {
+    "defaultMessage": "Publicaciones y personas",
+    "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
+  },
+  "staff_settings.group.reach": {
+    "defaultMessage": "Federación y descubrimiento",
+    "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
+  },
+  "staff_settings.group.moderation": {
+    "defaultMessage": "Moderación",
+    "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
+  },
+  "staff_settings.section.about": {
+    "defaultMessage": "Nombre y descripciones",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.language": {
+    "defaultMessage": "Idioma",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.contact": {
+    "defaultMessage": "Contacto",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.images": {
+    "defaultMessage": "Imágenes",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.mode": {
+    "defaultMessage": "Quién puede registrarse",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.invites": {
+    "defaultMessage": "Invitaciones de miembros",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.providers_only": {
+    "defaultMessage": "Solo proveedores de inicio de sesión",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.apps": {
+    "defaultMessage": "Aplicaciones",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.posts": {
+    "defaultMessage": "Publicaciones",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.timelines": {
+    "defaultMessage": "Cronologías",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.link_cards": {
+    "defaultMessage": "Tarjetas de enlace",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.drafts": {
+    "defaultMessage": "Borradores y publicaciones programadas",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.articles": {
+    "defaultMessage": "Artículos",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.events": {
+    "defaultMessage": "Eventos",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.landing": {
+    "defaultMessage": "Página principal y sugerencias",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.federation_mode": {
+    "defaultMessage": "Dirección",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.federation_scope": {
+    "defaultMessage": "Servidores",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.signatures": {
+    "defaultMessage": "Solicitudes firmadas",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.remote_media": {
+    "defaultMessage": "Archivos multimedia de otros servidores",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.remote_posts": {
+    "defaultMessage": "Publicaciones de otros servidores",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.domain_actions": {
+    "defaultMessage": "Servidores moderados",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_records": {
+    "defaultMessage": "Registros de decisiones",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.search_engines": {
+    "defaultMessage": "Motores de búsqueda",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.ai": {
+    "defaultMessage": "IA",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.full_text_search": {
+    "defaultMessage": "Búsqueda de texto completo",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.voice_starters": {
+    "defaultMessage": "Quién puede abrir salas",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.voice_rooms": {
+    "defaultMessage": "Salas",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_default": {
+    "defaultMessage": "Valor predeterminado para cuentas nuevas",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_default.about": {
+    "defaultMessage": "Las cuentas nuevas empiezan con esta configuración, que cada persona puede cambiar. Las cuentas existentes conservan la suya.",
+    "description": "The line under the heading Default for new accounts: what the section's settings do. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_default_kept": {
+    "defaultMessage": "Qué conserva el valor predeterminado",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_max": {
+    "defaultMessage": "Máximo para todos",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_max.about": {
+    "defaultMessage": "Los días máximos que se conserva cualquier publicación de este servidor. Cada persona conserva su propia configuración durante el periodo de gracia después de que se le avise.",
+    "description": "The line under the heading Maximum for everyone: what the section's settings do. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_max_kept": {
+    "defaultMessage": "Qué se puede seguir conservando con el máximo",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.appeals": {
+    "defaultMessage": "Apelaciones",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.retention": {
+    "defaultMessage": "Conservación de registros",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.retention.about": {
+    "defaultMessage": "Cada registro se elimina cuando pasan sus días, salvo que una retención lo conserve.",
+    "description": "The line under the heading Keeping records: what the section's settings do. Read by administrators."
+  },
+  "staff_settings.section.translation_providers": {
+    "defaultMessage": "Proveedores",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.translation_providers.about": {
+    "defaultMessage": "Las publicaciones van a los proveedores marcados, el primero primero. Nada va a un proveedor que no está marcado.",
+    "description": "The line under the heading Providers: what the section's settings do. Read by administrators."
+  },
+  "staff_settings.section.translation_browser": {
+    "defaultMessage": "Traducción del navegador",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.translation_limits": {
+    "defaultMessage": "Límites",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.translation_reports": {
+    "defaultMessage": "Denuncias",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_inbound_status": {
+    "defaultMessage": "Publicaciones de otros servidores",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_inbound_follow": {
+    "defaultMessage": "Seguimientos de otros servidores",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_signup_check": {
+    "defaultMessage": "Registros",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_media_check": {
+    "defaultMessage": "Archivos multimedia",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_local_status": {
+    "defaultMessage": "Publicaciones de este servidor",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_inbound_actor": {
+    "defaultMessage": "Cuentas de otros servidores",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_local_profile": {
+    "defaultMessage": "Perfiles de este servidor",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.security": {
+    "defaultMessage": "Contacto de seguridad",
+    "description": "The heading of the section of the security contact on the Search and crawlers page of Server settings. Read by administrators."
+  },
+  "staff_settings.section.ux_measurement": {
+    "defaultMessage": "Medición",
+    "description": "The heading of the section of the setting that measures the web client, under the UX measurements. Read by administrators."
+  },
+  "staff_settings.text.name": {
+    "defaultMessage": "Nombre",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.short_description": {
+    "defaultMessage": "Descripción corta",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.description": {
+    "defaultMessage": "Descripción",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.thumbnail_alt": {
+    "defaultMessage": "Descripción de la miniatura",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.preview_image_alt": {
+    "defaultMessage": "Descripción de la imagen de vista previa del enlace",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.name.about": {
+    "defaultMessage": "Se muestra en lugar del dominio. Los identificadores y las direcciones conservan el dominio.",
+    "description": "The hint under the Name of the instance. Read by administrators."
+  },
+  "staff_settings.setting.default_locale": {
+    "defaultMessage": "Idioma predeterminado",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.contact_account": {
+    "defaultMessage": "Cuenta de contacto",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.contact_email": {
+    "defaultMessage": "Correo de contacto",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.contact_email.about": {
+    "defaultMessage": "También es adonde van las respuestas a los correos que envía este servidor.",
+    "description": "The line about the setting Contact email: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.security_contact": {
+    "defaultMessage": "Contacto de seguridad",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.thumbnail": {
+    "defaultMessage": "Miniatura",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.thumbnail.about": {
+    "defaultMessage": "Se muestra en la página «Acerca de» de este servidor y en la página principal, y en las vistas previas de enlaces cuando no hay imagen de vista previa.",
+    "description": "The line about the setting Thumbnail: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.preview_image": {
+    "defaultMessage": "Imagen de vista previa del enlace",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.preview_image.about": {
+    "defaultMessage": "Se muestra cuando se comparte una página de este servidor que no tiene imagen propia.",
+    "description": "The line about the setting Link preview image: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.registration_mode": {
+    "defaultMessage": "Quién puede registrarse",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.single_user": {
+    "defaultMessage": "Servidor de una sola persona",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.single_user.about": {
+    "defaultMessage": "Solo para un servidor con exactamente una cuenta. Nadie más puede registrarse y las cronologías locales están desactivadas.",
+    "description": "The line about the setting One-person server: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.invite_creators": {
+    "defaultMessage": "Quién puede crear invitaciones",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.invite_creators.about": {
+    "defaultMessage": "Los moderadores que gestionan invitaciones siempre pueden crearlas. En modo de aprobación, un registro con invitación no espera revisión.",
+    "description": "The line about the setting Who can create invites: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_active": {
+    "defaultMessage": "Invitaciones utilizables por persona",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_active.about": {
+    "defaultMessage": "Con 0, los miembros no pueden crear ninguna.",
+    "description": "The line about the setting Usable invites per person: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_uses": {
+    "defaultMessage": "Registros por invitación",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_lifetime_seconds": {
+    "defaultMessage": "Máxima duración de una invitación",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_lifetime_seconds.about": {
+    "defaultMessage": "Reducirla no acorta las invitaciones ya creadas.",
+    "description": "The line about the setting Longest an invite works: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.login_providers_only": {
+    "defaultMessage": "Iniciar sesión solo con proveedores de inicio de sesión",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.user_app_registration": {
+    "defaultMessage": "Las personas pueden registrar aplicaciones",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.user_app_registration.about": {
+    "defaultMessage": "Si está desactivado, las aplicaciones ya registradas siguen funcionando.",
+    "description": "The line about the setting People can register apps: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.dynamic_client_registration": {
+    "defaultMessage": "Las aplicaciones pueden registrarse solas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.oauth_metadata_document_clients": {
+    "defaultMessage": "Aceptar aplicaciones por su documento de metadatos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.oauth_client_rate_limits": {
+    "defaultMessage": "Límites de solicitudes de las aplicaciones",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.max_status_length": {
+    "defaultMessage": "Publicación más larga",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.require_media_description": {
+    "defaultMessage": "Los archivos multimedia necesitan una descripción",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.local_timeline_visibility": {
+    "defaultMessage": "Cronología local",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.local_timeline_visibility.about": {
+    "defaultMessage": "Salvo que todos puedan verla, la página principal no muestra publicaciones de ejemplo.",
+    "description": "The line about the setting Local timeline: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.federated_timeline_visibility": {
+    "defaultMessage": "Cronología federada",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.link_cards": {
+    "defaultMessage": "Tarjetas para enlaces",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.link_cards.about": {
+    "defaultMessage": "El servidor obtiene la página enlazada para crear su tarjeta. Si se desactiva, también se ocultan las tarjetas ya creadas.",
+    "description": "The line about the setting Cards for links: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.link_cards_ignore_robots_txt": {
+    "defaultMessage": "Obtener tarjetas pese a robots.txt",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.link_cards_ignore_robots_txt.about": {
+    "defaultMessage": "Actívalo solo cuando falten demasiadas tarjetas: los sitios enlazados ya no podrán rechazar estas solicitudes.",
+    "description": "The line about the setting Fetch cards despite robots.txt: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.max_drafts": {
+    "defaultMessage": "Borradores por persona",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.max_scheduled_posts": {
+    "defaultMessage": "Publicaciones programadas por persona",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.max_scheduled_posts_per_day": {
+    "defaultMessage": "Publicaciones programadas por persona al día",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.scheduled_post_min_lead_minutes": {
+    "defaultMessage": "Lo más pronto que se puede programar una publicación",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.scheduled_post_max_lead_days": {
+    "defaultMessage": "Lo más lejos que se puede programar una publicación",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.article_authoring": {
+    "defaultMessage": "Quién puede escribir artículos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.article_authoring.about": {
+    "defaultMessage": "Limitarlo conserva los artículos ya escritos.",
+    "description": "The line about the setting Who can write articles: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.max_article_bytes": {
+    "defaultMessage": "Artículo más grande",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.max_article_images": {
+    "defaultMessage": "Imágenes por artículo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.event_creators": {
+    "defaultMessage": "Quién puede crear eventos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.event_records_retention_days": {
+    "defaultMessage": "Conservar las respuestas a eventos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.public_counts": {
+    "defaultMessage": "Mostrar las cifras del servidor",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.landing_fediverse_explanation": {
+    "defaultMessage": "Explicar cómo funciona el fediverso",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.landing_features": {
+    "defaultMessage": "Mostrar las funciones que pueden usar los miembros",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.featured_accounts": {
+    "defaultMessage": "Cuentas sugeridas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.federation_mode": {
+    "defaultMessage": "Dirección",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.federation_scope": {
+    "defaultMessage": "Servidores",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.authorized_fetch": {
+    "defaultMessage": "Exigir solicitudes firmadas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_media_policy": {
+    "defaultMessage": "Conservar copias de",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_media_policy.about": {
+    "defaultMessage": "Un archivo sin copia se retransmite desde su servidor.",
+    "description": "The line about the setting Keep copies of: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.remote_media_cache_ttl_seconds": {
+    "defaultMessage": "Conservar copias durante",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_media_cache_max_bytes": {
+    "defaultMessage": "Máximo de espacio para copias",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_status_retention_days": {
+    "defaultMessage": "Conservar publicaciones a las que nada de aquí se refiere",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_status_retention_days.about": {
+    "defaultMessage": "Días que se conserva una publicación de otro servidor cuando nada de este servidor se refiere a ella.",
+    "description": "The line about the setting Keep posts nothing here refers to: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.remote_status_max_retention_days": {
+    "defaultMessage": "Conservar cualquier publicación como máximo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_status_max_retention_days.about": {
+    "defaultMessage": "Con 0, sin límite. Pasado ese plazo, las respuestas, los impulsos y los marcadores de aquí muestran la publicación como eliminada.",
+    "description": "The line about the setting Keep any post at most: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.relay_status_retention_days": {
+    "defaultMessage": "Conservar publicaciones que solo trajo un relé",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.relay_status_retention_days.about": {
+    "defaultMessage": "Días que se conserva una publicación así cuando nadie de aquí sigue a su autor ni se refiere a ella.",
+    "description": "The line about the setting Keep posts only a relay brought: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.domain_actions_visibility": {
+    "defaultMessage": "Quién ve los servidores moderados",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.domain_actions_rationale_visibility": {
+    "defaultMessage": "Quién ve los motivos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.domain_actions_rationale_visibility.about": {
+    "defaultMessage": "Quien no puede ver la lista nunca ve los motivos.",
+    "description": "The line about the setting Who sees the reasons: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_status_mode": {
+    "defaultMessage": "Modo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_follow_mode": {
+    "defaultMessage": "Modo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_signup_check_mode": {
+    "defaultMessage": "Modo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_media_check_mode": {
+    "defaultMessage": "Modo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_status_mode": {
+    "defaultMessage": "Modo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_actor_mode": {
+    "defaultMessage": "Modo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_profile_mode": {
+    "defaultMessage": "Modo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_status_on_failure": {
+    "defaultMessage": "Cuando falla el plugin",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_follow_on_failure": {
+    "defaultMessage": "Cuando falla el plugin",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_signup_check_on_failure": {
+    "defaultMessage": "Cuando falla el plugin",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_media_check_on_failure": {
+    "defaultMessage": "Cuando falla el plugin",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_actor_on_failure": {
+    "defaultMessage": "Cuando falla el plugin",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_status_unfollowed_direct": {
+    "defaultMessage": "Revisar también los mensajes de desconocidos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_signup_check_reject": {
+    "defaultMessage": "Rechazar un registro que rechaza",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_signup_check_reject.about": {
+    "defaultMessage": "Si está desactivado, un rechazo solo se registra.",
+    "description": "The line about the setting Refuse a sign-up it rejects: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_status_account_age_days": {
+    "defaultMessage": "Revisar cuentas con menos de",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_status_account_age_days.about": {
+    "defaultMessage": "Con 0, se revisan todas las cuentas.",
+    "description": "The line about the setting Review accounts younger than: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_profile_account_age_days": {
+    "defaultMessage": "Revisar cuentas con menos de",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_profile_account_age_days.about": {
+    "defaultMessage": "Con 0, se revisan todas las cuentas.",
+    "description": "The line about the setting Review accounts younger than: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.hook_decisions_retention_days": {
+    "defaultMessage": "Conservar decisiones",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.search_indexing": {
+    "defaultMessage": "Motores de búsqueda",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.indexable_default": {
+    "defaultMessage": "Incluir las cuentas nuevas en la búsqueda",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.indexable_default.about": {
+    "defaultMessage": "Con lo que empiezan las cuentas nuevas; cada persona puede cambiarlo. Las cuentas existentes conservan la suya.",
+    "description": "The line about the setting New accounts can be indexed: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.ai_usage": {
+    "defaultMessage": "IA",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.search_visibilities": {
+    "defaultMessage": "Publicaciones que cubre la búsqueda",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.search_visibilities.about": {
+    "defaultMessage": "Una visibilidad añadida solo encuentra sus publicaciones nuevas hasta que se reconstruya el índice.",
+    "description": "The line about the setting Posts search covers: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.voice_room_starters": {
+    "defaultMessage": "Quién puede abrir salas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.voice_public_summary": {
+    "defaultMessage": "Mostrar las salas locales fuera",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.voice_public_summary.about": {
+    "defaultMessage": "Las personas sin sesión iniciada aquí ven el nombre, la descripción, quién la organiza y si está abierta una sala local. Nunca quién participa.",
+    "description": "The line about the setting Show local rooms outside: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.voice_participants_retention_days": {
+    "defaultMessage": "Conservar quién participó",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.voice_participants_retention_days.about": {
+    "defaultMessage": "Días después de que termina una sala.",
+    "description": "The line about the setting Keep who took part: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_enabled": {
+    "defaultMessage": "Eliminación automática",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_min_age_days": {
+    "defaultMessage": "Eliminar publicaciones con más de",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_pinned": {
+    "defaultMessage": "Publicaciones fijadas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_bookmarked": {
+    "defaultMessage": "Publicaciones en marcadores",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_favourited": {
+    "defaultMessage": "Publicaciones favoritas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_media": {
+    "defaultMessage": "Publicaciones con archivos multimedia",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_polls": {
+    "defaultMessage": "Publicaciones con encuesta",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_articles": {
+    "defaultMessage": "Artículos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_public": {
+    "defaultMessage": "Publicaciones públicas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_local": {
+    "defaultMessage": "Publicaciones para vecinos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_unlisted": {
+    "defaultMessage": "Publicaciones de público discreto",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_private": {
+    "defaultMessage": "Publicaciones solo para seguidores",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_direct": {
+    "defaultMessage": "Publicaciones directas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_min_boosts": {
+    "defaultMessage": "Conservar publicaciones impulsadas al menos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_min_favourites": {
+    "defaultMessage": "Conservar publicaciones marcadas como favoritas al menos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_age_days": {
+    "defaultMessage": "Conservar publicaciones como máximo",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_age_days.about": {
+    "defaultMessage": "Con 0, sin máximo.",
+    "description": "The line about the setting Keep posts at most: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_grace_days": {
+    "defaultMessage": "Periodo de gracia",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_grace_days.about": {
+    "defaultMessage": "Días que una cuenta conserva su propia configuración después de recibir el aviso.",
+    "description": "The line about the setting Grace period: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_pinned": {
+    "defaultMessage": "Publicaciones fijadas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_bookmarked": {
+    "defaultMessage": "Publicaciones en marcadores",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_favourited": {
+    "defaultMessage": "Publicaciones favoritas",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_media": {
+    "defaultMessage": "Publicaciones con archivos multimedia",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_polls": {
+    "defaultMessage": "Publicaciones con encuesta",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_articles": {
+    "defaultMessage": "Artículos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_visibilities": {
+    "defaultMessage": "Publicaciones conservadas por su visibilidad",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_thresholds": {
+    "defaultMessage": "Publicaciones conservadas por impulsos y favoritos",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_kept_pins": {
+    "defaultMessage": "Fijadas que conservan publicaciones",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_kept_pins.about": {
+    "defaultMessage": "Primero las fijadas más recientes. Con 5 se conserva toda publicación fijada.",
+    "description": "The line about the setting Pins that keep posts: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.appeal_window_days": {
+    "defaultMessage": "Se puede apelar durante",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.appeal_window_days.about": {
+    "defaultMessage": "Días después de una acción. Cambiarlo también mueve el plazo de las acciones ya tomadas.",
+    "description": "The line about the setting Appeals can be made for: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.session_origins_retention_days": {
+    "defaultMessage": "Direcciones de inicio de sesión",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.registration_origins_retention_days": {
+    "defaultMessage": "Direcciones de registro",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.reports_retention_days": {
+    "defaultMessage": "Denuncias",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.reports_retention_days.about": {
+    "defaultMessage": "Días después de su última resolución. Una denuncia a la que se refiere una acción se conserva tanto como la acción.",
+    "description": "The line about the setting Reports: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.moderation_actions_retention_days": {
+    "defaultMessage": "Acciones y apelaciones",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.moderation_actions_retention_days.about": {
+    "defaultMessage": "Días después de que terminó la acción.",
+    "description": "The line about the setting Actions and appeals: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.audit_log_retention_days": {
+    "defaultMessage": "Registro de auditoría",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_browser": {
+    "defaultMessage": "Los lectores pueden usar la traducción de su navegador",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_browser.about": {
+    "defaultMessage": "No envía nada a este servidor ni a un proveedor. Con un proveedor también, el navegador traduce lo que el proveedor no traduce.",
+    "description": "The line about the setting Readers can use their browser's translation: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.translation_user_monthly_characters": {
+    "defaultMessage": "Caracteres por persona al mes",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_user_monthly_characters.about": {
+    "defaultMessage": "Con 0, no se envía nada. Los meses son en UTC.",
+    "description": "The line about the setting Characters per person a month: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.translation_server_monthly_characters": {
+    "defaultMessage": "Caracteres para todo el servidor al mes",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_retention_days": {
+    "defaultMessage": "Conservar traducciones",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_reports_to_server": {
+    "defaultMessage": "Los moderadores pueden traducir denuncias",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_reports_to_server.about": {
+    "defaultMessage": "El comentario de una denuncia cuenta como una publicación solo para seguidores: va únicamente a un proveedor autorizado a recibirlas.",
+    "description": "The line about the setting Moderators can translate reports: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.max_article_bytes.about": {
+    "defaultMessage": "Cuánto puede ocupar el cuerpo de un artículo, contado en el HTML que genera (de 1000 a 100 000).",
+    "description": "The line about the setting Largest article: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement": {
+    "defaultMessage": "Medir el cliente web",
+    "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement_share": {
+    "defaultMessage": "Proporción de sesiones medidas",
+    "description": "The setting ux_measurement_share, under the switch Measure the web client while it is on: the share of browser sessions whose web client sends samples, a number of percent after it. Read by administrators."
+  },
+  "staff_settings.choice.registration_mode": {
+    "defaultMessage": "{value, select, open {Cualquiera} approval {Tras la aprobación de un moderador} invite {Solo con invitación} other {Nadie}}",
+    "description": "An option of the setting registration_mode, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.registration_mode.about": {
+    "defaultMessage": "{value, select, open {Cualquiera puede crear una cuenta y usarla de inmediato.} approval {Un registro espera a que un moderador lo apruebe, salvo que venga con una invitación.} invite {Un registro necesita una invitación de un moderador o de un miembro.} other {Solo los administradores pueden crear cuentas.}}",
+    "description": "The line under an option of the setting registration_mode: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.federation_mode": {
+    "defaultMessage": "{value, select, both {En ambos sentidos} inbound {Solo recibir} outbound {Solo enviar} other {Desactivada}}",
+    "description": "An option of the setting federation_mode, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.federation_mode.about": {
+    "defaultMessage": "{value, select, both {Las publicaciones van a otros servidores y las de ellos llegan aquí.} inbound {Las personas de aquí pueden seguir y leer otros servidores, pero nada de este servidor sale, y se rechazan los seguimientos de fuera.} outbound {Otros servidores pueden seguir a las personas de aquí y recibir sus publicaciones, pero nada de ellos entra.} other {Este servidor no habla con ningún otro servidor.}}",
+    "description": "The line under an option of the setting federation_mode: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.federation_scope": {
+    "defaultMessage": "{value, select, open {Todos los servidores} other {Solo los servidores permitidos}}",
+    "description": "An option of the setting federation_scope, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.federation_scope.about": {
+    "defaultMessage": "{value, select, open {Todos los servidores que ninguna acción de dominio suspenda.} other {Solo los servidores de la lista de permitidos.}}",
+    "description": "The line under an option of the setting federation_scope: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.search_indexing": {
+    "defaultMessage": "{value, select, allow {Permitir} other {Rechazar}}",
+    "description": "An option of the setting search_indexing, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.search_indexing.about": {
+    "defaultMessage": "{value, select, allow {Se pueden indexar los perfiles de las cuentas que lo permiten y las publicaciones públicas.} other {Se pide a los motores de búsqueda que no indexen este servidor.}}",
+    "description": "The line under an option of the setting search_indexing: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.ai_usage": {
+    "defaultMessage": "{value, select, allow {Permitir} deny_training {Rechazar el entrenamiento} other {Rechazar el entrenamiento y el uso}}",
+    "description": "An option of the setting ai_usage, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.ai_usage.about": {
+    "defaultMessage": "{value, select, allow {Los servicios de IA pueden entrenarse con las páginas de este servidor y usarlas.} deny_training {Los servicios de IA pueden usar las páginas, pero no entrenarse con ellas.} other {Rechaza el entrenamiento y el uso por parte de buscadores, asistentes y agentes de IA. Hasta dónde se sostiene depende de la ley de cada país.}}",
+    "description": "The line under an option of the setting ai_usage: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.voice_room_starters": {
+    "defaultMessage": "{value, select, everyone {Todos} other {Solo con el permiso}}",
+    "description": "An option of the setting voice_room_starters, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.voice_room_starters.about": {
+    "defaultMessage": "{value, select, everyone {Cualquiera con sesión iniciada en este servidor que no esté suspendido ni limitado.} other {Solo las personas con el permiso para abrir salas de voz, que puede dar un plan de apoyo.}}",
+    "description": "The line under an option of the setting voice_room_starters: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.option.audience": {
+    "defaultMessage": "{value, select, off {Nadie} signed_in {Las personas con sesión iniciada aquí} other {Todos}}",
+    "description": "An option in the select of a setting of who sees something (a timeline, the moderated servers) on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.creators": {
+    "defaultMessage": "{value, select, everyone {Todos} other {Solo con el permiso}}",
+    "description": "An option in the select of a setting of who may create invites or events on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.authoring": {
+    "defaultMessage": "{value, select, everyone {Todos} other {Solo con el permiso}}",
+    "description": "An option in the select of who may write articles on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.remote_media": {
+    "defaultMessage": "{value, select, none {Nada} avatars {Avatares, cabeceras y emoji} other {Todo}}",
+    "description": "An option in the select of which media of other servers the server keeps copies of on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.search_visibilities": {
+    "defaultMessage": "{value, select, public {Publicaciones públicas} local {Publicaciones para vecinos} other {Publicaciones públicas y para vecinos}}",
+    "description": "An option in the select of the posts full-text search covers on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.hook_mode": {
+    "defaultMessage": "{value, select, off {Desactivado} observe {Solo registrar} other {Actuar}}",
+    "description": "An option in the select of how far a decision hook acts on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.hook_failure": {
+    "defaultMessage": "{value, select, pass {Dejar pasar} retry {Reintentar más tarde} other {Esperar aprobación}}",
+    "description": "An option in the select of what a decision hook does when its plugin fails on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.brand.loading": {
+    "defaultMessage": "Cargando el icono y el logotipo…",
+    "description": "At /admin/settings/branding while the brand images are read. Read by administrators."
+  },
+  "staff_settings.brand.failed": {
+    "defaultMessage": "No se pudieron cargar el icono y el logotipo.",
+    "description": "At /admin/settings/branding when the brand images could not be read. Read by administrators."
+  },
+  "staff_settings.brand.kind": {
+    "defaultMessage": "{kind, select, icon {Icono} logo {Logotipo} other {Logotipo para fondos oscuros}}",
+    "description": "The heading of the section of one brand image. Read by administrators."
+  },
+  "staff_settings.brand.kind.about": {
+    "defaultMessage": "{kind, select, icon {Una marca cuadrada: el favicon, el icono de la aplicación y la imagen de este servidor.} logo {Una marca ancha que incluye el nombre del servidor, que se muestra en lugar del nombre.} other {Se muestra sobre fondos oscuros en lugar del logotipo. Sin él, se muestra allí el logotipo.}}",
+    "description": "The line under a brand image's heading: where it shows. Read by administrators."
+  },
+  "staff_settings.brand.choose": {
+    "defaultMessage": "Elegir un archivo SVG",
+    "description": "The button that picks the SVG file of a brand image. Read by administrators."
+  },
+  "staff_settings.brand.remove": {
+    "defaultMessage": "Usar la imagen integrada",
+    "description": "The button that brings a brand image back to the built-in one when saved. Read by administrators."
+  },
+  "staff_settings.brand.checking": {
+    "defaultMessage": "Comprobando el archivo…",
+    "description": "Under a brand image while the server checks the SVG picked. Read by administrators."
+  },
+  "staff_settings.brand.dropped": {
+    "defaultMessage": "Se quitó del archivo: {names}.",
+    "description": "Under a brand image picked: the elements and attributes the server removed from the SVG, joined by commas. Read by administrators."
+  },
+  "staff_settings.brand.color": {
+    "defaultMessage": "Color detrás del icono",
+    "description": "The label of the color behind the icon's opaque pictures (home screens). Read by administrators."
+  },
+  "staff_settings.brand.color.about": {
+    "defaultMessage": "Donde el icono no puede ser transparente, como en las pantallas de inicio. Como #rrggbb.",
+    "description": "The hint under the color behind the icon. Read by administrators."
+  },
+  "staff_settings.brand.color.rule": {
+    "defaultMessage": "Introduce un color como # y seis dígitos hexadecimales, por ejemplo #ffffff.",
+    "description": "Under the color behind the icon when it is not #rrggbb. Read by administrators."
+  },
+  "staff_settings.brand.error": {
+    "defaultMessage": "{code, select, malformed {Este archivo no es un SVG válido. Expórtalo de nuevo y elígelo.} doctype {Este SVG declara un DOCTYPE o entidades. Expórtalo sin ellos.} not_svg {Este archivo no es un SVG. Elige un archivo SVG.} no_viewbox {Este SVG no tiene viewBox. Expórtalo con uno.} too_large {Este archivo es demasiado grande. Exporta un dibujo más sencillo.} too_many_elements {Este SVG tiene demasiados elementos. Exporta un dibujo más sencillo.} too_deep {Este SVG anida sus elementos demasiado a fondo. Exporta un dibujo más sencillo.} too_many_uses {Este SVG repite sus partes demasiadas veces. Exporta un dibujo más sencillo.} aspect_ratio {Esta imagen tiene una forma incorrecta: un icono debe ser cuadrado y un logotipo de 1 a 8 veces más ancho que alto.} text {Este SVG tiene texto. Convierte el texto en contornos y expórtalo de nuevo.} unsafe_css {Este SVG tiene estilos que no se pueden usar. Quítalos y expórtalo de nuevo.} not_opaque {El navegador dibujó una imagen que no es opaca. Prueba con otro navegador.} dimensions {El navegador dibujó una imagen del tamaño equivocado. Prueba con otro navegador.} invalid_color {El color detrás del icono no es un color. Introduce uno como #ffffff.} other {No se puede usar este archivo. Elige otro SVG.}}",
+    "description": "Under a brand image the server refused: why, by the code of its problem, and what to do. Read by administrators."
+  },
+  "staff_settings.brand.section": {
+    "defaultMessage": "Imágenes",
+    "description": "The heading of the section of the icon, the logo and the logo for dark backgrounds at /admin/settings/branding. Read by administrators."
+  },
+  "staff_settings.documents.group": {
+    "defaultMessage": "Documentos",
+    "description": "The heading of the list of documents at /admin/documents. Read by administrators."
+  },
+  "staff_settings.document": {
+    "defaultMessage": "{document, select, terms {Términos del servicio} privacy_policy {Política de privacidad} other {Información comercial}}",
+    "description": "The name of a document in the list at /admin/documents and the title of its page. Read by administrators."
+  },
+  "staff_settings.document.text": {
+    "defaultMessage": "Texto",
+    "description": "The heading of the section of a document's text on its page. Read by administrators."
+  },
+  "staff_settings.document.about": {
+    "defaultMessage": "Markdown, escrito una vez en cualquier idioma y mostrado tal cual en todos los idiomas. Si está vacío, el documento no se muestra.",
+    "description": "The line under the heading of a document's text. Read by administrators."
+  },
+  "staff_settings.document.rule": {
+    "defaultMessage": "Limítalo a {max} caracteres.",
+    "description": "Under a document's text when the server refused it as too long. Read by administrators."
+  },
+  "staff_settings.rules.loading": {
+    "defaultMessage": "Cargando las reglas…",
+    "description": "While the rules are read, on the rules' screens at /admin/rules. Read by administrators."
+  },
+  "staff_settings.rules.failed": {
+    "defaultMessage": "No se pudieron cargar las reglas.",
+    "description": "When the rules could not be read, on the rules' screens at /admin/rules. Read by administrators."
+  },
+  "staff_settings.rules.missing": {
+    "defaultMessage": "No hay ninguna regla en esta dirección.",
+    "description": "At /admin/rules/{id} for an ID that names no rule. Read by administrators."
+  },
+  "staff_settings.rules.in_effect": {
+    "defaultMessage": "Vigentes",
+    "description": "The heading of the list of the rules in effect, in their order. Read by administrators."
+  },
+  "staff_settings.rules.retired": {
+    "defaultMessage": "Retiradas",
+    "description": "The heading of the list of the retired rules, after the rules in effect. Read by administrators."
+  },
+  "staff_settings.rules.add": {
+    "defaultMessage": "Añadir una regla",
+    "description": "The button that leads to the form of a new rule, and that form's submit. Read by administrators."
+  },
+  "staff_settings.rules.full": {
+    "defaultMessage": "Hay {max} reglas vigentes, el máximo posible. Retira una para añadir otra.",
+    "description": "Under the heading of the rules in effect while they are at the limit. Read by administrators."
+  },
+  "staff_settings.rules.empty": {
+    "defaultMessage": "Aún no hay reglas.",
+    "description": "In place of the list of rules while there is none. Read by administrators."
+  },
+  "staff_settings.rules.numbered": {
+    "defaultMessage": "{n}. {text}",
+    "description": "A rule in effect in the list: its place and its text. Read by administrators."
+  },
+  "staff_settings.rules.new": {
+    "defaultMessage": "Regla nueva",
+    "description": "The title of the form of a new rule at /admin/rules/new. Read by administrators."
+  },
+  "staff_settings.rules.one": {
+    "defaultMessage": "Regla",
+    "description": "The title of a rule's page at /admin/rules/{id}. Read by administrators."
+  },
+  "staff_settings.rules.section": {
+    "defaultMessage": "Redacción",
+    "description": "The heading of the section of a rule's text, hint and place. Read by administrators."
+  },
+  "staff_settings.rules.text": {
+    "defaultMessage": "Regla",
+    "description": "The label of a rule's text. Read by administrators."
+  },
+  "staff_settings.rules.hint": {
+    "defaultMessage": "Explicación",
+    "description": "The label of a rule's hint. Read by administrators."
+  },
+  "staff_settings.rules.rule": {
+    "defaultMessage": "{field, select, text {Escribe la regla en una sola línea, con {max} caracteres como máximo.} other {Limita la explicación a {max} caracteres.}}",
+    "description": "Under a rule's text or explanation that the form or the server refused. Read by administrators."
+  },
+  "staff_settings.rules.position": {
+    "defaultMessage": "Posición",
+    "description": "The label of the select of a rule's place among the rules in effect. Read by administrators."
+  },
+  "staff_settings.rules.retire": {
+    "defaultMessage": "Retirar la regla",
+    "description": "The heading of the last section of a rule's page. Read by administrators."
+  },
+  "staff_settings.rules.retire.about": {
+    "defaultMessage": "Las denuncias que la citan siguen refiriéndose a ella.",
+    "description": "The line under Retire the rule. Read by administrators."
+  },
+  "staff_settings.rules.retire.press": {
+    "defaultMessage": "Retirar",
+    "description": "The button that retires a rule, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.rules.retire.title": {
+    "defaultMessage": "¿Retirar esta regla?",
+    "description": "The question before retiring a rule. Read by administrators."
+  },
+  "staff_settings.rules.retire.text": {
+    "defaultMessage": "«{text}» sale de las reglas para siempre. No se puede deshacer.",
+    "description": "The text of the question before retiring a rule. Read by administrators."
+  },
+  "staff_settings.rules.retire.failed": {
+    "defaultMessage": "No se pudo retirar la regla. Inténtalo de nuevo.",
+    "description": "Under Retire when retiring failed. Read by administrators."
+  },
+  "staff_settings.rules.retired_at": {
+    "defaultMessage": "Retirada el {date}",
+    "description": "On a retired rule's page: when it was retired. Read by administrators."
+  },
+  "staff_settings.rules.position.choice": {
+    "defaultMessage": "{n, selectordinal, other {#.º}}",
+    "description": "A place a rule may move to, in the select of its place. Read by administrators."
+  },
+  "staff_settings.relays.loading": {
+    "defaultMessage": "Cargando los relés…",
+    "description": "While the relays are read at /admin/relays. Read by administrators."
+  },
+  "staff_settings.relays.failed": {
+    "defaultMessage": "No se pudieron cargar los relés.",
+    "description": "When the relays could not be read. Read by administrators."
+  },
+  "staff_settings.relays.missing": {
+    "defaultMessage": "No hay ningún relé en esta dirección.",
+    "description": "At /admin/relays/{id} for an ID that names no relay. Read by administrators."
+  },
+  "staff_settings.relays.list": {
+    "defaultMessage": "Relés",
+    "description": "The heading of the list of relays. Read by administrators."
+  },
+  "staff_settings.relays.about": {
+    "defaultMessage": "Un relé pasa publicaciones públicas entre los servidores que se unen a él.",
+    "description": "The line under the heading of the relays. Read by administrators."
+  },
+  "staff_settings.relays.add": {
+    "defaultMessage": "Unirse a un relé",
+    "description": "The button that leads to the form of a new relay. Read by administrators."
+  },
+  "staff_settings.relays.empty": {
+    "defaultMessage": "Aún no hay relés. Únete a uno para compartir publicaciones públicas con los demás servidores que se unan a él.",
+    "description": "In place of the list of relays while there is none. Read by administrators."
+  },
+  "staff_settings.relays.state": {
+    "defaultMessage": "{state, select, pending {A la espera de la respuesta del relé} accepted {Unido} rejected {Rechazado por el relé} left {Abandonado} other {Su servidor está suspendido: nada va a él ni viene de él}}",
+    "description": "Where a relay's membership stands, the line under its name; `other` is a relay whose server a domain action suspends. Read by administrators."
+  },
+  "staff_settings.relays.since": {
+    "defaultMessage": "Desde el {date}",
+    "description": "When a relay's membership came to where it stands. Read by administrators."
+  },
+  "staff_settings.relays.receive": {
+    "defaultMessage": "{receive, select, yes {Recibe publicaciones del relé} other {Solo envía}}",
+    "description": "Whether the server takes in the public posts a relay relays. Read by administrators."
+  },
+  "staff_settings.relays.last_day": {
+    "defaultMessage": "Últimas 24 horas: {taken, number} aceptadas, {dropped, number} descartadas",
+    "description": "What a relay brought in during the last 24 hours, and what was dropped over the hourly limit. Read by administrators."
+  },
+  "staff_settings.relays.new": {
+    "defaultMessage": "Relé nuevo",
+    "description": "The title of the form of a new relay at /admin/relays/new. Read by administrators."
+  },
+  "staff_settings.relays.new.about": {
+    "defaultMessage": "Este servidor pide unirse de inmediato. Puede que el relé tenga que aceptar.",
+    "description": "The line under the heading of a new relay's form. Read by administrators."
+  },
+  "staff_settings.relays.section": {
+    "defaultMessage": "Relé",
+    "description": "The heading of the section of a relay's settings or facts. Read by administrators."
+  },
+  "staff_settings.relays.url": {
+    "defaultMessage": "URL",
+    "description": "The label of a relay's URL. Read by administrators."
+  },
+  "staff_settings.relays.protocol": {
+    "defaultMessage": "Tipo",
+    "description": "The label of the select of how a relay is joined. Read by administrators."
+  },
+  "staff_settings.relays.protocol.about": {
+    "defaultMessage": "Se detecta a partir de la URL salvo que elijas.",
+    "description": "The line about how a relay is joined. Read by administrators."
+  },
+  "staff_settings.relays.protocol.choice": {
+    "defaultMessage": "{protocol, select, auto {Detectar automáticamente} mastodon {Mastodon (inbox)} other {LitePub (actor)}}",
+    "description": "An option of how a relay is joined, and the kind of a relay on its page. Read by administrators."
+  },
+  "staff_settings.relays.receive.check": {
+    "defaultMessage": "Recibir publicaciones del relé",
+    "description": "The checkbox of a new relay: whether it receives as well as sends. Read by administrators."
+  },
+  "staff_settings.relays.join": {
+    "defaultMessage": "Unirse",
+    "description": "The submit of a new relay's form: it registers the relay and asks to join. Read by administrators."
+  },
+  "staff_settings.relays.refused": {
+    "defaultMessage": "{reason, select, url {Introduce una dirección https del relé.} exists {Este relé ya está registrado.} domain_suspended {Una acción de dominio suspende el servidor de este relé.} not_actor {Esta dirección no sirve ningún relé. Revisa la dirección que da el relé.} other {El relé no está en un estado que permita esto. Recarga la página.}}",
+    "description": "Why the server refused a relay, by the reason of its problem. Read by administrators."
+  },
+  "staff_settings.relays.leave": {
+    "defaultMessage": "Abandonar el relé",
+    "description": "The heading of the section of leaving a relay. Read by administrators."
+  },
+  "staff_settings.relays.leave.about": {
+    "defaultMessage": "Ya no va nada a él ni viene nada de él. Las publicaciones que trajo se quedan hasta que pasen sus días.",
+    "description": "The line under Leave the relay. Read by administrators."
+  },
+  "staff_settings.relays.leave.press": {
+    "defaultMessage": "Salir",
+    "description": "The button that leaves a relay, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.relays.leave.title": {
+    "defaultMessage": "¿Abandonar este relé?",
+    "description": "The question before leaving a relay. Read by administrators."
+  },
+  "staff_settings.relays.leave.text": {
+    "defaultMessage": "Este servidor deja de enviar a {host} y de aceptar lo que retransmite. Puedes unirte de nuevo más tarde.",
+    "description": "The text of the question before leaving a relay. Read by administrators."
+  },
+  "staff_settings.relays.rejoin": {
+    "defaultMessage": "Volver a unirse",
+    "description": "The heading of the section of joining a relay again. Read by administrators."
+  },
+  "staff_settings.relays.rejoin.about": {
+    "defaultMessage": "Este servidor pide unirse de nuevo. Puede que el relé tenga que aceptar.",
+    "description": "The line under Join again. Read by administrators."
+  },
+  "staff_settings.relays.rejoin.press": {
+    "defaultMessage": "Volver a unirse",
+    "description": "The button that joins a relay again. Read by administrators."
+  },
+  "staff_settings.relays.delete": {
+    "defaultMessage": "Eliminar el relé",
+    "description": "The heading of the last section of a relay this server left or that rejected it. Read by administrators."
+  },
+  "staff_settings.relays.delete.about": {
+    "defaultMessage": "Se van su registro y su historial. Las ediciones y eliminaciones de las publicaciones que fueron a él siguen yendo allí.",
+    "description": "The line under Delete the relay. Read by administrators."
+  },
+  "staff_settings.relays.delete.press": {
+    "defaultMessage": "Eliminar",
+    "description": "The button that deletes a relay, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.relays.delete.title": {
+    "defaultMessage": "¿Eliminar este relé?",
+    "description": "The question before deleting a relay. Read by administrators."
+  },
+  "staff_settings.relays.delete.text": {
+    "defaultMessage": "Se eliminan el registro de {host} y su historial. No se puede deshacer.",
+    "description": "The text of the question before deleting a relay. Read by administrators."
+  },
+  "staff_settings.relays.url.about": {
+    "defaultMessage": "La dirección https que da el relé: su inbox o su actor.",
+    "description": "The hint under a relay's URL. Read by administrators."
+  },
+  "staff_settings.providers_admin.loading": {
+    "defaultMessage": "Cargando los proveedores de inicio de sesión…",
+    "description": "While the providers are read, on the login providers' screens at /admin/login-providers. Read by administrators."
+  },
+  "staff_settings.providers_admin.failed": {
+    "defaultMessage": "No se pudieron cargar los proveedores de inicio de sesión.",
+    "description": "When the providers could not be read, on the login providers' screens at /admin/login-providers. Read by administrators."
+  },
+  "staff_settings.providers_admin.missing": {
+    "defaultMessage": "No hay ningún proveedor de inicio de sesión en esta dirección.",
+    "description": "At /admin/login-providers/{id} for an ID that names none. Read by administrators."
+  },
+  "staff_settings.providers_admin.list": {
+    "defaultMessage": "Proveedores de inicio de sesión",
+    "description": "The heading of the list of login providers. Read by administrators."
+  },
+  "staff_settings.providers_admin.add": {
+    "defaultMessage": "Añadir un proveedor de inicio de sesión",
+    "description": "The button that leads to a new provider's form, and that form's submit. Read by administrators."
+  },
+  "staff_settings.providers_admin.empty": {
+    "defaultMessage": "Aún no hay proveedores de inicio de sesión. Añade uno para que las personas inicien sesión con otro servicio.",
+    "description": "In place of the list of providers while there is none. Read by administrators."
+  },
+  "staff_settings.providers_admin.state": {
+    "defaultMessage": "{state, select, enabled {Activado} other {Desactivado}}",
+    "description": "Whether a provider is enabled: the line under its name, and the options of its state. Read by administrators."
+  },
+  "staff_settings.providers_admin.state.label": {
+    "defaultMessage": "Inicio de sesión con él",
+    "description": "The label of the select of a provider's state on its page. Read by administrators."
+  },
+  "staff_settings.providers_admin.linked": {
+    "defaultMessage": "{count, plural, =0 {Ninguna cuenta está vinculada a él} one {# cuenta está vinculada a él} other {# cuentas están vinculadas a él}}",
+    "description": "How many accounts are linked to a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.signup": {
+    "defaultMessage": "{allowed, select, yes {Las personas pueden registrarse con él} other {No se puede registrar con él}}",
+    "description": "Whether new people can sign up with a provider, in its row. Read by administrators."
+  },
+  "staff_settings.providers_admin.kind": {
+    "defaultMessage": "{kind, select, oidc {OpenID Connect} github {GitHub} mastodon {Servidor de Mastodon} other {Discord}}",
+    "description": "The kind of a login provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.limit": {
+    "defaultMessage": "{applies, select, yes {Solo los proveedores de inicio de sesión permiten iniciar sesión} other {El inicio de sesión se limitará a los proveedores de inicio de sesión}}",
+    "description": "The title of the summary over the providers while login_providers_only is on: whether the limit applies (an enabled provider). Read by administrators."
+  },
+  "staff_settings.providers_admin.limit.about": {
+    "defaultMessage": "{applies, select, yes {} other {Empieza cuando se activa un proveedor. }}{count, plural, =0 {Todas las personas activas tienen un proveedor vinculado.} one {# persona activa no tiene un proveedor vinculado y no podrá volver a iniciar sesión cuando terminen sus sesiones.} other {# personas activas no tienen un proveedor vinculado y no podrán volver a iniciar sesión cuando terminen sus sesiones.}}{you, select, yes { Eres una de ellas.} other {}}",
+    "description": "The line of the summary of the limit of sign-in to providers. Read by administrators."
+  },
+  "staff_settings.providers_admin.new": {
+    "defaultMessage": "Proveedor de inicio de sesión nuevo",
+    "description": "The title of a new provider's form. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.kind": {
+    "defaultMessage": "Tipo",
+    "description": "The heading of the choice of a new provider's kind. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.connection": {
+    "defaultMessage": "Conexión",
+    "description": "The heading of a provider's name, issuer and client. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.connection.about": {
+    "defaultMessage": "{kind, select, mastodon {Este servidor se registra solo en el servidor de Mastodon, salvo que indiques un cliente que registraste allí.} other {Registra este servidor como aplicación en el proveedor y copia aquí su cliente.}}",
+    "description": "The line under the heading Connection. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.who": {
+    "defaultMessage": "Quién puede usarlo",
+    "description": "The heading of a provider's sign-up, linking and conditions. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.state": {
+    "defaultMessage": "Estado",
+    "description": "The heading of a provider's state on its page. Read by administrators."
+  },
+  "staff_settings.providers_admin.field": {
+    "defaultMessage": "{field, select, name {Nombre} issuer {{kind, select, mastodon {Servidor} other {Emisor}}} clientId {ID de cliente} secret {Secreto de cliente} scopes {Más ámbitos} other {{kind, select, oidc {Condiciones sobre claims} github {Organizaciones} other {Servidores de Discord}}}}",
+    "description": "The label of a field of a provider's form. Read by administrators."
+  },
+  "staff_settings.providers_admin.issuer.about": {
+    "defaultMessage": "{kind, select, mastodon {El dominio del servidor, como mastodon.example.} other {La dirección https, tal como la nombran los tokens de ID del proveedor.}}",
+    "description": "The hint under a provider's issuer. Read by administrators."
+  },
+  "staff_settings.providers_admin.mastodon_client.about": {
+    "defaultMessage": "Déjalo vacío para registrar este servidor allí por sí solo.",
+    "description": "The hint under the client ID of a Mastodon provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.secret.about": {
+    "defaultMessage": "{fresh, select, yes {No se vuelve a mostrar una vez guardado.} other {Nunca se muestra. Introduce uno nuevo aquí para reemplazarlo; vacío lo conserva.}}",
+    "description": "The hint under a provider's client secret. Read by administrators."
+  },
+  "staff_settings.providers_admin.scopes.about": {
+    "defaultMessage": "{kind, select, github {Separados por espacios. Se añade read:org para las organizaciones.} other {Separados por espacios, además de los que necesita el proveedor.}}",
+    "description": "The hint under a provider's extra scopes. Read by administrators."
+  },
+  "staff_settings.providers_admin.conditions.about": {
+    "defaultMessage": "{kind, select, oidc {Una por línea, como claim=valor valor, por ejemplo hd=example.com. Vacío deja entrar a todos.} github {Nombres de organizaciones separados por espacios; la persona debe pertenecer a una. Vacío deja entrar a todos.} other {ID de servidores separados por espacios; la persona debe pertenecer a uno. Vacío deja entrar a todos.}}",
+    "description": "The hint under a provider's conditions. Read by administrators."
+  },
+  "staff_settings.providers_admin.allow_signup": {
+    "defaultMessage": "Las personas pueden registrarse con él",
+    "description": "The checkbox of whether new people can sign up with a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.allow_link": {
+    "defaultMessage": "Las personas pueden vincular su cuenta a él",
+    "description": "The checkbox of whether people can link their account to a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.refused": {
+    "defaultMessage": "{field, select, kind {Elige uno de los tipos.} name {Introduce un nombre de 1 a 100 caracteres.} issuer {Revisa la dirección. Un servidor de Mastodon debe ser de la versión 4.3 o posterior.} clientId {Introduce el ID de cliente que dio el proveedor. Si un servidor de Mastodon rechazó registrar este servidor, registra uno allí e introdúcelo.} secret {Introduce el secreto de cliente que dio el proveedor.} scopes {Introduce ámbitos separados por espacios, o ninguno para Mastodon.} other {Revisa las condiciones.}}",
+    "description": "Under a field of a provider that the form or the server refused. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback": {
+    "defaultMessage": "URL de retorno",
+    "description": "The heading of a provider's redirect URI on its page. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback.about": {
+    "defaultMessage": "Registra esta dirección en el proveedor como adonde devuelve a las personas.",
+    "description": "The line under the callback URL. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback.copy": {
+    "defaultMessage": "Copiar la URL",
+    "description": "The button that copies the callback URL. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback.next": {
+    "defaultMessage": "Cuando se añada el proveedor, su página muestra la URL de retorno que debes registrar en el proveedor: {url}",
+    "description": "On the form of a new login provider, under its connection: where the callback URL will be shown, with its form (the server's address, the provider's ID in place of <ID>). Read by administrators."
+  },
+  "staff_settings.providers_admin.starts.title": {
+    "defaultMessage": "¿Empezar a limitar el inicio de sesión ahora?",
+    "description": "The question before adding or enabling a provider that starts the limit of sign-in to providers at once. Read by administrators."
+  },
+  "staff_settings.providers_admin.starts.text": {
+    "defaultMessage": "El inicio de sesión está configurado solo para proveedores de inicio de sesión y este es el primero que se puede usar, así que el límite empieza de inmediato. {known, select, yes {{count, plural, one {# persona activa} other {# personas activas}} sin enlace con él no podrán volver a iniciar sesión cuando terminen sus sesiones.} other {Las personas sin enlace con él no podrán volver a iniciar sesión cuando terminen sus sesiones.}}{you, select, yes { Eres una de ellas.} other {}}",
+    "description": "The text of the question before a provider starts the limit at once. Read by administrators."
+  },
+  "staff_settings.providers_admin.disable.title": {
+    "defaultMessage": "¿Desactivar este proveedor?",
+    "description": "The question before saving a provider disabled while accounts are linked to it. Read by administrators."
+  },
+  "staff_settings.providers_admin.disable.text": {
+    "defaultMessage": "{count, plural, one {# cuenta vinculada} other {# cuentas vinculadas}} no podrán iniciar sesión con él hasta que se active de nuevo. Los enlaces se conservan.",
+    "description": "The text of the question before disabling a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete": {
+    "defaultMessage": "Eliminar el proveedor",
+    "description": "The heading of the last section of a provider's page. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.about": {
+    "defaultMessage": "{count, plural, =0 {Ninguna cuenta está vinculada a él.} one {# cuenta vinculada ya no podrá iniciar sesión con él.} other {# cuentas vinculadas ya no podrán iniciar sesión con él.}}",
+    "description": "The line under Delete the provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.press": {
+    "defaultMessage": "Eliminar",
+    "description": "The button that deletes a provider, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.title": {
+    "defaultMessage": "¿Eliminar este proveedor de inicio de sesión?",
+    "description": "The question before deleting a provider; the reader types its name. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.text": {
+    "defaultMessage": "{name} se elimina para siempre, con {count, plural, =0 {ninguna cuenta vinculada} one {# cuenta vinculada, que ya no podrá iniciar sesión con él} other {# cuentas vinculadas, que ya no podrán iniciar sesión con él}}. Escribe su nombre para eliminarlo. No se puede deshacer.",
+    "description": "The text of the question before deleting a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.failed": {
+    "defaultMessage": "No se pudo eliminar el proveedor. Inténtalo de nuevo.",
+    "description": "Under Delete when deleting a provider failed. Read by administrators."
+  },
+  "staff_settings.providers_admin.kind.about": {
+    "defaultMessage": "{kind, select, oidc {Cualquier servicio compatible con OpenID Connect, que se encuentra por su emisor.} github {Cuentas de github.com, opcionalmente solo miembros de algunas organizaciones.} mastodon {Cuentas de un servidor de Mastodon (4.3 o posterior).} other {Cuentas de Discord, opcionalmente solo miembros de algunos servidores.}}",
+    "description": "The line under a kind of provider in the choice of a new provider. Read by administrators."
+  },
+  "staff_settings.providers.loading": {
+    "defaultMessage": "Cargando los proveedores…",
+    "description": "In the providers' section of Translation while the server's providers are read. Read by administrators."
+  },
+  "staff_settings.providers.none": {
+    "defaultMessage": "Este servidor no tiene ningún proveedor de traducción configurado. Los proveedores se configuran en la configuración del servidor.",
+    "description": "In the providers' section of Translation when the server has none. Read by administrators."
+  },
+  "staff_settings.providers.use": {
+    "defaultMessage": "Usar {name}",
+    "description": "The checkbox of whether posts are sent to a translation provider. Read by administrators."
+  },
+  "staff_settings.providers.audience": {
+    "defaultMessage": "{audience, select, public {Público} local {Vecinos} unlisted {Público discreto} private {Solo seguidores} other {Directo}}",
+    "description": "A visibility a translation provider may receive, the same words as a post's visibility. Read by administrators."
+  },
+  "staff_settings.providers.first": {
+    "defaultMessage": "Probar {name} primero",
+    "description": "The button that moves a translation provider to the front of the order. Read by administrators."
+  },
+  "staff_settings.apps.loading": {
+    "defaultMessage": "Cargando las aplicaciones…",
+    "description": "While the OAuth apps are read at /admin/oauth-apps. Read by administrators."
+  },
+  "staff_settings.apps.failed": {
+    "defaultMessage": "No se pudieron cargar las aplicaciones.",
+    "description": "When the OAuth apps could not be read. Read by administrators."
+  },
+  "staff_settings.apps.filter": {
+    "defaultMessage": "Mostrar",
+    "description": "The heading of the section of the filter of the OAuth apps. Read by administrators."
+  },
+  "staff_settings.apps.filter.registration": {
+    "defaultMessage": "Cómo se registraron",
+    "description": "The label of the select of the way of registration the list keeps. Read by administrators."
+  },
+  "staff_settings.apps.list": {
+    "defaultMessage": "Aplicaciones",
+    "description": "The heading of the list of OAuth apps. Read by administrators."
+  },
+  "staff_settings.apps.empty": {
+    "defaultMessage": "No hay aplicaciones.",
+    "description": "In place of the list of OAuth apps while it shows none. Read by administrators."
+  },
+  "staff_settings.apps.registration": {
+    "defaultMessage": "{registration, select, any {De cualquier forma} first_party {Las de este servidor} user {Registradas por una persona} metadata_document {Por su documento de metadatos} other {Registradas por sí mismas}}",
+    "description": "How an OAuth app was registered, in its row and in the filter. Read by administrators."
+  },
+  "staff_settings.apps.state": {
+    "defaultMessage": "{state, select, enabled {Activada} other {Desactivada}}",
+    "description": "Where an OAuth app stands, the line under its name. Read by administrators."
+  },
+  "staff_settings.apps.owner": {
+    "defaultMessage": "Registrada por {handle}",
+    "description": "Who registered an OAuth app. Read by administrators."
+  },
+  "staff_settings.apps.owner_gone": {
+    "defaultMessage": "Registrada por una cuenta que ya no existe",
+    "description": "An OAuth app whose registering account no longer exists. Read by administrators."
+  },
+  "staff_settings.apps.act": {
+    "defaultMessage": "{state, select, enabled {Desactivar} other {Activar}}",
+    "description": "The button of an OAuth app's row, by where it stands now. Read by administrators."
+  },
+  "staff_settings.apps.done": {
+    "defaultMessage": "{state, select, enabled {Activada. Las personas la autorizan de nuevo para usarla.} other {Desactivada. Se revocaron sus tokens.}}",
+    "description": "In an OAuth app's row after it was enabled or disabled. Read by administrators."
+  },
+  "staff_settings.apps.disable.title": {
+    "defaultMessage": "¿Desactivar esta aplicación?",
+    "description": "The question before disabling an OAuth app. Read by administrators."
+  },
+  "staff_settings.apps.disable.text": {
+    "defaultMessage": "Todos los tokens de {name} se revocan de inmediato y no puede iniciar sesión hasta que se active. Al activarla de nuevo, sus usuarios deben autorizarla otra vez. No se puede deshacer.",
+    "description": "The text of the question before disabling an OAuth app. Read by administrators."
+  },
+  "staff_settings.hosts": {
+    "defaultMessage": "Hosts denegados",
+    "description": "The heading of the door to the denied hosts and the title of their screen. Read by administrators."
+  },
+  "staff_settings.hosts.about": {
+    "defaultMessage": "Hosts cuyos documentos de metadatos de aplicaciones se rechazan.",
+    "description": "The line under the heading of the denied hosts on the apps' screen. Read by administrators."
+  },
+  "staff_settings.hosts.door": {
+    "defaultMessage": "Hosts de documentos de metadatos",
+    "description": "The door to the screen of the denied hosts. Read by administrators."
+  },
+  "staff_settings.hosts.deny": {
+    "defaultMessage": "Denegar un host",
+    "description": "The heading of the form that denies a host. Read by administrators."
+  },
+  "staff_settings.hosts.deny.about": {
+    "defaultMessage": "Ninguna aplicación cuyos metadatos estén en el host puede iniciar sesión.",
+    "description": "The line under Deny a host. Read by administrators."
+  },
+  "staff_settings.hosts.deny.press": {
+    "defaultMessage": "Denegar",
+    "description": "The button that denies a host, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.hosts.deny.title": {
+    "defaultMessage": "¿Denegar este host?",
+    "description": "The question before denying a host. Read by administrators."
+  },
+  "staff_settings.hosts.deny.text": {
+    "defaultMessage": "Las aplicaciones de {host} ya no pueden iniciar sesión y sus tokens se revocan de inmediato. Levantar la denegación no devuelve los tokens. No se puede deshacer.",
+    "description": "The text of the question before denying a host. Read by administrators."
+  },
+  "staff_settings.hosts.host": {
+    "defaultMessage": "Host",
+    "description": "The label of the host to deny. Read by administrators."
+  },
+  "staff_settings.hosts.rule": {
+    "defaultMessage": "Introduce un nombre de host como apps.example, sin https:// ni puerto.",
+    "description": "Under the host to deny when it is empty or not a host name. Read by administrators."
+  },
+  "staff_settings.hosts.denied": {
+    "defaultMessage": "Se denegó {host}.",
+    "description": "After a host was denied. Read by administrators."
+  },
+  "staff_settings.hosts.lifted": {
+    "defaultMessage": "Se levantó la denegación de {host}.",
+    "description": "In a denied host's row after its denial was lifted. Read by administrators."
+  },
+  "staff_settings.hosts.list": {
+    "defaultMessage": "Denegados",
+    "description": "The heading of the list of denied hosts. Read by administrators."
+  },
+  "staff_settings.hosts.loading": {
+    "defaultMessage": "Cargando los hosts denegados…",
+    "description": "While the denied hosts are read. Read by administrators."
+  },
+  "staff_settings.hosts.read_failed": {
+    "defaultMessage": "No se pudieron cargar los hosts denegados.",
+    "description": "When the denied hosts could not be read. Read by administrators."
+  },
+  "staff_settings.hosts.empty": {
+    "defaultMessage": "Ningún host está denegado.",
+    "description": "In place of the list of denied hosts while there is none. Read by administrators."
+  },
+  "staff_settings.hosts.since": {
+    "defaultMessage": "Denegado el {date}",
+    "description": "When a host was denied. Read by administrators."
+  },
+  "staff_settings.hosts.lift": {
+    "defaultMessage": "Levantar",
+    "description": "The button of a denied host's row that lifts the denial. Read by administrators."
+  },
+  "staff_settings.act_failed": {
+    "defaultMessage": "No se pudo hacer. Inténtalo de nuevo.",
+    "description": "Where an action on the administration screens (a relay joined or left, an app enabled or disabled, a host denied or lifted) failed for no reason the server named. Read by administrators."
+  },
+  "staff_settings.translation_usage": {
+    "defaultMessage": "Este mes",
+    "description": "The heading of the section of how translation is used this month, on the Translation screen of the administration. Read by administrators."
+  },
+  "staff_settings.translation_usage.about": {
+    "defaultMessage": "Contado en UTC, para {month}. Lo que cuentan los límites puede diferir de lo que factura un proveedor.",
+    "description": "The line under This month on the Translation screen; month is YYYY-MM. Read by administrators."
+  },
+  "staff_settings.translation_usage.kept": {
+    "defaultMessage": "{share} de {count, plural, one {# solicitud} other {# solicitudes}} respondidas con traducciones conservadas",
+    "description": "The cache hit rate of translation this month; share is a percentage. Read by administrators."
+  },
+  "staff_settings.translation_usage.no_requests": {
+    "defaultMessage": "No se pidió ninguna traducción este mes.",
+    "description": "In place of the cache hit rate before any request this month. Read by administrators."
+  },
+  "staff_settings.translation_usage.loading": {
+    "defaultMessage": "Cargando el uso de este mes…",
+    "description": "While the month's use of translation is read. Read by administrators."
+  },
+  "staff_settings.translation_usage.failed": {
+    "defaultMessage": "No se pudo cargar el uso de este mes.",
+    "description": "When the month's use of translation could not be read, before Try again. Read by administrators."
+  },
+  "staff_settings.translation_usage.of_limit": {
+    "defaultMessage": "{used} de {limit} caracteres para todo el servidor",
+    "description": "This month's characters sent to translation providers against the server's monthly limit; both are formatted numbers. Read by administrators."
+  },
+  "staff_settings.irreversible": {
+    "defaultMessage": "{what, select, federation_scope {Termina los seguimientos con todos los demás servidores. No se puede deshacer.} login_providers_only {Las personas sin un proveedor vinculado no podrán volver a iniciar sesión cuando terminen sus sesiones.} auto_delete_max_age_days {Elimina las publicaciones más antiguas de todos. No se puede deshacer.} retire {La regla sale de las reglas para siempre. No se puede deshacer.} delete {El proveedor se elimina para siempre. No se puede deshacer.} deny {Revoca de inmediato los tokens de las aplicaciones del host. No se puede deshacer.} other {No se puede deshacer.}}",
+    "description": "The mark, beside a caution glyph, of an option or an action of the administration that cannot be undone, by what it marks. Read by administrators."
+  }
+}

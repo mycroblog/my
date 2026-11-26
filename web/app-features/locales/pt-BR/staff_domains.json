@@ -1,0 +1,1022 @@
+{
+  "staff_domains.none": {
+    "defaultMessage": "Nenhuma",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of a fact that holds nothing (no public comment, no note). Read by moderators."
+  },
+  "staff_domains.group.federation": {
+    "defaultMessage": "Federação",
+    "description": "The heading, at /moderation, of the group of the screens of remote domains and servers. Read by moderators."
+  },
+  "staff_domains.entry.domain_actions": {
+    "defaultMessage": "Ações de domínio",
+    "description": "The name of the moderators' screen of the actions on remote domains, in the list of moderation screens and as its title. Read by moderators."
+  },
+  "staff_domains.entry.instances": {
+    "defaultMessage": "Servidores remotos",
+    "description": "The name of the moderators' screen of the remote servers, in the list of moderation screens and as its title. Read by moderators."
+  },
+  "staff_domains.forbidden": {
+    "defaultMessage": "Sua conta não tem mais permissão para moderar domínios.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in its place when the server refuses the reader the screen. Read by moderators."
+  },
+  "staff_domains.refused": {
+    "defaultMessage": "{why, select, forbidden {Sua conta não tem mais permissão para fazer isso.} missing {Isto não existe mais. Volte e recarregue a lista.} other {Não foi possível fazer isso. Recarregue a página e tente novamente.}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when the server refused a write; `why` says why. Read by moderators."
+  },
+  "staff_domains.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that closes a confirmation without doing anything. Read by moderators."
+  },
+  "staff_domains.account_gone": {
+    "defaultMessage": "Uma conta que não existe mais",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), in the place of the account that sent a delivery when it no longer exists. Read by moderators."
+  },
+  "staff_domains.until_lifted": {
+    "defaultMessage": "Até ser revogada",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the end of an action that lasts until it is lifted, as a fact and as a choice of how long. Read by moderators."
+  },
+  "staff_domains.length.days": {
+    "defaultMessage": "{count, plural, one {# dia} =365 {1 ano} =3650 {10 anos} other {# dias}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), a choice of how long a new action lasts. Read by moderators."
+  },
+  "staff_domains.kind": {
+    "defaultMessage": "{kind, select, suspend {Suspender} limit {Limitar} reject_media {Rejeitar mídia} reject_reports {Rejeitar denúncias} force_sensitive {Mídia sempre marcada como sensível} other {Outra ação}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the kind of an action on a domain. Read by moderators."
+  },
+  "staff_domains.action_state": {
+    "defaultMessage": "{state, select, active {Em vigor} expired {Encerrada} lifted {Revogada} other {Desconhecido}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the state of an action on a domain. Read by moderators."
+  },
+  "staff_domains.to_server": {
+    "defaultMessage": "Abrir o servidor",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button on an action's page that opens the remote server's screen. Read by moderators."
+  },
+  "staff_domains.to_audit": {
+    "defaultMessage": "Registro de auditoria",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the audit log of the operations on this domain. Read by moderators."
+  },
+  "staff_domains.to_account_server": {
+    "defaultMessage": "Abrir o servidor da conta",
+    "description": "On a report's screen, the button that opens the screen of the reported remote account's server. Read by moderators."
+  },
+  "staff_domains.actions.new": {
+    "defaultMessage": "Nova ação",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the form of a new action, and the form's title. Read by moderators."
+  },
+  "staff_domains.actions.csv": {
+    "defaultMessage": "CSV do Mastodon",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the import and export of Mastodon's domain block CSV, and that screen's title. Read by moderators."
+  },
+  "staff_domains.actions.filters": {
+    "defaultMessage": "Filtrar ações de domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the name of the filters over the list, for assistive technology. Read by moderators."
+  },
+  "staff_domains.actions.domain": {
+    "defaultMessage": "Domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the search field that keeps only the actions on one domain. Read by moderators."
+  },
+  "staff_domains.actions.domain.clear": {
+    "defaultMessage": "Limpar o domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that empties the domain's search field. Read by moderators."
+  },
+  "staff_domains.actions.domain.invalid": {
+    "defaultMessage": "Informe um domínio, como spam.example, sem https:// nem caminho.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the domain's search when the server takes what was written for no domain. Read by moderators."
+  },
+  "staff_domains.actions.all": {
+    "defaultMessage": "Incluir suspensas e encerradas",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the toggle that shows the actions no longer in effect. Read by moderators."
+  },
+  "staff_domains.actions.loading": {
+    "defaultMessage": "Carregando as ações de domínio…",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), while the list is read. Read by moderators."
+  },
+  "staff_domains.actions.failed": {
+    "defaultMessage": "Não foi possível carregar as ações de domínio.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when the list could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.actions.table": {
+    "defaultMessage": "Ações de domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the name of the table, for assistive technology. Read by moderators."
+  },
+  "staff_domains.actions.column.domain": {
+    "defaultMessage": "Domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of the domains. Read by moderators."
+  },
+  "staff_domains.actions.column.kind": {
+    "defaultMessage": "Ação",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of what each action does. Read by moderators."
+  },
+  "staff_domains.actions.column.ends": {
+    "defaultMessage": "Termina",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of when each action ends. Read by moderators."
+  },
+  "staff_domains.actions.column.state": {
+    "defaultMessage": "Estado",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of each action's state. Read by moderators."
+  },
+  "staff_domains.actions.empty": {
+    "defaultMessage": "Nenhuma ação está em vigor em nenhum domínio.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when no action is in effect. Read by moderators."
+  },
+  "staff_domains.actions.empty.filtered": {
+    "defaultMessage": "Nenhuma ação corresponde a estes filtros.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when the filters leave nothing; Clear filters is above. Read by moderators."
+  },
+  "staff_domains.actions.back": {
+    "defaultMessage": "Ações de domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the back button to the list of domain actions. Read by moderators."
+  },
+  "staff_domains.allows": {
+    "defaultMessage": "Domínios permitidos",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the allowlist of federation, and its screen's title. Read by moderators."
+  },
+  "staff_domains.lists": {
+    "defaultMessage": "Assinaturas de listas de bloqueio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the subscriptions to domain block lists, and their screen's title. Read by moderators."
+  },
+  "staff_domains.action.missing": {
+    "defaultMessage": "Não há ação de domínio neste endereço.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), at the address of an action the server does not have. Read by moderators."
+  },
+  "staff_domains.action.all": {
+    "defaultMessage": "Todas as ações de domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the link to the list after a missing action. Read by moderators."
+  },
+  "staff_domains.action.loading": {
+    "defaultMessage": "Carregando a ação…",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), while an action's page is read. Read by moderators."
+  },
+  "staff_domains.action.failed": {
+    "defaultMessage": "Não foi possível carregar a ação.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when an action could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.action.lift": {
+    "defaultMessage": "Suspender",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button on an action's page that ends it now. Read by moderators."
+  },
+  "staff_domains.action.lifted": {
+    "defaultMessage": "A ação foi suspensa.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), after Lift. Read by moderators."
+  },
+  "staff_domains.action.others": {
+    "defaultMessage": "Ações neste domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button on an action's page that lists every action on the domain. Read by moderators."
+  },
+  "staff_domains.action.facts": {
+    "defaultMessage": "Sobre esta ação",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the name of an action's facts, for assistive technology. Read by moderators."
+  },
+  "staff_domains.action.fact.state": {
+    "defaultMessage": "Estado",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of an action's state. Read by moderators."
+  },
+  "staff_domains.action.fact.kind": {
+    "defaultMessage": "Ação",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of what an action does. Read by moderators."
+  },
+  "staff_domains.action.fact.issued": {
+    "defaultMessage": "Tomada em",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of when an action was taken. Read by moderators."
+  },
+  "staff_domains.action.fact.ends": {
+    "defaultMessage": "Termina",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of when an action ends. Read by moderators."
+  },
+  "staff_domains.action.fact.lifted": {
+    "defaultMessage": "Suspensa em",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of when an action was lifted. Read by moderators."
+  },
+  "staff_domains.action.fact.public_comment": {
+    "defaultMessage": "Motivo público",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of an action's reason that others may read. Read by moderators."
+  },
+  "staff_domains.action.fact.private_note": {
+    "defaultMessage": "Nota dos moderadores",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of an action's note that only the moderators read. Read by moderators."
+  },
+  "staff_domains.action.fact.obfuscate": {
+    "defaultMessage": "Publicado como",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of whether a published list hides part of the domain. Read by moderators."
+  },
+  "staff_domains.action.fact.issued_by": {
+    "defaultMessage": "Tomada por",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of the block list subscription that took an action. Read by moderators."
+  },
+  "staff_domains.action.obfuscated": {
+    "defaultMessage": "Parte do domínio oculta",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of Published as for an action that hides part of the domain. Read by moderators."
+  },
+  "staff_domains.action.not_obfuscated": {
+    "defaultMessage": "O domínio inteiro",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of Published as for an action that shows the whole domain. Read by moderators."
+  },
+  "staff_domains.action.subscription": {
+    "defaultMessage": "Uma assinatura de lista de bloqueio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the link to the subscription that took an action. Read by moderators."
+  },
+  "staff_domains.form.domain": {
+    "defaultMessage": "Domínio",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the field of a domain to act on or to allow. Read by moderators."
+  },
+  "staff_domains.form.domain.hint": {
+    "defaultMessage": "Os subdomínios também são cobertos.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of a domain. Read by moderators."
+  },
+  "staff_domains.form.domain.blank": {
+    "defaultMessage": "Informe um domínio, como spam.example.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of a domain left empty. Read by moderators."
+  },
+  "staff_domains.form.domain.invalid": {
+    "defaultMessage": "Informe um domínio de outro servidor, como spam.example, sem https:// nem caminho.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of a domain the server refused (not a domain, or this server's own). Read by moderators."
+  },
+  "staff_domains.form.kind": {
+    "defaultMessage": "Ação",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the choice of what a new action does. Read by moderators."
+  },
+  "staff_domains.form.length": {
+    "defaultMessage": "Duração",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the choice of how long a new action lasts. Read by moderators."
+  },
+  "staff_domains.form.public_comment": {
+    "defaultMessage": "Motivo público",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the field of the reason others may read. Read by moderators."
+  },
+  "staff_domains.form.private_note": {
+    "defaultMessage": "Nota dos moderadores",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the field of the note only the moderators read. Read by moderators."
+  },
+  "staff_domains.form.obfuscate": {
+    "defaultMessage": "Ocultar parte do domínio onde ele é publicado",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the checkbox of whether a published list hides part of the domain. Read by moderators."
+  },
+  "staff_domains.form.submit": {
+    "defaultMessage": "{kind, select, suspend {Suspender…} limit {Limitar} reject_media {Rejeitar mídia} reject_reports {Rejeitar denúncias} force_sensitive {Marcar mídia como sensível} other {Tomar ação}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that takes the new action, named by its kind; a suspend asks first (…). Read by moderators."
+  },
+  "staff_domains.suspend.title": {
+    "defaultMessage": "Suspender {domain}?",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the question of the confirmation before a domain is suspended. Read by moderators."
+  },
+  "staff_domains.suspend.stops": {
+    "defaultMessage": "Nada mais é recebido de {domain} e de seus subdomínios, enviado a eles nem buscado deles, e as contas e publicações deles ficam ocultas.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in the confirmation of a suspend, what it stops. Read by moderators."
+  },
+  "staff_domains.suspend.counting": {
+    "defaultMessage": "Contando os vínculos de seguir que terminam…",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in the confirmation of a suspend, while the server counts the follows it ends. Read by moderators."
+  },
+  "staff_domains.suspend.confirm": {
+    "defaultMessage": "Suspender",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button of the confirmation that suspends the domain, once its name is typed. Read by moderators."
+  },
+  "staff_domains.suspend.cuts": {
+    "defaultMessage": "{follows, plural, =0 {Nenhum vínculo de seguir entre pessoas daqui e as contas deles termina.} one {# vínculo de seguir entre pessoas daqui e as contas deles termina para sempre, para {people, plural, one {# pessoa} other {# pessoas}} daqui. Levantar a suspensão não o traz de volta.} other {# vínculos de seguir entre pessoas daqui e as contas deles terminam para sempre, para {people, plural, one {# pessoa} other {# pessoas}} daqui. Levantar a suspensão não os traz de volta.}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in the confirmation of a suspend, how many follows it ends, as the server counts them now. Read by moderators."
+  },
+  "staff_domains.suspend.uncounted": {
+    "defaultMessage": "Todo vínculo de seguir entre pessoas daqui e as contas deles termina para sempre; não foi possível contá-los. Levantar a suspensão não os traz de volta.",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in the confirmation of a suspend, when the server could not count the follows it ends. Read by moderators."
+  },
+  "staff_domains.export": {
+    "defaultMessage": "Exportar",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of saving the actions as CSV. Read by moderators."
+  },
+  "staff_domains.export.save": {
+    "defaultMessage": "Salvar como CSV",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button that saves the actions in effect as Mastodon's CSV. Read by moderators."
+  },
+  "staff_domains.export.saved": {
+    "defaultMessage": "{name} salvo.",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), after the CSV was saved; `name` is the file's name. Read by moderators."
+  },
+  "staff_domains.import": {
+    "defaultMessage": "Importar",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of importing a CSV. Read by moderators."
+  },
+  "staff_domains.import.file": {
+    "defaultMessage": "Arquivo CSV",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the field of the file to import. Read by moderators."
+  },
+  "staff_domains.import.file.choose": {
+    "defaultMessage": "{chosen, select, yes {Escolher outro arquivo} other {Escolher um arquivo}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button that opens the file picker. Read by moderators."
+  },
+  "staff_domains.import.file.none": {
+    "defaultMessage": "Nenhum arquivo escolhido",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the place of the file's name while none is chosen. Read by moderators."
+  },
+  "staff_domains.import.file.too_large": {
+    "defaultMessage": "Este arquivo é grande demais. Escolha um arquivo CSV de no máximo 1 MB.",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), under the file's field when the server refused it as too large. Read by moderators."
+  },
+  "staff_domains.import.file.hint": {
+    "defaultMessage": "Uma lista de domínios, um por linha, suspende cada um deles.",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), under the file's field. Read by moderators."
+  },
+  "staff_domains.import.file.unread": {
+    "defaultMessage": "Não foi possível ler este arquivo como um CSV de bloqueio de domínios. Escolha um arquivo CSV de no máximo 5.000 linhas.",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), under the file's field when it could not be read. Read by moderators."
+  },
+  "staff_domains.import.previewing": {
+    "defaultMessage": "Lendo o que o arquivo faria…",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), while the server previews the file. Read by moderators."
+  },
+  "staff_domains.import.importable.table": {
+    "defaultMessage": "Linhas a importar",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the name of the table of rows that would take actions, for assistive technology. Read by moderators."
+  },
+  "staff_domains.import.importable.none": {
+    "defaultMessage": "Nenhuma linha deste arquivo tomaria uma ação.",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), when no row would take an action. Read by moderators."
+  },
+  "staff_domains.import.others.table": {
+    "defaultMessage": "Linhas que não tomam ação",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the name of the table of rows that would import nothing, for assistive technology. Read by moderators."
+  },
+  "staff_domains.import.column.domain": {
+    "defaultMessage": "Domínio",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the column of each row's domain. Read by moderators."
+  },
+  "staff_domains.import.column.line": {
+    "defaultMessage": "Linha",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the column of each row's line in the file. Read by moderators."
+  },
+  "staff_domains.import.column.issues": {
+    "defaultMessage": "Toma",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the column of the actions each row would take. Read by moderators."
+  },
+  "staff_domains.import.column.status": {
+    "defaultMessage": "Por quê",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the column of why each row would take nothing. Read by moderators."
+  },
+  "staff_domains.import.line": {
+    "defaultMessage": "Linha {line}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the line of a row in the file. Read by moderators."
+  },
+  "staff_domains.import.no_domain": {
+    "defaultMessage": "Sem domínio",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the place of a row's domain when it has none. Read by moderators."
+  },
+  "staff_domains.import.status": {
+    "defaultMessage": "{status, select, already_applied {Uma ação já o cobre} no_action {Não pede nenhuma ação} duplicate {Uma linha anterior tem este domínio} own_domain {O domínio deste próprio servidor} invalid {Linha inválida} other {Não toma ação}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), why a row takes nothing. Read by moderators."
+  },
+  "staff_domains.import.note": {
+    "defaultMessage": "Nota dos moderadores para todas as ações",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the field of the private note of every action imported. Read by moderators."
+  },
+  "staff_domains.import.confirm": {
+    "defaultMessage": "Importar",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button of the confirmation that imports. Read by moderators."
+  },
+  "staff_domains.import.importable": {
+    "defaultMessage": "{count, plural, one {# linha toma ações} other {# linhas tomam ações}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows that would take actions, which the reader keeps or leaves. Read by moderators."
+  },
+  "staff_domains.import.others": {
+    "defaultMessage": "{count, plural, one {# linha não toma ação} other {# linhas não tomam ação}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows that would import nothing. Read by moderators."
+  },
+  "staff_domains.import.submit": {
+    "defaultMessage": "{count, plural, one {Importar # linha} other {Importar # linhas}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button that imports the rows kept. Read by moderators."
+  },
+  "staff_domains.import.confirm.title": {
+    "defaultMessage": "{count, plural, one {Importar # linha?} other {Importar # linhas?}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the question of the confirmation before rows that suspend domains are imported. Read by moderators."
+  },
+  "staff_domains.import.confirm.about": {
+    "defaultMessage": "{count, plural, one {# delas suspende um domínio: nada mais é recebido dele, enviado a ele nem buscado dele.} other {# delas suspendem domínios: nada mais é recebido deles, enviado a eles nem buscado deles.}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the confirmation of an import, what its suspends end. Read by moderators."
+  },
+  "staff_domains.import.submit.ask": {
+    "defaultMessage": "{count, plural, one {Importar # linha…} other {Importar # linhas…}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, the button that imports the rows kept when a suspend among them asks first. Read by moderators."
+  },
+  "staff_domains.import.cuts": {
+    "defaultMessage": "{follows, plural, =0 {Nenhum vínculo de seguir entre pessoas daqui e as contas deles termina.} one {# vínculo de seguir entre pessoas daqui e as contas deles termina para sempre, para {people, plural, one {# pessoa} other {# pessoas}} daqui. Levantar as suspensões não o traz de volta.} other {# vínculos de seguir entre pessoas daqui e as contas deles terminam para sempre, para {people, plural, one {# pessoa} other {# pessoas}} daqui. Levantar as suspensões não os traz de volta.}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, in the confirmation of an import, how many follows its suspends end, as the server counts them now. Read by moderators."
+  },
+  "staff_domains.import.uncounted": {
+    "defaultMessage": "Todo vínculo de seguir entre pessoas daqui e as contas deles termina para sempre; não foi possível contá-los. Levantar as suspensões não os traz de volta.",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, in the confirmation of an import, when the follows its suspends end could not be counted (too many domains, or a count failed). Read by moderators."
+  },
+  "staff_domains.imported.skipped.table": {
+    "defaultMessage": "Linhas ignoradas",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the name of the table of skipped rows, for assistive technology. Read by moderators."
+  },
+  "staff_domains.imported.skipped.none": {
+    "defaultMessage": "Nenhuma linha foi ignorada.",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), when the import skipped nothing. Read by moderators."
+  },
+  "staff_domains.imported.to_list": {
+    "defaultMessage": "Mostrar as ações de domínio",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button after an import that opens the list of actions. Read by moderators."
+  },
+  "staff_domains.imported.skipped": {
+    "defaultMessage": "{count, plural, one {# linha ignorada} other {# linhas ignoradas}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows the import skipped. Read by moderators."
+  },
+  "staff_domains.allows.add": {
+    "defaultMessage": "Permitir um domínio",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the heading of the form that allows a domain. Read by moderators."
+  },
+  "staff_domains.allows.comment": {
+    "defaultMessage": "Nota dos moderadores",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the field of the note on an allow. Read by moderators."
+  },
+  "staff_domains.allows.submit": {
+    "defaultMessage": "Permitir",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the button that allows the domain. Read by moderators."
+  },
+  "staff_domains.allows.added": {
+    "defaultMessage": "{domain} está permitido.",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), after a domain was allowed. Read by moderators."
+  },
+  "staff_domains.allows.list": {
+    "defaultMessage": "Domínios permitidos",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the heading of the allowed domains and their table's name. Read by moderators."
+  },
+  "staff_domains.allows.loading": {
+    "defaultMessage": "Carregando os domínios permitidos…",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), while the list is read. Read by moderators."
+  },
+  "staff_domains.allows.failed": {
+    "defaultMessage": "Não foi possível carregar os domínios permitidos.",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when the list could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.allows.column.domain": {
+    "defaultMessage": "Domínio",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the column of the domains. Read by moderators."
+  },
+  "staff_domains.allows.column.allowed": {
+    "defaultMessage": "Permitido em",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the column of when each domain was allowed. Read by moderators."
+  },
+  "staff_domains.allows.empty": {
+    "defaultMessage": "Nenhum domínio está permitido.",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when no domain is allowed. Read by moderators."
+  },
+  "staff_domains.allows.remove": {
+    "defaultMessage": "Remover",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the action on the domains picked that removes them from the allowlist. Read by moderators."
+  },
+  "staff_domains.allows.remove.confirm": {
+    "defaultMessage": "Remover",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the button of the confirmation that removes the domains. Read by moderators."
+  },
+  "staff_domains.allows.remove.title": {
+    "defaultMessage": "{count, plural, one {Remover {domain} da lista de permissão?} other {Remover # domínios da lista de permissão?}}",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the question of the confirmation before domains are removed. Read by moderators."
+  },
+  "staff_domains.allows.remove.about": {
+    "defaultMessage": "{count, plural, one {Enquanto este servidor se federa apenas com domínios permitidos, ele é cortado de imediato, e todo vínculo de seguir com as contas dele termina para sempre. Permiti-lo de novo não os traz de volta.} other {Enquanto este servidor se federa apenas com domínios permitidos, eles são cortados de imediato, e todo vínculo de seguir com as contas deles termina para sempre. Permiti-los de novo não os traz de volta.}}",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), in the confirmation of a removal, what it does. Read by moderators."
+  },
+  "staff_domains.allows.full": {
+    "defaultMessage": "A lista de permissão já tem 5.000 domínios. Remova um antes de permitir outro.",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when the allowlist is full. Read by moderators."
+  },
+  "staff_domains.allows.removed": {
+    "defaultMessage": "{count, plural, one {# domínio foi removido da lista de permissão.} other {# domínios foram removidos da lista de permissão.}}",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), after the domains were removed. Read by moderators."
+  },
+  "staff_domains.lists.add": {
+    "defaultMessage": "Adicionar assinatura",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that opens the form of a new subscription, and the form's title. Read by moderators."
+  },
+  "staff_domains.lists.loading": {
+    "defaultMessage": "Carregando as assinaturas…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), while the list is read. Read by moderators."
+  },
+  "staff_domains.lists.failed": {
+    "defaultMessage": "Não foi possível carregar as assinaturas.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when the list could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.lists.column.title": {
+    "defaultMessage": "Assinatura",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of the subscriptions' titles. Read by moderators."
+  },
+  "staff_domains.lists.column.mode": {
+    "defaultMessage": "Modo",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of whether differences wait for a moderator. Read by moderators."
+  },
+  "staff_domains.lists.column.fetched": {
+    "defaultMessage": "Última busca",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of each subscription's last fetch. Read by moderators."
+  },
+  "staff_domains.lists.never": {
+    "defaultMessage": "Ainda não buscada",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), for a subscription never fetched. Read by moderators."
+  },
+  "staff_domains.lists.empty": {
+    "defaultMessage": "Você não assina nenhuma lista de bloqueio.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no subscription. Read by moderators."
+  },
+  "staff_domains.lists.failing": {
+    "defaultMessage": "{count, plural, one {# falha} other {# falhas seguidas}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), for a subscription whose last fetches failed. Read by moderators."
+  },
+  "staff_domains.list.mode": {
+    "defaultMessage": "{mode, select, draft {Rascunhos} automatic {Automático} other {Desconhecido}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), a subscription's mode, short. Read by moderators."
+  },
+  "staff_domains.list.mode.choice": {
+    "defaultMessage": "{mode, select, draft {Rascunhos: cada diferença espera um moderador} automatic {Automático: as diferenças são aplicadas a cada busca} other {Desconhecido}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), a choice of the mode in a subscription's form. Read by moderators."
+  },
+  "staff_domains.list.format": {
+    "defaultMessage": "{format, select, mastodon_csv {CSV de bloqueio de domínios do Mastodon} mastodon_json {Bloqueios de domínio publicados por um servidor Mastodon} plain_text {Um domínio por linha} other {Desconhecido}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), a list's format. Read by moderators."
+  },
+  "staff_domains.list.issue_as": {
+    "defaultMessage": "{kind, select, suspend {Suspender} limit {Limitar} ignore {Nada} other {Desconhecido}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), a choice of what a row of a list takes here. Read by moderators."
+  },
+  "staff_domains.list.form.title": {
+    "defaultMessage": "Título",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the field of a subscription's title. Read by moderators."
+  },
+  "staff_domains.list.form.title.blank": {
+    "defaultMessage": "Informe um título para a assinatura.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the title left empty. Read by moderators."
+  },
+  "staff_domains.list.form.url": {
+    "defaultMessage": "Endereço da lista",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the field of the list's URL. Read by moderators."
+  },
+  "staff_domains.list.form.url.hint": {
+    "defaultMessage": "Não pode ser alterado depois.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the URL's field. Read by moderators."
+  },
+  "staff_domains.list.form.url.blank": {
+    "defaultMessage": "Informe o endereço https da lista.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the URL left empty. Read by moderators."
+  },
+  "staff_domains.list.form.format": {
+    "defaultMessage": "Formato",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of the list's format. Read by moderators."
+  },
+  "staff_domains.list.form.mode": {
+    "defaultMessage": "Modo",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of the mode. Read by moderators."
+  },
+  "staff_domains.list.form.suspend_as": {
+    "defaultMessage": "Uma suspensão na lista passa a ser",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of what a list's suspend takes here. Read by moderators."
+  },
+  "staff_domains.list.form.silence_as": {
+    "defaultMessage": "Um silenciamento na lista passa a ser",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of what a list's silence (Mastodon's limit) takes here. Read by moderators."
+  },
+  "staff_domains.list.form.reject_media": {
+    "defaultMessage": "Rejeitar mídia onde a lista rejeita",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the checkbox of whether a row's reject_media takes that action. Read by moderators."
+  },
+  "staff_domains.list.form.reject_reports": {
+    "defaultMessage": "Rejeitar denúncias onde a lista rejeita",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the checkbox of whether a row's reject_reports takes that action. Read by moderators."
+  },
+  "staff_domains.list.form.comment": {
+    "defaultMessage": "Copiar os motivos públicos da lista",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the checkbox of whether the actions copy the row's public comment. Read by moderators."
+  },
+  "staff_domains.list.form.subscribe": {
+    "defaultMessage": "Assinar",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that subscribes. Read by moderators."
+  },
+  "staff_domains.list.missing": {
+    "defaultMessage": "Não há assinatura neste endereço.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), at the address of a subscription the server does not have. Read by moderators."
+  },
+  "staff_domains.list.all": {
+    "defaultMessage": "Todas as assinaturas",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the link to the list after a missing subscription. Read by moderators."
+  },
+  "staff_domains.list.loading": {
+    "defaultMessage": "Carregando a assinatura…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), while a subscription's page is read. Read by moderators."
+  },
+  "staff_domains.list.failed": {
+    "defaultMessage": "Não foi possível carregar a assinatura.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when a subscription could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.list.facts": {
+    "defaultMessage": "Sobre esta assinatura",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the name of a subscription's facts, for assistive technology. Read by moderators."
+  },
+  "staff_domains.list.fact.url": {
+    "defaultMessage": "Endereço",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of the list's URL. Read by moderators."
+  },
+  "staff_domains.list.fact.format": {
+    "defaultMessage": "Formato",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of the list's format. Read by moderators."
+  },
+  "staff_domains.list.fact.mode": {
+    "defaultMessage": "Modo",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of the mode. Read by moderators."
+  },
+  "staff_domains.list.fact.last_fetch": {
+    "defaultMessage": "Última busca",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of when the list was last fetched. Read by moderators."
+  },
+  "staff_domains.list.fact.outcome": {
+    "defaultMessage": "O que resultou",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of what came of the last fetch. Read by moderators."
+  },
+  "staff_domains.list.fact.failures": {
+    "defaultMessage": "Falhas",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of how many fetches failed in a row. Read by moderators."
+  },
+  "staff_domains.list.fact.created": {
+    "defaultMessage": "Assinada em",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of when the subscription was made. Read by moderators."
+  },
+  "staff_domains.list.fetch": {
+    "defaultMessage": "Buscar agora",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that fetches the list now. Read by moderators."
+  },
+  "staff_domains.list.fetching": {
+    "defaultMessage": "A lista será buscada em instantes.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after Fetch now. Read by moderators."
+  },
+  "staff_domains.list.settings": {
+    "defaultMessage": "Configurações",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the heading of a subscription's settings. Read by moderators."
+  },
+  "staff_domains.list.save": {
+    "defaultMessage": "Salvar",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that saves a subscription's settings. Read by moderators."
+  },
+  "staff_domains.list.saved": {
+    "defaultMessage": "Salvo. A lista será buscada de novo com estas configurações.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after the settings were saved. Read by moderators."
+  },
+  "staff_domains.list.stop": {
+    "defaultMessage": "Cancelar a assinatura",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the heading of the last section of a subscription's page. Read by moderators."
+  },
+  "staff_domains.list.stop.ask": {
+    "defaultMessage": "Cancelar a assinatura…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that opens the confirmation of stopping the subscription. Read by moderators."
+  },
+  "staff_domains.list.stop.title": {
+    "defaultMessage": "Cancelar a assinatura de {title}?",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the question of the confirmation before the subscription is stopped. Read by moderators."
+  },
+  "staff_domains.list.stop.about": {
+    "defaultMessage": "A lista deixa de ser buscada. As ações que ela tomou continuam, como se um moderador as tivesse tomado, a menos que você as suspenda.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), in the confirmation of stopping a subscription. Read by moderators."
+  },
+  "staff_domains.list.stop.lift": {
+    "defaultMessage": "Suspender as ações que ela tomou",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the checkbox in the confirmation of stopping a subscription. Read by moderators."
+  },
+  "staff_domains.list.stop.confirm": {
+    "defaultMessage": "Cancelar a assinatura",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button of the confirmation that stops the subscription. Read by moderators."
+  },
+  "staff_domains.drafts": {
+    "defaultMessage": "Rascunhos",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the heading of the differences that wait for a moderator, and their table's name. Read by moderators."
+  },
+  "staff_domains.drafts.loading": {
+    "defaultMessage": "Carregando os rascunhos…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), while the drafts are read. Read by moderators."
+  },
+  "staff_domains.drafts.failed": {
+    "defaultMessage": "Não foi possível carregar os rascunhos.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when the drafts could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.drafts.empty": {
+    "defaultMessage": "Nenhuma diferença espera por você.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when no draft waits. Read by moderators."
+  },
+  "staff_domains.drafts.column.domain": {
+    "defaultMessage": "Domínio",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of the drafts' domains. Read by moderators."
+  },
+  "staff_domains.drafts.column.change": {
+    "defaultMessage": "Mudança",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of what a draft would do. Read by moderators."
+  },
+  "staff_domains.drafts.column.held": {
+    "defaultMessage": "Por que espera",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of why a draft waits. Read by moderators."
+  },
+  "staff_domains.drafts.accept": {
+    "defaultMessage": "Aceitar",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the action that accepts the drafts picked, and the confirmation's button. Read by moderators."
+  },
+  "staff_domains.drafts.reject": {
+    "defaultMessage": "Rejeitar",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the action that rejects the drafts picked. Read by moderators."
+  },
+  "staff_domains.drafts.accepted": {
+    "defaultMessage": "{count, plural, one {# rascunho aceito.} other {# rascunhos aceitos.}}{missing, plural, =0 {} one { # já tinha sido tratado.} other { # já tinham sido tratados.}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after drafts were accepted. Read by moderators."
+  },
+  "staff_domains.drafts.rejected": {
+    "defaultMessage": "{count, plural, one {# rascunho rejeitado.} other {# rascunhos rejeitados.}}{missing, plural, =0 {} one { # já tinha sido tratado.} other { # já tinham sido tratados.}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after drafts were rejected. Read by moderators."
+  },
+  "staff_domains.drafts.confirm.title": {
+    "defaultMessage": "{count, plural, one {Aceitar # rascunho?} other {Aceitar # rascunhos?}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the question of the confirmation before drafts that suspend domains are accepted. Read by moderators."
+  },
+  "staff_domains.drafts.confirm.about": {
+    "defaultMessage": "{count, plural, one {# deles suspende um domínio, o que termina para sempre todo vínculo de seguir com as contas dele. Levantar a suspensão não os traz de volta.} other {# deles suspendem domínios, o que termina para sempre todo vínculo de seguir com as contas deles. Levantar as suspensões não os traz de volta.}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), in the confirmation of accepting drafts, what their suspends end. Read by moderators."
+  },
+  "staff_domains.draft.change": {
+    "defaultMessage": "{change, select, issue {Tomar: {kind}} lift {Suspender: {kind}} other {{kind}}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), what a draft would do; `kind` is the action's kind. Read by moderators."
+  },
+  "staff_domains.draft.held": {
+    "defaultMessage": "{held, select, draft_mode {Modo de rascunhos} unknown_severity {Uma gravidade que este servidor não conhece} mass_lift {Uma busca suspenderia ações demais} other {Em espera}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), why a draft waits for a moderator. Read by moderators."
+  },
+  "staff_domains.fetches": {
+    "defaultMessage": "Buscas",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the heading of the fetches of a list, and their log's name. Read by moderators."
+  },
+  "staff_domains.fetches.loading": {
+    "defaultMessage": "Carregando as buscas…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), while the fetches are read. Read by moderators."
+  },
+  "staff_domains.fetches.failed": {
+    "defaultMessage": "Não foi possível carregar as buscas.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when the fetches could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.fetches.empty": {
+    "defaultMessage": "A lista ainda não foi buscada.",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no fetch yet. Read by moderators."
+  },
+  "staff_domains.servers.filters": {
+    "defaultMessage": "Filtrar servidores remotos",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the name of the filters, for assistive technology. Read by moderators."
+  },
+  "staff_domains.servers.state": {
+    "defaultMessage": "Estado",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter of the servers' state. Read by moderators."
+  },
+  "staff_domains.servers.state.any": {
+    "defaultMessage": "Qualquer estado",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of every known server. Read by moderators."
+  },
+  "staff_domains.servers.state.troubled": {
+    "defaultMessage": "Problemas de entrega",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of the servers deliveries failed to reach on some days or that are marked unavailable; also read as \"State: Delivery problems\". Read by moderators."
+  },
+  "staff_domains.servers.open": {
+    "defaultMessage": "Abrir um servidor",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the field that opens any server's screen. Read by moderators."
+  },
+  "staff_domains.servers.open.hint": {
+    "defaultMessage": "O domínio dele, um identificador nele ou um endereço nele.",
+    "description": "On the moderators' list of remote servers (/moderation/instances), under Open a server. Read by moderators."
+  },
+  "staff_domains.servers.open.invalid": {
+    "defaultMessage": "Informe um domínio como example.com, um identificador como @name@example.com ou um endereço no servidor.",
+    "description": "On the moderators' list of remote servers (/moderation/instances), under Open a server when it names no server. Read by moderators."
+  },
+  "staff_domains.servers.open.submit": {
+    "defaultMessage": "Abrir",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the button of Open a server. Read by moderators."
+  },
+  "staff_domains.servers.loading": {
+    "defaultMessage": "Carregando os servidores remotos…",
+    "description": "On the moderators' list of remote servers (/moderation/instances), while the list is read. Read by moderators."
+  },
+  "staff_domains.servers.failed": {
+    "defaultMessage": "Não foi possível carregar os servidores remotos.",
+    "description": "On the moderators' list of remote servers (/moderation/instances), when the list could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.servers.column.domain": {
+    "defaultMessage": "Servidor",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of the servers' domains. Read by moderators."
+  },
+  "staff_domains.servers.column.software": {
+    "defaultMessage": "Software",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of the software each server reports (such as Mastodon 4.3.2). Read by moderators."
+  },
+  "staff_domains.servers.column.failures": {
+    "defaultMessage": "Dias com falha",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of how many days deliveries failed. Read by moderators."
+  },
+  "staff_domains.servers.column.state": {
+    "defaultMessage": "Estado",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of each server's state. Read by moderators."
+  },
+  "staff_domains.servers.empty": {
+    "defaultMessage": "Nenhum servidor remoto é conhecido ainda.",
+    "description": "On the moderators' list of remote servers (/moderation/instances), when this server knows no remote server at all. Read by moderators."
+  },
+  "staff_domains.servers.empty.filtered": {
+    "defaultMessage": "Nenhum servidor corresponde. Limpe o filtro para ver todos os servidores.",
+    "description": "On the moderators' list of remote servers (/moderation/instances), when the filter (with problems, unavailable) leaves nothing. Read by moderators."
+  },
+  "staff_domains.server.state": {
+    "defaultMessage": "{state, select, available {Disponível} unavailable {Indisponível} other {Desconhecido}}",
+    "description": "On the moderators' list of remote servers (/moderation/instances) and a server's screen, whether deliveries go to a server (unavailable ones get only follows and their answers). Read by moderators."
+  },
+  "staff_domains.server.failure_days": {
+    "defaultMessage": "{count, plural, =0 {Nenhuma falha} one {# dia} other {# dias}}",
+    "description": "On the moderators' list of remote servers (/moderation/instances) and a server's screen, on how many days deliveries to it failed. Read by moderators."
+  },
+  "staff_domains.server.loading": {
+    "defaultMessage": "Carregando o servidor…",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), while it is read. Read by moderators."
+  },
+  "staff_domains.server.failed": {
+    "defaultMessage": "Não foi possível carregar o servidor.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when it could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.server.facts": {
+    "defaultMessage": "Sobre este servidor",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the name of the server's facts (its software, when it was first seen, its deliveries), for assistive technology. Read by moderators."
+  },
+  "staff_domains.server.fact.software": {
+    "defaultMessage": "Software",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the software and version the server last reported. Read by moderators."
+  },
+  "staff_domains.server.software.none": {
+    "defaultMessage": "Não informado",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the value of Software when the server has reported none. Read by moderators."
+  },
+  "staff_domains.server.fact.first_seen": {
+    "defaultMessage": "Visto pela primeira vez",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when this server first stored a document of that server; absent for a server known only from deliveries. Read by moderators."
+  },
+  "staff_domains.server.fact.state": {
+    "defaultMessage": "Estado",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of whether deliveries go to it. Read by moderators."
+  },
+  "staff_domains.server.fact.since": {
+    "defaultMessage": "Desde",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when it entered its state. Read by moderators."
+  },
+  "staff_domains.server.fact.failures": {
+    "defaultMessage": "Dias com falha",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of how many days deliveries failed in the latest run. Read by moderators."
+  },
+  "staff_domains.server.fact.last_failure": {
+    "defaultMessage": "Último dia com falha",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the latest day deliveries failed. Read by moderators."
+  },
+  "staff_domains.server.mark": {
+    "defaultMessage": "Marcar como disponível",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that clears the failures and resumes deliveries. Read by moderators."
+  },
+  "staff_domains.server.marked": {
+    "defaultMessage": "As entregas a este servidor são retomadas.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), after Mark available. Read by moderators."
+  },
+  "staff_domains.server.refetch": {
+    "defaultMessage": "Buscar publicações de novo",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that refetches the stored posts of the server's accounts. Read by moderators."
+  },
+  "staff_domains.server.refetching": {
+    "defaultMessage": "As publicações das contas dele serão buscadas de novo nos próximos minutos.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), after Refetch posts. Read by moderators."
+  },
+  "staff_domains.server.actions": {
+    "defaultMessage": "Ações de domínio",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that lists the actions on this domain. Read by moderators."
+  },
+  "staff_domains.availability.title": {
+    "defaultMessage": "Disponibilidade",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the heading of the times it was marked unavailable or available. Read by moderators."
+  },
+  "staff_domains.availability.loading": {
+    "defaultMessage": "Carregando a disponibilidade…",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), while the availability events are read. Read by moderators."
+  },
+  "staff_domains.availability.failed": {
+    "defaultMessage": "Não foi possível carregar a disponibilidade.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the availability events could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.availability.empty": {
+    "defaultMessage": "As entregas a este servidor nunca pararam.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when there is no availability event. Read by moderators."
+  },
+  "staff_domains.deliveries": {
+    "defaultMessage": "Entregas",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the heading of the deliveries, and their log's name. Read by moderators."
+  },
+  "staff_domains.deliveries.activity": {
+    "defaultMessage": "ID da atividade",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the filter field of one activity's deliveries. Read by moderators."
+  },
+  "staff_domains.deliveries.account": {
+    "defaultMessage": "Conta local",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the filter field of one local account's deliveries, by username. Read by moderators."
+  },
+  "staff_domains.deliveries.account.hint": {
+    "defaultMessage": "Listar as entregas de uma conta fica registrado no registro de auditoria.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account, before it is sent. Read by moderators."
+  },
+  "staff_domains.deliveries.account.chosen": {
+    "defaultMessage": "Mostrando as entregas de {handle}.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account while its deliveries are shown. Read by moderators."
+  },
+  "staff_domains.deliveries.account.unknown": {
+    "defaultMessage": "Nenhuma conta daqui tem este nome de usuário. Informe o nome de usuário de uma conta deste servidor, como kai.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account the server does not know. Read by moderators."
+  },
+  "staff_domains.deliveries.show": {
+    "defaultMessage": "Mostrar",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that applies the deliveries' filters. Read by moderators."
+  },
+  "staff_domains.deliveries.clear": {
+    "defaultMessage": "Limpar filtros",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that takes the deliveries' filters off. Read by moderators."
+  },
+  "staff_domains.deliveries.not_local": {
+    "defaultMessage": "Essa conta não é uma conta deste servidor. Limpe os filtros para ver todas as entregas.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the server refused the account filter. Read by moderators."
+  },
+  "staff_domains.deliveries.loading": {
+    "defaultMessage": "Carregando as entregas…",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), while the deliveries are read. Read by moderators."
+  },
+  "staff_domains.deliveries.failed": {
+    "defaultMessage": "Não foi possível carregar as entregas.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the deliveries could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.deliveries.empty": {
+    "defaultMessage": "Nada foi entregue a este servidor nos últimos 30 dias.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when there is no delivery. Read by moderators."
+  },
+  "staff_domains.deliveries.empty.filtered": {
+    "defaultMessage": "Nenhuma entrega corresponde a estes filtros nos últimos 30 dias.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the filters leave nothing. Read by moderators."
+  },
+  "staff_domains.delivery": {
+    "defaultMessage": "{shared, select, yes {{type} para a caixa de entrada compartilhada} other {{type} para uma caixa de entrada}}",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the line of one delivery; `type` is the activity's type (Create, Follow). Read by moderators."
+  },
+  "staff_domains.delivery.waiting": {
+    "defaultMessage": "Ainda não tentada",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a delivery with no attempt yet. Read by moderators."
+  },
+  "staff_domains.delivery.masked": {
+    "defaultMessage": "{mask, select, private {Sobre uma publicação só para seguidores} direct {Sobre uma mensagem direta} local {Sobre uma publicação para vizinhos} approves_followers {Sobre um pedido de seguir uma conta que aprova seus seguidores} other {Sobre algo que não existe mais}}: o remetente, a atividade e a caixa de entrada ficam ocultos",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a masked delivery, why it is masked. Read by moderators."
+  },
+  "staff_domains.delivery.reveal.audited": {
+    "defaultMessage": "Mostrar um campo oculto fica registrado no registro de auditoria.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), over a masked delivery's facts, before Show. Read by moderators."
+  },
+  "staff_domains.delivery.reveal.failed": {
+    "defaultMessage": "Não foi possível mostrar os campos ocultos. Tente novamente.",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when showing the masked fields failed. Read by moderators."
+  },
+  "staff_domains.delivery.facts": {
+    "defaultMessage": "Sobre esta entrega",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the name of a delivery's facts, for assistive technology. Read by moderators."
+  },
+  "staff_domains.delivery.sender": {
+    "defaultMessage": "Remetente",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the local account that sent the activity. Read by moderators."
+  },
+  "staff_domains.delivery.activity": {
+    "defaultMessage": "Atividade",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the activity's URI. Read by moderators."
+  },
+  "staff_domains.delivery.inbox": {
+    "defaultMessage": "Caixa de entrada",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the inbox delivered to. Read by moderators."
+  },
+  "staff_domains.delivery.recorded": {
+    "defaultMessage": "Registrada em",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when the activity was recorded. Read by moderators."
+  },
+  "staff_domains.delivery.attempts": {
+    "defaultMessage": "Tentativas",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the name of the log of a delivery's attempts. Read by moderators."
+  },
+  "staff_domains.imported": {
+    "defaultMessage": "{count, plural, =0 {Não tomou ação} one {Tomou # ação em {domains, plural, one {# domínio} other {# domínios}}} other {Tomou # ações em {domains, plural, one {# domínio} other {# domínios}}}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the title that says what the import did. Read by moderators."
+  },
+  "staff_domains.fetch.outcome": {
+    "defaultMessage": "{outcome, select, applied {Leu {count, plural, one {# domínio} other {# domínios}}} not_modified {Sem mudança desde a última busca} other {Leu a lista}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), what came of a fetch that did not fail. Read by moderators."
+  },
+  "staff_domains.fetch.failed": {
+    "defaultMessage": "{why, select, http_status {Falhou, pois o servidor respondeu {status}} network {Falhou ao alcançar o servidor} forbidden_destination {Falhou, pois o endereço leva a um lugar de onde este servidor não busca} too_large {Falhou, pois a lista é maior que 2 MB} too_many_entries {Falhou, pois a lista tem mais de 5.000 linhas} malformed {Falhou ao ler a lista no formato dela} other {Falhou}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), why a fetch failed. Read by moderators."
+  },
+  "staff_domains.availability": {
+    "defaultMessage": "{kind, select, marked_unavailable {{reason, select, failure_days {As entregas pararam após falhas em 7 dias} operator {Um moderador parou as entregas} other {As entregas pararam}}} other {{reason, select, delivery_succeeded {As entregas foram retomadas porque uma deu certo} inbound_request {As entregas foram retomadas porque o servidor enviou uma requisição assinada} probe_succeeded {As entregas foram retomadas porque a verificação diária o alcançou} operator {Um moderador retomou as entregas} other {As entregas foram retomadas}}}}",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), one time it was marked unavailable or available, and why. Read by moderators."
+  },
+  "staff_domains.attempt": {
+    "defaultMessage": "{outcome, select, succeeded {Aceita, {status} ({scheme, select, rfc9421 {RFC 9421} cavage {draft-cavage} other {sem assinatura}})} retryable_failure {Falhou, nova tentativa{status, plural, =0 {: {error}} other {: {status}}}} permanent_failure {Recusada, não será reenviada{status, plural, =0 {: {error}} other {: {status}}}} skipped {Não enviada: {error}} other {Desconhecido}}",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), what came of one attempt of a delivery. Read by moderators."
+  }
+}

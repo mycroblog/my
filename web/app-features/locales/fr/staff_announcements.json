@@ -1,0 +1,290 @@
+{
+  "staff_announcements.entry": {
+    "defaultMessage": "Annonces",
+    "description": "The name of the screen of the server's announcements to every local user, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_announcements.write": {
+    "defaultMessage": "Rédiger une annonce",
+    "description": "The button at the end of the title of /admin/announcements that opens the form of a new announcement. Read by administrators."
+  },
+  "staff_announcements.filters": {
+    "defaultMessage": "Filtrer les annonces",
+    "description": "For assistive technology, the name of the filters over the list of announcements at /admin/announcements. Read by administrators."
+  },
+  "staff_announcements.filter.state": {
+    "defaultMessage": "État",
+    "description": "The filter of the announcements by where they stand (a draft, scheduled, showing, ended, withdrawn). Read by administrators."
+  },
+  "staff_announcements.filter.any": {
+    "defaultMessage": "Tous les états",
+    "description": "The choice of the state filter that keeps every announcement. Read by administrators."
+  },
+  "staff_announcements.loading": {
+    "defaultMessage": "Chargement des annonces…",
+    "description": "At /admin/announcements while the list is read. Read by administrators."
+  },
+  "staff_announcements.failed": {
+    "defaultMessage": "Impossible de charger les annonces.",
+    "description": "At /admin/announcements when the list could not be read, before Try again. Read by administrators."
+  },
+  "staff_announcements.table": {
+    "defaultMessage": "Annonces",
+    "description": "For assistive technology, the name of the table of announcements at /admin/announcements. Read by administrators."
+  },
+  "staff_announcements.column.title": {
+    "defaultMessage": "Titre",
+    "description": "The header of the column of the announcements' titles. Read by administrators."
+  },
+  "staff_announcements.column.window": {
+    "defaultMessage": "Affichage",
+    "description": "The header of the column of when each announcement shows to the readers. Read by administrators."
+  },
+  "staff_announcements.column.state": {
+    "defaultMessage": "État",
+    "description": "The header of the column of where each announcement stands. Read by administrators."
+  },
+  "staff_announcements.empty": {
+    "defaultMessage": "Aucune annonce n’a encore été rédigée.",
+    "description": "At /admin/announcements while there is none. Read by administrators."
+  },
+  "staff_announcements.empty.filtered": {
+    "defaultMessage": "Aucune annonce n’est dans cet état. Effacez le filtre pour les voir toutes.",
+    "description": "At /admin/announcements when the state filter keeps none. Read by administrators."
+  },
+  "staff_announcements.standing": {
+    "defaultMessage": "{standing, select, draft {Brouillon} scheduled {Planifiée} showing {Affichée} ended {Terminée} withdrawn {Retirée} other {{standing}}}",
+    "description": "Where an announcement stands: a draft nobody sees, published and waiting for its window to start, showing to every local user now, published and its window over, or withdrawn for good. Read by administrators."
+  },
+  "staff_announcements.window.both": {
+    "defaultMessage": "Du {from} au {until}",
+    "description": "When an announcement shows: both sides of its window, each a date and a time. Read by administrators."
+  },
+  "staff_announcements.window.from": {
+    "defaultMessage": "À partir du {from}",
+    "description": "When an announcement shows: from a moment, until it is withdrawn. Read by administrators."
+  },
+  "staff_announcements.window.until": {
+    "defaultMessage": "De sa publication au {until}",
+    "description": "When an announcement shows: from its publication until a moment. Read by administrators."
+  },
+  "staff_announcements.window.open": {
+    "defaultMessage": "De sa publication jusqu’à son retrait",
+    "description": "When an announcement shows, with no window set. Read by administrators."
+  },
+  "staff_announcements.new": {
+    "defaultMessage": "Nouvelle annonce",
+    "description": "The title of the form of a new announcement, at /admin/announcements/new. Read by administrators."
+  },
+  "staff_announcements.one": {
+    "defaultMessage": "Annonce",
+    "description": "The title of an announcement's page while it is read, or when its address names none. Read by administrators."
+  },
+  "staff_announcements.section": {
+    "defaultMessage": "Titre",
+    "description": "The heading of the section of an announcement's title. Read by administrators."
+  },
+  "staff_announcements.title": {
+    "defaultMessage": "Titre",
+    "description": "The field of an announcement's title, plain text on one line. Read by administrators."
+  },
+  "staff_announcements.title.rule": {
+    "defaultMessage": "Écrivez un titre d’au plus {max} caractères, sur une seule ligne.",
+    "description": "Under the title of an announcement when it is empty, too long or has a line break. Read by administrators."
+  },
+  "staff_announcements.text": {
+    "defaultMessage": "Texte",
+    "description": "The heading of the section of an announcement's text, and the name of its editor. Read by administrators."
+  },
+  "staff_announcements.text.about": {
+    "defaultMessage": "Markdown, jusqu’à {max} caractères.",
+    "description": "Under the heading of an announcement's text: its format and its limit. Read by administrators."
+  },
+  "staff_announcements.text.placeholder": {
+    "defaultMessage": "Ce que tout le monde sur ce serveur doit savoir",
+    "description": "In the empty editor of an announcement's text. Read by administrators."
+  },
+  "staff_announcements.text.rule": {
+    "defaultMessage": "Raccourcissez le texte à {max} caractères au maximum.",
+    "description": "Under the text of an announcement when it is empty or too long. Read by administrators."
+  },
+  "staff_announcements.editor_failed": {
+    "defaultMessage": "Impossible de charger l’éditeur. Rechargez la page et réessayez.",
+    "description": "In the place of an announcement's editor when its part of the app could not be fetched. Read by administrators."
+  },
+  "staff_announcements.when": {
+    "defaultMessage": "Quand elle s’affiche",
+    "description": "The heading of the section of when an announcement shows to the readers. Read by administrators."
+  },
+  "staff_announcements.when.about": {
+    "defaultMessage": "Dans votre fuseau horaire.",
+    "description": "Under the heading of when an announcement shows: the zone its start and end are in. Read by administrators."
+  },
+  "staff_announcements.when.invalid": {
+    "defaultMessage": "Saisissez une date et une heure qui existent, ou laissez vide.",
+    "description": "Under a side of an announcement's window that holds no valid date and time. Read by administrators."
+  },
+  "staff_announcements.starts": {
+    "defaultMessage": "Début",
+    "description": "The field of the moment an announcement starts to show, a date and a time. Read by administrators."
+  },
+  "staff_announcements.ends": {
+    "defaultMessage": "Fin",
+    "description": "The field of the moment an announcement stops showing, a date and a time. Read by administrators."
+  },
+  "staff_announcements.ends.after": {
+    "defaultMessage": "Choisissez une fin postérieure au début.",
+    "description": "Under the end of an announcement's window when it is not after its start. Read by administrators."
+  },
+  "staff_announcements.save_draft": {
+    "defaultMessage": "Enregistrer comme brouillon",
+    "description": "The button of a new announcement's form that keeps it as a draft, which nobody sees. Read by administrators."
+  },
+  "staff_announcements.save": {
+    "defaultMessage": "Enregistrer",
+    "description": "The button of an announcement's form that saves its changes. Read by administrators."
+  },
+  "staff_announcements.publish": {
+    "defaultMessage": "Publier",
+    "description": "The button of a new or a draft announcement's form that publishes it, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.publish.title": {
+    "defaultMessage": "Publier cette annonce ?",
+    "description": "The question before publishing an announcement. Read by administrators."
+  },
+  "staff_announcements.publish.text": {
+    "defaultMessage": "Tout le monde sur ce serveur la voit et est notifié dès qu’elle commence à s’afficher. Les modifications ultérieures ne notifient plus personne.",
+    "description": "Under the question before publishing an announcement. Read by administrators."
+  },
+  "staff_announcements.publish.cancel": {
+    "defaultMessage": "Pas maintenant",
+    "description": "The button that closes the question before publishing an announcement, keeping it as it was. Read by administrators."
+  },
+  "staff_announcements.published": {
+    "defaultMessage": "Publiée",
+    "description": "Beside Save once an announcement was published. Read by administrators."
+  },
+  "staff_announcements.save.refused": {
+    "defaultMessage": "Rien n’a été enregistré. Corrigez ce qui est signalé et réessayez.",
+    "description": "Beside the buttons of an announcement's form when a field was refused, which is marked under it. Read by administrators."
+  },
+  "staff_announcements.save.failed": {
+    "defaultMessage": "Rien n’a été enregistré. Vérifiez votre connexion et réessayez.",
+    "description": "Beside the buttons of an announcement's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_announcements.save.withdrawn": {
+    "defaultMessage": "Cette annonce a été retirée entre-temps et ne peut plus changer. Rechargez la page pour la voir.",
+    "description": "Beside the buttons of an announcement's form when the server refused the change because it was withdrawn. Read by administrators."
+  },
+  "staff_announcements.standing.heading": {
+    "defaultMessage": "Où elle en est",
+    "description": "The heading of the first section of an announcement's page: its state, when it shows, when it was published and revised. Read by administrators."
+  },
+  "staff_announcements.published_at": {
+    "defaultMessage": "Publiée le {date}",
+    "description": "A fact of an announcement: when it was last published (a date and a time). Read by administrators."
+  },
+  "staff_announcements.revised_at": {
+    "defaultMessage": "Dernière modification le {date}",
+    "description": "A fact of an announcement: when its text or window last changed (a date and a time). Read by administrators."
+  },
+  "staff_announcements.preview": {
+    "defaultMessage": "Ce que voient les lecteurs",
+    "description": "The heading of the section of an announcement's page that shows its title and its text as readers get them. Read by administrators."
+  },
+  "staff_announcements.preview.about": {
+    "defaultMessage": "Telle qu’elle a été enregistrée en dernier.",
+    "description": "Under the heading of what readers see of an announcement. Read by administrators."
+  },
+  "staff_announcements.preview.about_draft": {
+    "defaultMessage": "Telle qu’elle a été enregistrée en dernier, si elle était publiée maintenant.",
+    "description": "Under the heading of what readers see of a draft announcement, which shows it as its page would if it were published now (its date is today's or the start of its window). Read by administrators."
+  },
+  "staff_announcements.withdraw": {
+    "defaultMessage": "Retirer l’annonce",
+    "description": "The heading of the last section of an announcement's page, apart, which withdraws it. Read by administrators."
+  },
+  "staff_announcements.withdraw.about": {
+    "defaultMessage": "Personne ne la voit plus, et elle ne peut plus être modifiée ni publiée. Ses notifications sont masquées.",
+    "description": "Under the heading of the section that withdraws an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.press": {
+    "defaultMessage": "Retirer",
+    "description": "The button that withdraws an announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.withdraw.title": {
+    "defaultMessage": "Retirer cette annonce ?",
+    "description": "The question before withdrawing an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.text": {
+    "defaultMessage": "Personne ne la voit plus. Cette action est irréversible.",
+    "description": "Under the question before withdrawing an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.cancel": {
+    "defaultMessage": "La conserver",
+    "description": "The button that closes the question before withdrawing an announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.withdraw.failed": {
+    "defaultMessage": "L’annonce n’a pas été retirée. Vérifiez votre connexion et réessayez.",
+    "description": "In the section that withdraws an announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete": {
+    "defaultMessage": "Supprimer le brouillon",
+    "description": "The heading of the section of a draft announcement's page that deletes it. Read by administrators."
+  },
+  "staff_announcements.delete.about": {
+    "defaultMessage": "Les lecteurs ne l’ont pas encore vue. Elle disparaît de la liste des annonces, et seul son titre reste dans le journal d’audit.",
+    "description": "Under the heading of the section that deletes a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.press": {
+    "defaultMessage": "Supprimer",
+    "description": "The button that deletes a draft announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.delete.title": {
+    "defaultMessage": "Supprimer ce brouillon ?",
+    "description": "The question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.cancel": {
+    "defaultMessage": "La conserver",
+    "description": "The button that closes the question before deleting a draft announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.delete.text": {
+    "defaultMessage": "Son texte est perdu, et seul son titre reste dans le journal d’audit. Cette action est irréversible.",
+    "description": "Under the question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.failed": {
+    "defaultMessage": "Le brouillon n’a pas été supprimé. Vérifiez votre connexion et réessayez.",
+    "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete.published": {
+    "defaultMessage": "Le brouillon n’a pas été supprimé : il a été publié entre-temps.",
+    "description": "In the section that withdraws an announcement, once a Delete of it as a draft was refused because someone published it meanwhile (409); the page then shows it published. Read by administrators."
+  },
+  "staff_announcements.irreversible": {
+    "defaultMessage": "Cette action est irréversible.",
+    "description": "The mark beside the button that withdraws an announcement. Read by administrators."
+  },
+  "staff_announcements.loading_one": {
+    "defaultMessage": "Chargement de l’annonce…",
+    "description": "On an announcement's page while it is read. Read by administrators."
+  },
+  "staff_announcements.failed_one": {
+    "defaultMessage": "Impossible de charger l’annonce.",
+    "description": "On an announcement's page when it could not be read, before Try again. Read by administrators."
+  },
+  "staff_announcements.missing": {
+    "defaultMessage": "Il n’y a aucune annonce à cette adresse.",
+    "description": "At /admin/announcements/{id} for an ID no announcement has, before the link to all announcements. Read by administrators."
+  },
+  "staff_announcements.all": {
+    "defaultMessage": "Toutes les annonces",
+    "description": "The link to /admin/announcements under the sentence that an address names no announcement. Read by administrators."
+  },
+  "staff_announcements.section.about": {
+    "defaultMessage": "Texte brut sur une ligne, jusqu’à {max} caractères.",
+    "description": "Under the heading of an announcement's title: its format and its limit. Read by administrators."
+  },
+  "staff_announcements.list.all": {
+    "defaultMessage": "Toutes les annonces",
+    "description": "The heading of the list of announcements at /admin/announcements while no state filter is applied, with Write an announcement at its end. Read by administrators."
+  }
+}

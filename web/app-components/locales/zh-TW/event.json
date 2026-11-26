@@ -1,0 +1,34 @@
+{
+  "event.elsewhere": {
+    "defaultMessage": "{here} · {there}（{zone}）",
+    "description": "When an event starts or ends (in the column beside the timeline, the list of events, an event's page), when the event's time zone is not the reader's: its date and time in the reader's zone ({here}), then its time in the event's own zone ({there}, with the weekday when the day there is another) with the zone's place name ({zone}, such as Tokyo)."
+  },
+  "event.by": {
+    "defaultMessage": "作者：{name}",
+    "description": "Who organizes an event, in its line of a list (the events' screen, a profile): name is the organizer's display name."
+  },
+  "event.by.unavailable": {
+    "defaultMessage": "作者：無法使用的帳號",
+    "description": "Who organizes an event, in its line of a list (the events' screen, a profile), when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); event.by otherwise."
+  },
+  "event.going": {
+    "defaultMessage": "{count, plural, other {# 人參加}}",
+    "description": "How many answered going to an event, for assistive technology beside the people glyph and the figure, in its line of a list and on its page."
+  },
+  "event.went": {
+    "defaultMessage": "{count, plural, other {# 人曾參加}}",
+    "description": "How many answered going to an event that ended, for assistive technology beside the people glyph and the figure."
+  },
+  "event.date_polled": {
+    "defaultMessage": "日期待定",
+    "description": "In place of an event's time in its line of a list, while its organizers poll its date."
+  },
+  "event.state": {
+    "defaultMessage": "{state, select, canceled {已取消} other {已結束}}",
+    "description": "Marks an event in its line of a list and on its page: it was cancelled, or it ended."
+  },
+  "event.place_kind": {
+    "defaultMessage": "{kind, select, voice {語音聊天} physical {實體} other {線上}}",
+    "description": "The kind of a place of an event, beside its glyph in the event's line of a list: a voice chat room, a place to meet in person, or a URL online."
+  }
+}

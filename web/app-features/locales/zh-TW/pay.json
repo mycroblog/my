@@ -3,6 +3,10 @@
     "defaultMessage": "測試模式：不會收取任何費用。",
     "description": "Notice at the top of the PAY.JP checkout and card pages while the server uses PAY.JP's test keys: no card is charged."
   },
+  "pay.fake_notice": {
+    "defaultMessage": "測試版本：此頁面代替支付服務商，不會有任何金流。",
+    "description": "Notice at the top of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
+  },
   "pay.back": {
     "defaultMessage": "返回",
     "description": "Link from a payment page back to the screen of this server the user came from."
@@ -26,6 +30,26 @@
   "pay.card.note": {
     "defaultMessage": "信用卡資料會輸入到 PAY.JP 的表單，不會傳到這個伺服器。",
     "description": "Note under PAY.JP's card element on the checkout and card pages."
+  },
+  "pay.card.failed": {
+    "defaultMessage": "無法驗證信用卡，也沒有收取任何費用。請檢查電子郵件地址、持卡人姓名和卡片資料，然後再試一次。",
+    "description": "Alert of the card form when PAY.JP could not take the card and gave no reason of its own."
+  },
+  "pay.card.unavailable": {
+    "defaultMessage": "無法載入信用卡表單。請重新載入頁面，或稍後再試。",
+    "description": "Alert of the card form when PAY.JP's script (payjp.js) could not be loaded, so no card can be entered."
+  },
+  "pay.card.name_invalid": {
+    "defaultMessage": "請以拉丁字母輸入姓名，與卡片上的印刷相同。",
+    "description": "Error under the card holder's name field when it is not 2 to 45 Latin letters, digits, spaces, periods or hyphens, the only names PAY.JP takes. Shown before the card is sent."
+  },
+  "pay.checkout.submit": {
+    "defaultMessage": "支付 {amount} 並訂閱",
+    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure), pays the first period and starts the subscription. {amount} is what is charged now, formatted with its currency (¥1,200)."
+  },
+  "pay.checkout.then": {
+    "defaultMessage": "之後為 {price}。",
+    "description": "Line right above the button of the PAY.JP checkout page: what the subscription costs after the first payment. {price} is a price with its interval (pay.price.month or pay.price.year)."
   },
   "pay.fake.pay": {
     "defaultMessage": "付款",
@@ -62,5 +86,41 @@
   "pay.portal.history_empty": {
     "defaultMessage": "還沒有付款紀錄。",
     "description": "Text of the PAY.JP card page without payments."
+  },
+  "pay.portal.paused": {
+    "defaultMessage": "上一次付款失敗，所以訂閱已暫停，寬限期結束後權益也會終止。更換信用卡會完成付款並恢復訂閱。",
+    "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
+  },
+  "pay.portal.plan": {
+    "defaultMessage": "{plan}：{price}",
+    "description": "The subscription at the top of the PAY.JP card page. {plan} is the plan's name, {price} a price with its interval (pay.price.month or pay.price.year)."
+  },
+  "pay.portal.next": {
+    "defaultMessage": "下次付款：{date}",
+    "description": "Line under the subscription at the top of the PAY.JP card page. {date} is the date of the next payment (YYYY-MM-DD)."
+  },
+  "pay.portal.add_card": {
+    "defaultMessage": "新增信用卡",
+    "description": "Heading and button of the card form on the PAY.JP card page of a customer without a card."
+  },
+  "pay.portal.refunded": {
+    "defaultMessage": "已退款 {amount}",
+    "description": "The muted end of a row of the recent payments on the PAY.JP card page, for a payment refunded in part or in full. {amount} is formatted with its currency."
+  },
+  "pay.price.month": {
+    "defaultMessage": "每月 {amount}",
+    "description": "A price paid every month on the payment pages. {amount} is formatted with its currency (¥1,200)."
+  },
+  "pay.price.year": {
+    "defaultMessage": "每年 {amount}",
+    "description": "A price paid every year on the payment pages. {amount} is formatted with its currency (¥12,000)."
+  },
+  "pay.price.once": {
+    "defaultMessage": "一次性 {amount}",
+    "description": "An amount paid once (a tip) on the payment pages. {amount} is formatted with its currency (¥500)."
+  },
+  "pay.back_to_app": {
+    "defaultMessage": "返回應用程式",
+    "description": "Action of a payment page that leads back to this server's app: under the error of an expired or unknown page, and at the end of the other pages."
   }
 }

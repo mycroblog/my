@@ -1,0 +1,26 @@
+{
+  "report.menu": {
+    "defaultMessage": "Melden …",
+    "description": "The item of a menu about an account (a post's, a profile's, a notification's) that opens the panel that reports the account to the moderators. It sits under the account's handle."
+  },
+  "report.menu_room": {
+    "defaultMessage": "Den Raum melden …",
+    "description": "The item of a voice chat room's menu that opens the panel that reports the room and its host to the moderators."
+  },
+  "report.menu_event": {
+    "defaultMessage": "Die Veranstaltung melden …",
+    "description": "The item of an event's menu that opens the panel that reports the event and its organizer to the moderators."
+  },
+  "report.more": {
+    "defaultMessage": "Mehr",
+    "description": "The name of the button of a voice chat room's or an event's page, for a reader who does not run it, that opens the menu of what else they may do (report it)."
+  },
+  "report.notification_more": {
+    "defaultMessage": "Weitere Aktionen für diese Benachrichtigung",
+    "description": "The name of the button at the end of a notification's line that opens its menu (reporting the account it is about)."
+  },
+  "report.failed": {
+    "defaultMessage": "Die Meldung konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es dann erneut.",
+    "description": "Said right before Send report when the report could not be sent and the server gave no reason."
+  }
+}

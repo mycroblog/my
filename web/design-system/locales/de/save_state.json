@@ -1,0 +1,18 @@
+{
+  "save_state.saving": {
+    "defaultMessage": "Wird gespeichert …",
+    "description": "The save state of a control that saves at once (a choice or a switch of the settings), in the caption line under the control's label, beside a spinner, while the change is being saved."
+  },
+  "save_state.saved": {
+    "defaultMessage": "Gespeichert",
+    "description": "The save state of a control that saves at once, in the caption line under the control's label, beside a check mark, for a moment after the change was saved."
+  },
+  "save_state.failed": {
+    "defaultMessage": "Das konnte nicht gespeichert werden.",
+    "description": "The save state of a control that saves at once, in the caption line under the control's label, when its change was not saved (the network, the server); Try again follows it on the same line (save_state.retry). Short: the line is narrow on a phone."
+  },
+  "save_state.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "The button right after save_state.failed, on the same caption line, that saves the control's change again."
+  }
+}

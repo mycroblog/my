@@ -1,0 +1,38 @@
+{
+  "column.loading": {
+    "defaultMessage": "Chargement des publications…",
+    "description": "In place of a timeline's posts while its first ones are being fetched."
+  },
+  "column.loading_more": {
+    "defaultMessage": "Chargement de publications supplémentaires…",
+    "description": "Under the posts of a timeline while the older ones after them are being fetched."
+  },
+  "column.failed": {
+    "defaultMessage": "Les publications n’ont pas pu être chargées.",
+    "description": "In place of a timeline's posts when fetching its first ones failed; a retry action follows it."
+  },
+  "column.failed_more": {
+    "defaultMessage": "Des publications supplémentaires n’ont pas pu être chargées.",
+    "description": "Under the posts of a timeline when fetching the older ones after them failed; a retry action follows it."
+  },
+  "column.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "The action after a failure to load a timeline's posts, its first ones or more of them, which fetches them again."
+  },
+  "column.empty": {
+    "defaultMessage": "Aucune publication pour le moment.",
+    "description": "In place of a timeline's posts when it has none."
+  },
+  "column.next": {
+    "defaultMessage": "Aller à la publication suivante",
+    "description": "The keyboard shortcut that moves the focus to the next post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.previous": {
+    "defaultMessage": "Aller à la publication précédente",
+    "description": "The keyboard shortcut that moves the focus to the previous post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.shortcuts": {
+    "defaultMessage": "Lorsque la chronologie est active",
+    "description": "The heading of the group of keyboard shortcuts that act on a timeline (moving between its posts), in the keyboard shortcuts dialog."
+  }
+}

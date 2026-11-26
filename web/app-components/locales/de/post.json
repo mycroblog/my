@@ -1,0 +1,334 @@
+{
+  "post.reply": {
+    "defaultMessage": "Antworten",
+    "description": "The action of a post that replies to it."
+  },
+  "post.boost": {
+    "defaultMessage": "Boosten",
+    "description": "The action of a post that boosts it, and the item of its boost menu that boosts it or takes the boost back."
+  },
+  "post.unboost": {
+    "defaultMessage": "Boost zurücknehmen",
+    "description": "The item of a boosted post's boost menu that takes the reader's boost back."
+  },
+  "post.quote": {
+    "defaultMessage": "Zitieren",
+    "description": "The item of a post's boost menu that writes a post quoting it."
+  },
+  "post.boost_waits": {
+    "defaultMessage": "Dein Boost geht raus, sobald {handle} ihn genehmigt",
+    "description": "The quiet line under Boost in a post's boost menu, read after it as part of its name, when the post's author approves the reader's boosts by hand: the boost is made only once that author approves it, and until then counts nowhere and no one sees it. handle is the author's, as @user@domain."
+  },
+  "post.quote_waits": {
+    "defaultMessage": "Dein Zitat zeigt diesen Beitrag, sobald {handle} es genehmigt",
+    "description": "The quiet line under Quote in a post's boost menu, read after it as part of its name, when the post's author approves the reader's quotes by hand: the quote is posted, but shows the quoted post only once that author approves it. handle is the author's, as @user@domain."
+  },
+  "post.favourite": {
+    "defaultMessage": "Favorisieren",
+    "description": "The action of a post that favourites it, or takes the favourite back."
+  },
+  "post.react": {
+    "defaultMessage": "Reagieren",
+    "description": "The action of a post that reacts to it with an emoji."
+  },
+  "post.more": {
+    "defaultMessage": "Mehr",
+    "description": "The button of a post that opens the menu of its other actions."
+  },
+  "post.more_shortcut": {
+    "defaultMessage": "Weitere Aktionen öffnen",
+    "description": "In the keyboard shortcuts dialog, the row of the key that opens a focused post's more menu; says what the key does, unlike the button's name More."
+  },
+  "post.boosted_by": {
+    "defaultMessage": "{name} hat geboostet",
+    "description": "The context line over a post that someone boosted into the timeline; name is the display name of who boosted it."
+  },
+  "post.replying_to": {
+    "defaultMessage": "Antwort an {handle}",
+    "description": "The context line over a reply; handle is the account it replies to, as @user."
+  },
+  "post.reactions": {
+    "defaultMessage": "Reaktionen",
+    "description": "The accessible name of the row of a post's emoji reactions."
+  },
+  "post.reaction": {
+    "defaultMessage": "{emoji}, {count, number}",
+    "description": "The accessible name of an emoji reaction chip: the emoji (a Unicode emoji or :shortcode:) and how many reacted with it."
+  },
+  "post.reaction_mine": {
+    "defaultMessage": "{emoji}, {count, number}, auch von dir",
+    "description": "The accessible name of the reader's own emoji reaction chip, a toggle that is on: the emoji, how many reacted with it, and that the reader is one of them; pressing it takes the reader's reaction back."
+  },
+  "post.translate": {
+    "defaultMessage": "Übersetzen",
+    "description": "The action under a post in another language that shows it translated into the reader's language."
+  },
+  "post.translating": {
+    "defaultMessage": "Wird übersetzt …",
+    "description": "The line under a post, heard by assistive technology, while its translation is on its way."
+  },
+  "post.translation_downloading": {
+    "defaultMessage": "Lädt herunter, was dieser Browser zum Übersetzen braucht … {percent}",
+    "description": "The line under a post, heard by assistive technology, while the reader's browser downloads what it needs before translating the post; percent is how much has come, such as 40%."
+  },
+  "post.translation_limit": {
+    "defaultMessage": "Das monatliche Übersetzungslimit dieses Servers ist erreicht.",
+    "description": "The line under a post when this server refused to translate it because the reader or the whole server used up this month's characters; Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_visibility": {
+    "defaultMessage": "Nur manche Personen können diesen Beitrag sehen, daher kann er nicht an den Übersetzungsdienst dieses Servers gesendet werden.",
+    "description": "The line under a post when this server may not send it to its translation service because of its visibility (followers only, a direct message, or an author's posts limited to followers); Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_language": {
+    "defaultMessage": "Der Übersetzungsdienst dieses Servers übersetzt nicht zwischen diesen Sprachen.",
+    "description": "The line under a post when this server's translation service does not translate between the post's language and the reader's language (or, when the post's language is not known, cannot tell it), and the reader's browser cannot translate it instead; nothing follows it."
+  },
+  "post.translation_failed": {
+    "defaultMessage": "Der Übersetzungsdienst dieses Servers antwortet nicht.",
+    "description": "The line under a post when this server's translation service is down or did not answer in time; Try again follows."
+  },
+  "post.translation_browser": {
+    "defaultMessage": "Dieser Browser kann diesen Beitrag nicht übersetzen.",
+    "description": "The line under a post when the reader's browser cannot translate it (its model could not be downloaded, or it does not translate between these languages)."
+  },
+  "post.translation_retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "The action after a failed translation's reason that asks this server for the translation again, when its translation service may answer now."
+  },
+  "post.translation_in_browser": {
+    "defaultMessage": "In diesem Browser übersetzen",
+    "description": "The action after this server refused to translate a post, which asks the reader's browser to translate it instead; the browser sends the post's text nowhere."
+  },
+  "post.translation_next_month": {
+    "defaultMessage": "Die Übersetzung ist nächsten Monat wieder verfügbar.",
+    "description": "The sentence after the monthly translation limit's reason, when nothing else can translate the post now."
+  },
+  "post.translated_from_by": {
+    "defaultMessage": "Beitrag aus dem {language} von {provider} übersetzt",
+    "description": "The note under a translated post, heard by assistive technology when it appears; language is the name of the language it was written in, provider the name of this server's translation service, or of the reader's browser when the browser translated it. The reader learns from it who received the post's text."
+  },
+  "post.translated_by": {
+    "defaultMessage": "Beitrag von {provider} übersetzt",
+    "description": "The note under a translated post when the language it was written in is not known; provider is the name of this server's translation service, or of the reader's browser when the browser translated it."
+  },
+  "post.translated_from": {
+    "defaultMessage": "Beitrag aus dem {language} übersetzt",
+    "description": "The note under a translated post when the translation service has no name; language is the name of the language it was written in."
+  },
+  "post.translated": {
+    "defaultMessage": "Beitrag übersetzt",
+    "description": "The note under a translated post when neither its language nor the translation service is known."
+  },
+  "post.original": {
+    "defaultMessage": "Original anzeigen",
+    "description": "The action under a translated post that shows it again as it was written."
+  },
+  "post.visibility.public": {
+    "defaultMessage": "Öffentlich",
+    "description": "What the visibility glyph of a public post says, beside its time."
+  },
+  "post.visibility.local": {
+    "defaultMessage": "Nachbarn",
+    "description": "What the visibility glyph of a post for neighbors says, beside its time: people on its server, and the author's followers on other servers. The composer's name for it (compose.visibility.local)."
+  },
+  "post.visibility.unlisted": {
+    "defaultMessage": "Still öffentlich",
+    "description": "What the visibility glyph of a public post kept out of the public timelines says, beside its time."
+  },
+  "post.visibility.private": {
+    "defaultMessage": "Nur Follower",
+    "description": "What the visibility glyph of a post for its author's followers alone says, beside its time."
+  },
+  "post.visibility.direct": {
+    "defaultMessage": "Direkt",
+    "description": "What the visibility glyph of a post for the accounts it mentions alone says, beside its time."
+  },
+  "post.board": {
+    "defaultMessage": "Auf der Pinnwand der Veranstaltung",
+    "description": "What the board glyph of a post on an event's board says, beside its time, in place of its visibility glyph (post.visibility.*): only the event's board shows it."
+  },
+  "post.copy_link": {
+    "defaultMessage": "Link kopieren",
+    "description": "The item of a post's more menu that copies the link to the post."
+  },
+  "post.open_original": {
+    "defaultMessage": "Originalseite öffnen",
+    "description": "The item of a remote post's more menu that opens the post's page on its own server."
+  },
+  "post.share": {
+    "defaultMessage": "Teilen",
+    "description": "The item of a post's more menu that shares it through the device's share sheet."
+  },
+  "post.bookmark": {
+    "defaultMessage": "Lesezeichen",
+    "description": "The item of a post's more menu that bookmarks it."
+  },
+  "post.mute_thread": {
+    "defaultMessage": "Unterhaltung stummschalten",
+    "description": "The item of a post's more menu that stops the notifications of the thread the post is in (replies, mentions, boosts, favourites, reactions and quotes in it); the posts still show in timelines."
+  },
+  "post.unmute_thread": {
+    "defaultMessage": "Stummschaltung der Unterhaltung aufheben",
+    "description": "The item of a post's more menu, on while the thread the post is in is muted, that lets its notifications come again."
+  },
+  "post.unbookmark": {
+    "defaultMessage": "Lesezeichen entfernen",
+    "description": "The item of a bookmarked post's more menu that takes the bookmark back."
+  },
+  "post.edit": {
+    "defaultMessage": "Bearbeiten",
+    "description": "The item of the more menu of the reader's own post that edits it."
+  },
+  "post.redraft": {
+    "defaultMessage": "Löschen und neu verfassen …",
+    "description": "The item of the more menu of the reader's own post that deletes it and opens its text, images and poll in the composer, after a confirmation (hence the ellipsis)."
+  },
+  "post.edited_mark": {
+    "defaultMessage": "Bearbeitet, Verlauf anzeigen",
+    "description": "The name, for assistive technology, of the word \"edited\" after an edited post's time (post.edited), which opens its edit history."
+  },
+  "post.edited": {
+    "defaultMessage": "bearbeitet",
+    "description": "The word after an edited post's time, in its header, or in its details on its own page; it opens its edit history. Lowercase in English: it follows the time after a middle dot (3h ago · edited)."
+  },
+  "post.history.title": {
+    "defaultMessage": "Bearbeitungsverlauf",
+    "description": "The title of the dialog that lists every version of an edited post, newest first."
+  },
+  "post.history.close": {
+    "defaultMessage": "Schließen",
+    "description": "The name of the button that closes the edit history."
+  },
+  "post.history.current": {
+    "defaultMessage": "Aktuell",
+    "description": "The label of the newest version in the edit history, the one the post shows."
+  },
+  "post.history.original": {
+    "defaultMessage": "Original",
+    "description": "The label of the oldest version in the edit history, as it was first posted."
+  },
+  "post.history.earlier": {
+    "defaultMessage": "Frühere Bearbeitung",
+    "description": "The label of a version in the edit history between the original and the current one."
+  },
+  "post.history.added_start": {
+    "defaultMessage": "Anfang der Ergänzung",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version added to the one before it (shown on a tint); post.history.added_end follows the run."
+  },
+  "post.history.added_end": {
+    "defaultMessage": "Ende der Ergänzung",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version added (post.history.added_start)."
+  },
+  "post.history.removed_start": {
+    "defaultMessage": "Anfang der Entfernung",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version removed from the one before it (shown muted and struck through); post.history.removed_end follows the run."
+  },
+  "post.history.removed_end": {
+    "defaultMessage": "Ende der Entfernung",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version removed (post.history.removed_start)."
+  },
+  "post.history.added_image": {
+    "defaultMessage": "Hinzugefügtes Bild",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version added (shown on a tint)."
+  },
+  "post.history.removed_image": {
+    "defaultMessage": "Entferntes Bild",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version removed (shown crossed out)."
+  },
+  "post.delete": {
+    "defaultMessage": "Löschen …",
+    "description": "The item of the more menu of the reader's own post that deletes it after a confirmation (hence the ellipsis)."
+  },
+  "post.delete.title": {
+    "defaultMessage": "Diesen Beitrag löschen?",
+    "description": "The question of the confirmation before the reader's post is deleted."
+  },
+  "post.delete.body": {
+    "defaultMessage": "Seine Boosts, Favoriten und Reaktionen gehen mit ihm verloren, und andere Server werden gebeten, ihn ebenfalls zu löschen. Das lässt sich nicht rückgängig machen.",
+    "description": "What follows deleting the reader's post, under the confirmation's question."
+  },
+  "post.delete.confirm": {
+    "defaultMessage": "Löschen",
+    "description": "The confirmation that deletes the reader's post."
+  },
+  "post.delete.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "The refusal of the confirmation of deleting (or redrafting) a post: nothing is deleted."
+  },
+  "post.redraft.title": {
+    "defaultMessage": "Diesen Beitrag löschen und neu verfassen?",
+    "description": "The question of the confirmation before the reader's post is deleted and opened in the composer."
+  },
+  "post.redraft.body": {
+    "defaultMessage": "{poll, select, yes {Seine Boosts, Favoriten, Reaktionen und die Stimmen seiner Umfrage gehen verloren, und Antworten verlieren ihre Verknüpfung dazu. Sein Text und seine Umfrage werden zum Entwurf eines neuen Beitrags.} other {Seine Boosts, Favoriten und Reaktionen gehen verloren, und Antworten verlieren ihre Verknüpfung dazu. Sein Text und seine Bilder werden zum Entwurf eines neuen Beitrags.}}",
+    "description": "What follows deleting and redrafting the reader's post, under the confirmation's question. poll is yes when the post has a poll (a post with a poll has no images), whose votes are lost, else no."
+  },
+  "post.redraft.confirm": {
+    "defaultMessage": "Löschen und neu verfassen",
+    "description": "The confirmation that deletes the reader's post and opens it in the composer."
+  },
+  "post.shortcuts": {
+    "defaultMessage": "Wenn ein Beitrag fokussiert ist",
+    "description": "The heading of the group of keyboard shortcuts that act on a post, in the keyboard shortcuts dialog."
+  },
+  "post.poll": {
+    "defaultMessage": "Umfrage",
+    "description": "The accessible name of a post's poll; the same word as the poll's card in the composer (compose.poll)."
+  },
+  "post.poll_options": {
+    "defaultMessage": "Optionen",
+    "description": "The accessible name of the options of a poll the reader can vote in, a radio group or, where several may be chosen, a group of checkboxes; the composer names one option 'Option {n}' (compose.poll.option)."
+  },
+  "post.poll_several": {
+    "defaultMessage": "Mehrere Antworten erlaubt",
+    "description": "In the line under a poll the reader can vote in, where a vote may choose several options; the composer's checkbox that allows it reads 'Allow several choices' (compose.poll.multiple)."
+  },
+  "post.poll_vote": {
+    "defaultMessage": "Abstimmen",
+    "description": "The button at the end of the line under a poll that sends the reader's chosen options; it waits for a choice, and a reader without an account who presses it is taken to sign in."
+  },
+  "post.poll_voters": {
+    "defaultMessage": "{count, plural, one {# Person hat abgestimmt} other {# Personen haben abgestimmt}}",
+    "description": "In the line under a poll: how many accounts voted. count is how many."
+  },
+  "post.poll_votes": {
+    "defaultMessage": "{count, plural, one {# Stimme} other {# Stimmen}}",
+    "description": "In the line under a poll whose number of voters is unknown (from some servers): how many votes it has, one per chosen option. count is how many."
+  },
+  "post.poll_ends": {
+    "defaultMessage": "Endet {time}",
+    "description": "In the line under a poll that has not ended: when it ends. time is a short relative time such as 'in 2d' / '2日後'. The same verb as the composer's duration (compose.poll.ends_in)."
+  },
+  "post.poll_ended": {
+    "defaultMessage": "Beendet",
+    "description": "In the line under a poll that has ended and takes no more votes."
+  },
+  "post.poll_hidden": {
+    "defaultMessage": "Die Zahlen werden am Ende angezeigt",
+    "description": "In the line under a poll whose author hides how many voted for each option until it ends (the composer's 'Hide the counts until it ends', compose.poll.hide_totals), shown in place of each option's share."
+  },
+  "post.poll_mine": {
+    "defaultMessage": "deine Stimme",
+    "description": "Read by assistive technology in parentheses after an option of a poll's results that the reader voted for, before its share; drawn as the option's filled mark."
+  },
+  "post.reacted_row": {
+    "defaultMessage": "{emoji} {count, plural, one {# Person hat reagiert} other {# Personen haben reagiert}}",
+    "description": "The accessible name of the row under a post on its own page that opens the list of who reacted with one emoji. It starts with the emoji and the count, the row's visible text, in that order. emoji is a Unicode emoji or :shortcode:; count is how many."
+  },
+  "post.reacted_with": {
+    "defaultMessage": "Mit {emoji} reagiert",
+    "description": "The heading of the list of the accounts that reacted to a post with one emoji. emoji is a Unicode emoji or :shortcode:, which the heading draws as its image."
+  },
+  "post.article_sensitive": {
+    "defaultMessage": "Sensibler Artikel",
+    "description": "The line on the page of a sensitive article, above its folded cover and text, with a Show button; its title and summary stay shown."
+  },
+  "post.filtered": {
+    "defaultMessage": "{count, plural, one {Entspricht dem Filter {names}} other {Entspricht den Filtern {names}}}",
+    "description": "The line in place of a post that matched keyword filters of the reader (words they chose to fold posts by), followed by a Show (disclosure.show) or Hide button that shows the post or folds it again. names is the list of the filters' names, each in quotation marks (post.filter_name); count is how many filters matched."
+  },
+  "post.filter_name": {
+    "defaultMessage": "„{name}“",
+    "description": "The name of one keyword filter, in the quotation marks of the language, as post.filtered lists it; name is what the reader called the filter, in any language."
+  }
+}

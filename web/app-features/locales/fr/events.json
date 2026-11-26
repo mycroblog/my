@@ -1,0 +1,890 @@
+{
+  "events.list": {
+    "defaultMessage": "Événements à venir",
+    "description": "The name of the list of upcoming events on the events' screen, for assistive technology."
+  },
+  "events.loading": {
+    "defaultMessage": "Chargement des événements…",
+    "description": "In place of the list of events while the first of them load."
+  },
+  "events.failed": {
+    "defaultMessage": "Les événements n’ont pas pu être chargés.",
+    "description": "In place of the list of events when they could not be loaded, beside a button to try again."
+  },
+  "events.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "The button after a sentence that says something of an event's screens could not be loaded."
+  },
+  "events.empty": {
+    "defaultMessage": "Aucun événement à venir.",
+    "description": "In place of the list of events when there is none the reader sees."
+  },
+  "events.create": {
+    "defaultMessage": "Créer un événement",
+    "description": "The button under the list of events, for a reader who may create events, that leads to the form that creates one; and the title of that form."
+  },
+  "events.back": {
+    "defaultMessage": "Événements",
+    "description": "The back button at the top of an event's page, which leads to the list of events."
+  },
+  "events.event_loading": {
+    "defaultMessage": "Chargement de l’événement…",
+    "description": "In place of an event's page while it loads."
+  },
+  "events.event_failed": {
+    "defaultMessage": "L’événement n’a pas pu être chargé.",
+    "description": "In place of an event's page when it could not be loaded, beside a button to try again."
+  },
+  "events.gone": {
+    "defaultMessage": "Cet événement n’existe pas, ou vous ne pouvez pas le voir.",
+    "description": "All an event's page says when the server has no event at its address that the reader sees."
+  },
+  "events.local_only": {
+    "defaultMessage": "Seules les personnes ayant un compte sur ce serveur peuvent voir ses événements. Connectez-vous pour voir celui-ci.",
+    "description": "All an event's page says to a visitor who is not signed in, over the sign-in button."
+  },
+  "events.sign_in": {
+    "defaultMessage": "Se connecter",
+    "description": "The button on an event's page for a visitor, which signs in and comes back to the event."
+  },
+  "events.canceled": {
+    "defaultMessage": "{reason, select, moderator {Cet événement a été annulé par un modérateur.} organizer_suspended {Cet événement a été annulé : le compte de son organisateur a été suspendu.} organizer_deleted {Cet événement a été annulé : le compte de son organisateur a été supprimé.} other {Cet événement a été annulé par son organisateur.}}",
+    "description": "At the top of a cancelled event's page, by who or what cancelled it; the organizer's note, if any, follows on its own line."
+  },
+  "events.date_polled": {
+    "defaultMessage": "La date n’est pas encore décidée.",
+    "description": "In place of an event's time on its page while its organizers poll its date; the poll follows below, under its own heading."
+  },
+  "events.visibility": {
+    "defaultMessage": "{visibility, select, public {Visible par tout le monde sur ce serveur} followers {Visible par les abonnés de {organizer}} following {Visible par les personnes que {organizer} suit} mutuals {Visible par les abonnements mutuels de {organizer}} other {Visible uniquement par les personnes invitées}}",
+    "description": "Who sees an event, under its time on its page: organizer is the organizer's display name. Those invited and those who answered always see it too."
+  },
+  "events.visibility.unavailable": {
+    "defaultMessage": "{visibility, select, public {Visible par tout le monde sur ce serveur} followers {Visible par les abonnés de l’organisateur} following {Visible par les personnes que l’organisateur suit} mutuals {Visible par les abonnements mutuels de l’organisateur} other {Visible uniquement par les personnes invitées}}",
+    "description": "Who sees an event, under its time on its page, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.visibility otherwise. Those invited and those who answered always see it too."
+  },
+  "events.capacity": {
+    "defaultMessage": "{going, plural, one {# participant sur {capacity}} other {# participants sur {capacity}}}",
+    "description": "How many answered going to an event that has a capacity, under its time on its page: going is how many, capacity the most it takes."
+  },
+  "events.where": {
+    "defaultMessage": "Où",
+    "description": "The heading of an event's places on its page, and the name of their list."
+  },
+  "events.place_voice": {
+    "defaultMessage": "Salon vocal",
+    "description": "The name of an event's voice chat room among its places."
+  },
+  "events.place_physical": {
+    "defaultMessage": "En personne",
+    "description": "Said before the name of an event's place to meet in person, for assistive technology."
+  },
+  "events.place_url": {
+    "defaultMessage": "En ligne",
+    "description": "Said before the name of an event's place online, for assistive technology."
+  },
+  "events.place_hidden": {
+    "defaultMessage": "{kind, select, physical {En personne : le lieu est visible par les participants que les organisateurs approuvent} voice {Salon vocal} other {En ligne : le lien est visible par les participants que les organisateurs approuvent}}",
+    "description": "A place of an event the reader does not see, by its kind alone: it is shown to the attendees the organizers approve."
+  },
+  "events.map": {
+    "defaultMessage": "Ouvrir la carte",
+    "description": "The link to the map of an event's place in person, which leaves the site."
+  },
+  "events.room_opens": {
+    "defaultMessage": "S’ouvre au début de l’événement",
+    "description": "Under an event's voice chat room before the event starts."
+  },
+  "events.room_opening": {
+    "defaultMessage": "Ouverture…",
+    "description": "Under an event's voice chat room once the event started, before the server opened the room."
+  },
+  "events.room_open": {
+    "defaultMessage": "Ouvert maintenant",
+    "description": "Under an event's voice chat room while it is open, over the button that joins it."
+  },
+  "events.room_ended": {
+    "defaultMessage": "Le salon est terminé",
+    "description": "Under an event's voice chat room once the room it opened ended."
+  },
+  "events.room_canceled": {
+    "defaultMessage": "Ne s’ouvrira pas : l’événement a été annulé",
+    "description": "Under the voice chat room of a cancelled event."
+  },
+  "events.room_unavailable": {
+    "defaultMessage": "{reason, select, disabled {Ouverture impossible : le chat vocal est désactivé sur ce serveur} not_eligible {Ouverture impossible : l’organisateur ne peut pas héberger de salons vocaux} too_many_rooms {Ouverture impossible : le nombre de salons ouverts autorisé par ce serveur était atteint} other {Ouverture impossible : l’organisateur animait un autre salon}}",
+    "description": "Under an event's voice chat room that could not open at the start, why; the event goes on."
+  },
+  "events.join": {
+    "defaultMessage": "Rejoindre le salon",
+    "description": "The button under an event's open voice chat room, which joins the room and opens its page."
+  },
+  "events.join_failed": {
+    "defaultMessage": "Impossible de rejoindre le salon. Réessayez dans un instant.",
+    "description": "Said when joining an event's voice chat room failed."
+  },
+  "events.your_answer": {
+    "defaultMessage": "Votre réponse",
+    "description": "The heading of the reader's answer to an event (going, maybe, not going), and the name of the answers."
+  },
+  "events.answer": {
+    "defaultMessage": "{answer, select, going {Je participe} maybe {Peut-être} other {Je ne participe pas}}",
+    "description": "An answer to an event, on its button."
+  },
+  "events.answer_full": {
+    "defaultMessage": "L’événement est complet. Vous pouvez toujours répondre peut-être ou ne participe pas.",
+    "description": "Under the answers to an event whose going reached its capacity, when the reader is not among them."
+  },
+  "events.answer_started": {
+    "defaultMessage": "Les réponses ont été closes au début de l’événement.",
+    "description": "Under the answers to an event that started."
+  },
+  "events.answer_refused_full": {
+    "defaultMessage": "Non enregistré : l’événement est complet.",
+    "description": "In place of the line under the answers to an event when going was refused at capacity."
+  },
+  "events.answer_refused_closed": {
+    "defaultMessage": "Non enregistré : l’événement a commencé ou a été annulé.",
+    "description": "In place of the line under the answers to an event when the answer was refused for an event that started or was cancelled."
+  },
+  "events.answer_refused_unscheduled": {
+    "defaultMessage": "Non enregistré : la date n’est pas encore décidée.",
+    "description": "In place of the line under the answers to an event when the answer was refused while its date is polled."
+  },
+  "events.calendar": {
+    "defaultMessage": "Ajouter au calendrier",
+    "description": "The button on an event's page that downloads its calendar file (.ics) to import into the reader's calendar."
+  },
+  "events.calendar_saved": {
+    "defaultMessage": "{name} téléchargé. Ouvrez-le pour ajouter l’événement à votre calendrier.",
+    "description": "Under the calendar button of an event once its file was downloaded: name is the file's name."
+  },
+  "events.calendar_failed": {
+    "defaultMessage": "Le fichier de calendrier n’a pas pu être téléchargé. Réessayez dans un instant.",
+    "description": "Under the calendar button of an event when its file could not be downloaded."
+  },
+  "events.calendar_unscheduled": {
+    "defaultMessage": "Le fichier de calendrier sera téléchargeable une fois la date décidée.",
+    "description": "Under the calendar button of an event when the server refused its file while its date is polled."
+  },
+  "events.poll_heading": {
+    "defaultMessage": "Quand pouvez-vous venir ?",
+    "description": "The heading of an event's date poll on its page."
+  },
+  "events.poll_note": {
+    "defaultMessage": "Répondre affiche votre nom à toutes les personnes qui voient l’événement.",
+    "description": "Over an event's date poll."
+  },
+  "events.poll": {
+    "defaultMessage": "Sondage de date",
+    "description": "The name of the table of an event's candidate dates, for assistive technology."
+  },
+  "events.poll_date": {
+    "defaultMessage": "Date",
+    "description": "The head of the column of the dates in an event's date poll, for assistive technology."
+  },
+  "events.vote": {
+    "defaultMessage": "{vote, select, yes {Disponible} maybe {Peut-être} other {Indisponible}}",
+    "description": "An answer to a candidate date of an event, the head of the column of its count and on its button."
+  },
+  "events.yours": {
+    "defaultMessage": "Votre réponse",
+    "description": "The head of the column of the reader's own answer in an event's date poll."
+  },
+  "events.poll_loading": {
+    "defaultMessage": "Chargement des dates…",
+    "description": "In place of an event's date poll while its dates load."
+  },
+  "events.poll_failed": {
+    "defaultMessage": "Les dates n’ont pas pu être chargées.",
+    "description": "In place of an event's date poll when its dates could not be loaded, beside a button to try again."
+  },
+  "events.vote_scheduled": {
+    "defaultMessage": "Non enregistré : la date a été décidée et le sondage est clos.",
+    "description": "Under an event's date poll when an answer was refused because the organizers confirmed a date."
+  },
+  "events.vote_closed": {
+    "defaultMessage": "Non enregistré : l’événement a été annulé.",
+    "description": "Under an event's date poll when an answer was refused for a cancelled event."
+  },
+  "events.answered": {
+    "defaultMessage": "Qui a répondu",
+    "description": "The heading over who answered each candidate date of an event's date poll."
+  },
+  "events.who_answered": {
+    "defaultMessage": "{count, plural, =0 {Aucune réponse pour le {date}} one {# réponse pour le {date}} other {# réponses pour le {date}}}",
+    "description": "The summary of who answered a candidate date, over the button that shows them: date is the candidate's date and time."
+  },
+  "events.vote_group": {
+    "defaultMessage": "{vote, select, yes {Disponible} maybe {Peut-être} other {Indisponible}} ({count})",
+    "description": "The heading of who answered a candidate date one way, with how many."
+  },
+  "events.ballots_loading": {
+    "defaultMessage": "Chargement de qui a répondu…",
+    "description": "In place of who answered a candidate date while they load."
+  },
+  "events.ballots_failed": {
+    "defaultMessage": "Qui a répondu n’a pas pu être chargé.",
+    "description": "In place of who answered a candidate date when they could not be loaded, beside a button to try again."
+  },
+  "events.ballots_none": {
+    "defaultMessage": "Personne n’a encore répondu pour cette date.",
+    "description": "In place of who answered a candidate date when no one did."
+  },
+  "events.organizers": {
+    "defaultMessage": "{count, plural, one {Organisateur} other {Organisateurs}}",
+    "description": "The heading of who organizes an event on its page: the organizer, then the co-organizers."
+  },
+  "events.going_group": {
+    "defaultMessage": "Participent ({count})",
+    "description": "The heading of who answered going to an event, with how many."
+  },
+  "events.maybe_group": {
+    "defaultMessage": "Peut-être",
+    "description": "The heading of who answered maybe to an event."
+  },
+  "events.attendees_loading": {
+    "defaultMessage": "Chargement des participants…",
+    "description": "In place of who is going to an event while they load."
+  },
+  "events.attendees_failed": {
+    "defaultMessage": "Les participants n’ont pas pu être chargés.",
+    "description": "In place of who is going to an event when they could not be loaded, beside a button to try again."
+  },
+  "events.attendees_none": {
+    "defaultMessage": "Personne n’a encore répondu qu’il participe ou peut-être.",
+    "description": "In place of who is going to an event when no one answered going or maybe."
+  },
+  "events.vote_failed": {
+    "defaultMessage": "L’enregistrement de votre réponse pour le {date} n’a pas abouti.",
+    "description": "Under an event's date poll when the answer to one date could not be saved, beside a button to try it again: date is the candidate's date and time."
+  },
+  "events.mark": {
+    "defaultMessage": "{state, select, canceled {Annulé} other {Terminé}}",
+    "description": "At the top of an event's page, beside its glyph, as its line in a list marks it: it was cancelled (the reason follows under it) or it ended."
+  },
+  "events.tab": {
+    "defaultMessage": "{tab, select, board {Tableau} other {Détails}}",
+    "description": "A tab under an event's head on its page, for a reader of its board: board shows the event's board, other (details) what the event is, the answers and who goes. A reader who may not read the board gets no tabs."
+  },
+  "events.board.feed": {
+    "defaultMessage": "Le tableau de l’événement",
+    "description": "The name of the list of the posts on an event's board, under its Board tab, for assistive technology."
+  },
+  "events.board.write": {
+    "defaultMessage": "Écrire sur le tableau",
+    "description": "The bar at the top of an event's board, for a reader who may write on it, beside their avatar: it opens the composer for a post on the board. Also the bar's name for assistive technology."
+  },
+  "events.board.empty": {
+    "defaultMessage": "Rien sur le tableau pour le moment.",
+    "description": "In place of the posts of an event's board when nothing is on it."
+  },
+  "events.board.closed": {
+    "defaultMessage": "{reason, select, canceled {L’événement a été annulé : le tableau est en lecture seule.} other {7 jours se sont écoulés depuis la fin de l’événement : le tableau est en lecture seule.}}",
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, when nobody writes on it any more: canceled, the event was cancelled; other, 7 days passed since the event's end (it is writable for the 7 days after the end). Its words are those of the error server:errors.event.board_closed."
+  },
+  "events.board.not_writer": {
+    "defaultMessage": "{writers, select, organizer {Seul l’organisateur peut écrire sur ce tableau.} other {Seuls l’organisateur et les co-organisateurs peuvent écrire sur ce tableau.}}",
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, for a reader the event's board_writers leave out: organizer, only the organizer writes on it; other (coorganizers), the organizer and the co-organizers."
+  },
+  "events.create.submit": {
+    "defaultMessage": "Créer l’événement",
+    "description": "The button at the foot of the form that creates an event."
+  },
+  "events.create.not_allowed": {
+    "defaultMessage": "Vous ne pouvez pas créer d’événements sur ce serveur. Ses administrateurs choisissent qui le peut.",
+    "description": "In place of the form that creates an event, for a reader who may not create events (the server's setting, a role without the permission, or an account a moderator limited)."
+  },
+  "events.create.loading": {
+    "defaultMessage": "Chargement…",
+    "description": "In place of the form that creates an event while the server's settings and the reader's account, which say whether they may create events, load."
+  },
+  "events.create.failed": {
+    "defaultMessage": "Le formulaire de création d’un événement n’a pas pu être chargé.",
+    "description": "In place of the form that creates an event when the server's settings or the reader's account could not be loaded, beside a button to try again."
+  },
+  "events.edit": {
+    "defaultMessage": "Modifier l’événement",
+    "description": "The title of the form that changes an event, and the item of the event's menu that leads to it, for its organizers."
+  },
+  "events.edit.submit": {
+    "defaultMessage": "Enregistrer",
+    "description": "The button at the foot of the form that changes an event."
+  },
+  "events.edit.canceled": {
+    "defaultMessage": "Cet événement a été annulé : il ne peut plus être modifié.",
+    "description": "In place of the form that changes an event, when the event was cancelled."
+  },
+  "events.back_to_event": {
+    "defaultMessage": "Retour à l’événement",
+    "description": "The back button of a screen under an event (changing it, its invitations, its co-organizers), which leads to the event's page."
+  },
+  "events.organizers_only": {
+    "defaultMessage": "Seuls l’organisateur de l’événement, {organizer}, et ses co-organisateurs peuvent le modifier.",
+    "description": "In place of the form that changes an event, for a reader who neither organizes nor co-organizes it: organizer is the organizer's name."
+  },
+  "events.organizers_only.unavailable": {
+    "defaultMessage": "Seuls l’organisateur de l’événement et ses co-organisateurs peuvent le modifier.",
+    "description": "In place of the form that changes an event, for a reader who neither organizes nor co-organizes it, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.organizers_only otherwise."
+  },
+  "events.form.title": {
+    "defaultMessage": "Titre",
+    "description": "The label of the field of an event's title, in the form that creates or changes an event."
+  },
+  "events.form.title_empty": {
+    "defaultMessage": "Donnez un titre à l’événement.",
+    "description": "Under the title field of an event's form, when the reader sends it with no title."
+  },
+  "events.form.title_rule": {
+    "defaultMessage": "Un titre fait de 1 à 100 caractères sur une seule ligne.",
+    "description": "Under the title field of an event's form, when the title is too long, has a line break, or the server refused it."
+  },
+  "events.form.description": {
+    "defaultMessage": "Description",
+    "description": "The label of the field of an event's description, in the event's form."
+  },
+  "events.form.description_hint": {
+    "defaultMessage": "3 000 caractères au maximum. Les URL deviennent des liens.",
+    "description": "Under the label of the description field of an event's form."
+  },
+  "events.form.description_rule": {
+    "defaultMessage": "Une description fait 3 000 caractères au maximum.",
+    "description": "Under the description field of an event's form, when it is too long or the server refused it."
+  },
+  "events.form.when": {
+    "defaultMessage": "Quand",
+    "description": "The heading of an event's date in its form, and the name of the choice between a fixed date and a date poll."
+  },
+  "events.form.dating": {
+    "defaultMessage": "{dating, select, fixed {À une date fixe} other {Sondage de date : proposez des dates et laissez les gens répondre}}",
+    "description": "An option of how a new event's date is set: dating is fixed (a start and an end now) or other (poll: candidate dates people answer, the organizers confirm one later)."
+  },
+  "events.form.starts": {
+    "defaultMessage": "Début",
+    "description": "The label of the field of the start of an event, or of a candidate date, in the event's form."
+  },
+  "events.form.ends": {
+    "defaultMessage": "Fin",
+    "description": "The label of the field of the end of an event, or of a candidate date, in the event's form."
+  },
+  "events.form.start_rule": {
+    "defaultMessage": "Le début est postérieur à maintenant et au plus à 1 an.",
+    "description": "Under the start of an event or of a candidate date, when it is not after now or more than a year ahead."
+  },
+  "events.form.end_rule": {
+    "defaultMessage": "La fin est postérieure au début et au plus 7 jours après.",
+    "description": "Under the end of an event or of a candidate date, when it is not after the start or more than 7 days after it."
+  },
+  "events.form.candidate": {
+    "defaultMessage": "Date {n}",
+    "description": "The name of a candidate date in the form that creates an event with a date poll: n is its place in the list, from 1."
+  },
+  "events.form.candidate_remove": {
+    "defaultMessage": "Retirer la date {n}",
+    "description": "The button beside a candidate date in the form of a new event's poll, which takes it out: n is its place, from 1."
+  },
+  "events.form.candidate_add": {
+    "defaultMessage": "Ajouter une date",
+    "description": "The button under the candidate dates of a new event's poll, which adds one more."
+  },
+  "events.form.candidate_twice": {
+    "defaultMessage": "Cette date est déjà proposée.",
+    "description": "Under a candidate date of an event's poll that is the same as another (the same start and end)."
+  },
+  "events.form.candidates_note": {
+    "defaultMessage": "Proposez jusqu’à {count} dates. Les personnes qui voient l’événement répondent à chacune, et vous en confirmez une plus tard.",
+    "description": "Over the candidate dates in the form that creates an event with a date poll: count is the most dates a poll has (20)."
+  },
+  "events.form.candidates_rule": {
+    "defaultMessage": "Un sondage comporte de 1 à 20 dates différentes, chacune postérieure à maintenant et au plus à un an, et durant au plus 7 jours.",
+    "description": "Under the candidate dates of an event's form, when the server refused them."
+  },
+  "events.form.poll_elsewhere": {
+    "defaultMessage": "La date fait l’objet d’un sondage. Ajoutez, retirez et confirmez des dates dans le sondage de la page de l’événement.",
+    "description": "In place of the date in the form that changes an event whose date is polled."
+  },
+  "events.form.zone_note": {
+    "defaultMessage": "En {zone}, le fuseau horaire de l’événement.",
+    "description": "Under the date fields of an event's form: zone is the IANA name of the event's time zone (Asia/Tokyo), in which the dates are read."
+  },
+  "events.form.time_zone": {
+    "defaultMessage": "Fuseau horaire",
+    "description": "The heading and the name of the choice of an event's time zone, in its form."
+  },
+  "events.form.time_zone_rule": {
+    "defaultMessage": "Choisissez un fuseau horaire dans la liste.",
+    "description": "Under the time zone of an event's form, when the server refused it."
+  },
+  "events.form.places": {
+    "defaultMessage": "Où",
+    "description": "The heading of an event's places in its form."
+  },
+  "events.form.voice": {
+    "defaultMessage": "Dans un salon vocal qui s’ouvre au début de l’événement",
+    "description": "The checkbox of an event's voice chat room place, in its form."
+  },
+  "events.form.speakers": {
+    "defaultMessage": "Qui peut parler sans demander",
+    "description": "The heading of the choice of who may speak in an event's voice chat room without raising a hand, in its form; also the choice's name."
+  },
+  "events.form.speakers_choice": {
+    "defaultMessage": "{speakers, select, everyone {Tout le monde dans le salon} followers {Vos abonnés} following {Les personnes que vous suivez} mutuals {Les personnes que vous suivez et qui vous suivent en retour} other {Uniquement les personnes autorisées à parler}}",
+    "description": "An option of who speaks in an event's voice chat room without asking: speakers is everyone, followers, following, mutuals, or other (manual: only the people a host lets speak)."
+  },
+  "events.form.physical": {
+    "defaultMessage": "En personne",
+    "description": "The checkbox of an event's place to meet in person, in its form."
+  },
+  "events.form.place_name": {
+    "defaultMessage": "Nom",
+    "description": "The label of the name of an event's place in person or online, in its form."
+  },
+  "events.form.place_name_rule": {
+    "defaultMessage": "Un nom fait de 1 à 100 caractères sur une seule ligne.",
+    "description": "Under the name of an event's place, when it is empty, too long or has a line break."
+  },
+  "events.form.address": {
+    "defaultMessage": "Adresse",
+    "description": "The label of the address of an event's place in person, in its form."
+  },
+  "events.form.address_rule": {
+    "defaultMessage": "Une adresse fait 500 caractères au maximum.",
+    "description": "Under the address of an event's place in person, when it is too long."
+  },
+  "events.form.map_url": {
+    "defaultMessage": "Lien de la carte (facultatif)",
+    "description": "The label of the URL of a map of an event's place in person, in its form."
+  },
+  "events.form.map_url_hint": {
+    "defaultMessage": "Un lien qui commence par https ou http. Aucune carte n’est affichée sur la page, seulement le lien.",
+    "description": "Under the label of the map link of an event's place in person."
+  },
+  "events.form.url_rule": {
+    "defaultMessage": "Saisissez un lien qui commence par https ou http.",
+    "description": "Under a link of an event's place (a map's, a place online's), when it is not an http or https URL."
+  },
+  "events.form.online": {
+    "defaultMessage": "En ligne",
+    "description": "The checkbox of an event's place online (a stream, an outside meeting's link), in its form."
+  },
+  "events.form.online_url": {
+    "defaultMessage": "Lien",
+    "description": "The label of the URL of an event's place online, in its form."
+  },
+  "events.form.online_url_hint": {
+    "defaultMessage": "Un lien qui commence par https ou http, par exemple une diffusion ou une réunion.",
+    "description": "Under the label of the link of an event's place online."
+  },
+  "events.form.places_rule": {
+    "defaultMessage": "Vérifiez les lieux : chacun demande un nom et un lien qui commence par https ou http.",
+    "description": "Under an event's places, when the server refused them without naming one."
+  },
+  "events.form.disclosure": {
+    "defaultMessage": "Qui voit les lieux en personne et en ligne",
+    "description": "The heading of the choice of who sees an event's places in person and online, in its form; also the choice's name."
+  },
+  "events.form.disclosure_choice": {
+    "defaultMessage": "{disclosure, select, approved {Uniquement les participants que vous approuvez} other {Toutes les personnes qui voient l’événement}}",
+    "description": "An option of who sees an event's places in person and online: disclosure is approved (the attendees the organizers approve) or other (viewers: everyone who sees the event). The voice chat room is shown to everyone who sees the event either way."
+  },
+  "events.form.visibility": {
+    "defaultMessage": "Qui peut voir l’événement",
+    "description": "The heading of the choice of who sees an event, in its form; also the choice's name."
+  },
+  "events.form.visibility_choice": {
+    "defaultMessage": "{visibility, select, public {Tout le monde sur ce serveur} followers {Vos abonnés} following {Les personnes que vous suivez} mutuals {Les personnes que vous suivez et qui vous suivent en retour} other {Uniquement les personnes invitées}}",
+    "description": "An option of who sees an event: visibility is public, followers, following, mutuals, or other (invited). Those invited and those who answered always see it too."
+  },
+  "events.form.visibility_rule": {
+    "defaultMessage": "Choisissez qui peut voir l’événement.",
+    "description": "Under the choice of who sees an event, when the server refused it."
+  },
+  "events.form.board_writers": {
+    "defaultMessage": "Qui peut écrire sur le tableau",
+    "description": "The heading of the choice of who writes on an event's board, in the form that creates or changes the event, after who sees it; and the choice's name."
+  },
+  "events.form.board_writers_choice": {
+    "defaultMessage": "{writers, select, organizer {Vous seul} coorganizers {Vous et les co-organisateurs} other {Toutes les personnes qui lisent le tableau}}",
+    "description": "An option of who writes on an event's board, in the form its organizer creates or changes it with (you is the organizer): writers is organizer, coorganizers (the organizer and the co-organizers), or other (readers: everyone who reads the board)."
+  },
+  "events.form.board_writers_hint": {
+    "defaultMessage": "Vous, les co-organisateurs et les personnes qui ont répondu qu’elles participent ou peut-être peuvent lire le tableau.",
+    "description": "Under the choice of who writes on an event's board, in the form its organizer creates or changes it with: who reads the board, as server:errors.event.board_not_reader says it."
+  },
+  "events.form.board_writers_organizer": {
+    "defaultMessage": "{writers, select, organizer {Seul l’organisateur peut écrire sur le tableau} coorganizers {L’organisateur et les co-organisateurs peuvent écrire sur le tableau} other {Toutes les personnes qui lisent le tableau peuvent y écrire}}. Seul l’organisateur, {organizer}, change qui peut y écrire.",
+    "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with: who writes on it now (writers as events.form.board_writers_choice), and that only the organizer, organizer (the organizer's name), changes it."
+  },
+  "events.form.board_writers_organizer.unavailable": {
+    "defaultMessage": "{writers, select, organizer {Seul l’organisateur peut écrire sur le tableau} coorganizers {L’organisateur et les co-organisateurs peuvent écrire sur le tableau} other {Toutes les personnes qui lisent le tableau peuvent y écrire}}. Seul l’organisateur change qui peut y écrire.",
+    "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who writes on it now (writers as events.form.board_writers_choice), and that only the organizer changes it; events.form.board_writers_organizer otherwise."
+  },
+  "events.form.board_writers_rule": {
+    "defaultMessage": "Choisissez qui peut écrire sur le tableau.",
+    "description": "Under the choice of who writes on an event's board, when the server refused it."
+  },
+  "events.form.visibility_organizer": {
+    "defaultMessage": "{visibility, select, public {Visible par tout le monde sur ce serveur} followers {Visible par les abonnés de {organizer}} following {Visible par les personnes que {organizer} suit} mutuals {Visible par les abonnements mutuels de {organizer}} other {Visible uniquement par les personnes invitées}}. Seul l’organisateur, {organizer}, change qui peut le voir.",
+    "description": "In place of the choice of who sees an event, in the form a co-organizer changes it with: who sees it now (visibility as events.visibility), and that only the organizer, organizer, changes it."
+  },
+  "events.form.visibility_organizer.unavailable": {
+    "defaultMessage": "{visibility, select, public {Visible par tout le monde sur ce serveur} followers {Visible par les abonnés de l’organisateur} following {Visible par les personnes que l’organisateur suit} mutuals {Visible par les abonnements mutuels de l’organisateur} other {Visible uniquement par les personnes invitées}}. Seul l’organisateur change qui peut le voir.",
+    "description": "In place of the choice of who sees an event, in the form a co-organizer changes it with, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who sees it now (visibility as events.visibility), and that only the organizer changes it; events.form.visibility_organizer otherwise."
+  },
+  "events.form.capacity": {
+    "defaultMessage": "Capacité",
+    "description": "The heading of an event's capacity in its form, and the name of its field."
+  },
+  "events.form.capacity_unit": {
+    "defaultMessage": "{count, plural, one {personne} other {personnes}}",
+    "description": "After the field of an event's capacity: count is the number in the field."
+  },
+  "events.form.capacity_hint": {
+    "defaultMessage": "0 pour aucune limite, jusqu’à {max}. Lorsque l’événement est complet, plus personne ne peut répondre qu’il participe.",
+    "description": "Under the field of an event's capacity: max is the most it takes (10,000)."
+  },
+  "events.form.capacity_rule": {
+    "defaultMessage": "Une capacité va de 0 (aucune limite) à 10 000.",
+    "description": "Under the field of an event's capacity, when the server refused it."
+  },
+  "events.form.not_sent": {
+    "defaultMessage": "Corrigez ce qui est signalé, puis réessayez.",
+    "description": "Before the button of an event's form, when the form or the server found something wrong with a field."
+  },
+  "events.form.refused": {
+    "defaultMessage": "{kind, select, not_eligible {Vous ne pouvez pas créer d’événements sur ce serveur.} voice_unavailable {Le salon vocal ne peut pas être un lieu pour le moment : le chat vocal est désactivé, ou vous ne pouvez pas héberger de salons. Décochez-le pour continuer.} rate_limited {Vous avez créé autant d’événements que possible pour le moment. Réessayez plus tard.} not_organizer {Seuls les organisateurs de l’événement peuvent le modifier.} organizer_only {Seul l’organisateur de l’événement peut changer qui peut le voir.} closed {L’événement a été annulé : il ne peut plus être modifié.} not_found {Cet événement n’existe plus, ou vous ne pouvez pas le voir.} scheduled {La date a été confirmée entre-temps. Rouvrez l’événement pour le modifier.} other {L’envoi n’a pas abouti. Vérifiez votre connexion et réessayez.}}",
+    "description": "Before the button of an event's form, when the server refused it as a whole: kind is not_eligible, voice_unavailable (voice chat off or the organizer may not host rooms), rate_limited (10 events an hour), not_organizer, organizer_only (the visibility), closed (cancelled), not_found, scheduled (a date confirmed meanwhile), or other (the server could not be reached or failed)."
+  },
+  "events.manage": {
+    "defaultMessage": "Gérer l’événement",
+    "description": "The name of the menu at the top of an event's page, for its organizer and co-organizers: changing it, its invitations, its co-organizers, cancelling it."
+  },
+  "events.invitations": {
+    "defaultMessage": "Invitations",
+    "description": "The title of the screen of an event's invitations, the heading and name of their list, and the item of the event's menu that leads to it."
+  },
+  "events.coorganizers": {
+    "defaultMessage": "Co-organisateurs",
+    "description": "The title of the screen of an event's co-organizers, and the item of the event's menu that leads to it, for its organizer."
+  },
+  "events.cancel_menu": {
+    "defaultMessage": "Annuler l’événement…",
+    "description": "An item of an event's menu, for its organizer: cancels the event, asked first."
+  },
+  "events.cancel.title": {
+    "defaultMessage": "Annuler l’événement ?",
+    "description": "The question of the dialog before the organizer cancels an event."
+  },
+  "events.cancel.text": {
+    "defaultMessage": "Toutes les personnes qui ont répondu sont prévenues, et plus personne ne peut répondre. L’événement reste sur ce serveur, marqué comme annulé. Cette action est irréversible.",
+    "description": "What follows cancelling an event, in its dialog."
+  },
+  "events.cancel.note": {
+    "defaultMessage": "Un mot pour les personnes qui ont répondu (facultatif)",
+    "description": "The label of the note shown with an event's cancellation, in the dialog that cancels it."
+  },
+  "events.cancel.note_hint": {
+    "defaultMessage": "{max} caractères au maximum, affichés sur la page de l’événement.",
+    "description": "Under the label of the note of an event's cancellation: max is how long it may be (500)."
+  },
+  "events.cancel.note_rule": {
+    "defaultMessage": "Un mot fait {max} caractères au maximum.",
+    "description": "Under the note of an event's cancellation, when it is too long: max is how long it may be (500)."
+  },
+  "events.cancel.keep": {
+    "defaultMessage": "Conserver l’événement",
+    "description": "The button that closes the dialog of an event's cancellation without cancelling it, and the dialog's close."
+  },
+  "events.cancel.confirm": {
+    "defaultMessage": "Annuler l’événement",
+    "description": "The button that confirms cancelling an event."
+  },
+  "events.cancel.failed": {
+    "defaultMessage": "L’événement n’a pas pu être annulé. Réessayez.",
+    "description": "In the dialog that cancels an event, when the cancellation did not finish."
+  },
+  "events.cancel.done": {
+    "defaultMessage": "Vous avez annulé l’événement.",
+    "description": "Said on an event's page once its organizer cancelled it."
+  },
+  "events.cancel.closed": {
+    "defaultMessage": "L’événement était déjà annulé.",
+    "description": "Said on an event's page when its organizer pressed Cancel the event and the server said it was cancelled already (from another device, or by a moderator); the page then shows it cancelled."
+  },
+  "events.approval.menu": {
+    "defaultMessage": "Actions pour {name}",
+    "description": "The name of the menu an organizer opens on an attendee of an event: name is the attendee's."
+  },
+  "events.approval.op": {
+    "defaultMessage": "{approved, select, yes {Approuver} other {Retirer l’approbation}}",
+    "description": "An item of the menu an organizer opens on an attendee going or maybe: approved is yes (approves them) or other (takes the approval back)."
+  },
+  "events.approval.about": {
+    "defaultMessage": "Cette personne voit alors les lieux en personne et en ligne.",
+    "description": "Under Approve in an attendee's menu: what the approval changes for them."
+  },
+  "events.approval.approved": {
+    "defaultMessage": "Approuvé",
+    "description": "Beside an attendee of an event, for its organizers, once an organizer approved them."
+  },
+  "events.approval.done": {
+    "defaultMessage": "{approved, select, yes {Vous avez approuvé {name}.} other {{name} n’est plus approuvé.}}",
+    "description": "Said on an event's page once an organizer approved an attendee (approved yes) or took the approval back (other): name is the attendee's."
+  },
+  "events.approval.failed": {
+    "defaultMessage": "{cause, select, not_attending {{name} n’a plus répondu qu’il participe ou peut-être : il n’y a donc rien à approuver.} other {{approved, select, yes {L’approbation de {name}} other {Le retrait de l’approbation de {name}}} n’a pas abouti. Réessayez.}}",
+    "description": "Said on an event's page when an approval was refused or did not finish: cause is not_attending (the attendee changed their answer) or other; approved is yes (approving) or other (removing the approval); name is the attendee's."
+  },
+  "events.approval.waiting": {
+    "defaultMessage": "En attente d’approbation",
+    "description": "Beside an attendee going or maybe whom no organizer approved yet, for the event's organizers, before Approve."
+  },
+  "events.approval.approve": {
+    "defaultMessage": "Approuver {name}",
+    "description": "The name of the Approve button beside an attendee waiting for approval, for assistive technology: name is the attendee's. It starts with the words the button shows (events.approval.op: Approve)."
+  },
+  "events.poll.actions": {
+    "defaultMessage": "Actions",
+    "description": "The head of the column of each date's actions in an event's date poll, for its organizers, for assistive technology."
+  },
+  "events.poll.menu": {
+    "defaultMessage": "Options pour le {date}",
+    "description": "The name of the menu at the end of a candidate date's row, for an event's organizers: date is the candidate's date and time."
+  },
+  "events.poll.op": {
+    "defaultMessage": "{op, select, confirm {Confirmer cette date…} other {Retirer cette date…}}",
+    "description": "An item of a candidate date's menu, for an event's organizers: op is confirm (fixes the event's date to it and closes the poll, asked first) or other (withdraw: takes it out of the poll, asked first)."
+  },
+  "events.poll.last": {
+    "defaultMessage": "Un sondage garde au moins une date.",
+    "description": "Under Withdraw this date in a candidate date's menu, when it is the poll's only date."
+  },
+  "events.poll.ask_title": {
+    "defaultMessage": "{op, select, confirm {Confirmer le {date} ?} other {Retirer le {date} ?}}",
+    "description": "The question of the dialog before an organizer confirms a candidate date (op confirm) or withdraws it (other): date is the candidate's date and time."
+  },
+  "events.poll.ask_text": {
+    "defaultMessage": "{op, select, confirm {Le sondage est clos, et toutes les personnes qui ont répondu ou sont invitées sont informées de la date. Cette action est irréversible.} other {Ses réponses disparaissent avec elle. Cette action est irréversible.}}",
+    "description": "What follows confirming a candidate date (op confirm) or withdrawing it (other), in its dialog."
+  },
+  "events.poll.ask_cancel": {
+    "defaultMessage": "{op, select, confirm {Continuer le sondage} other {Conserver la date}}",
+    "description": "The button that closes the dialog of confirming (op confirm) or withdrawing (other) a candidate date without doing it."
+  },
+  "events.poll.ask_confirm": {
+    "defaultMessage": "{op, select, confirm {Confirmer} other {Retirer}}",
+    "description": "The button that confirms a candidate date (op confirm) or withdraws it (other)."
+  },
+  "events.poll.done": {
+    "defaultMessage": "{op, select, confirm {L’événement a désormais lieu le {date}.} other {Vous avez retiré le {date}.}}",
+    "description": "Said on an event's page once an organizer confirmed a candidate date (op confirm) or withdrew it (other): date is its date and time."
+  },
+  "events.poll.act_failed": {
+    "defaultMessage": "{cause, select, last {Le {date} est la seule date du sondage : elle reste. Ajoutez une autre date pour la retirer.} scheduled {La date a été confirmée entre-temps : le sondage est clos.} started {Le {date} a commencé : il ne peut plus être confirmé. Confirmez une date ultérieure, ou ajoutez-en une.} closed {L’événement a été annulé.} other {{op, select, confirm {La confirmation du {date}} other {Le retrait du {date}}} n’a pas abouti. Réessayez.}}",
+    "description": "Said on an event's page when confirming or withdrawing a candidate date was refused or did not finish: cause is last (its only date), scheduled (a date confirmed meanwhile), started (the date is past), closed (cancelled) or other; op is confirm or other (withdraw); date is the candidate's."
+  },
+  "events.poll.add_heading": {
+    "defaultMessage": "Ajouter une date",
+    "description": "The heading of the part under an event's date poll, for its organizers, that adds a candidate date; also its name."
+  },
+  "events.poll.add": {
+    "defaultMessage": "Ajouter",
+    "description": "The button that adds the candidate date its fields hold to an event's poll."
+  },
+  "events.poll.added": {
+    "defaultMessage": "Vous avez ajouté le {date}.",
+    "description": "Said on an event's page once an organizer added a candidate date: date is its date and time."
+  },
+  "events.poll.add_refused": {
+    "defaultMessage": "{cause, select, invalid {La date n’a pas été ajoutée : un sondage comporte jusqu’à 20 dates différentes, chacune postérieure à maintenant.} scheduled {La date n’a pas été ajoutée : la date a été confirmée et le sondage est clos.} closed {La date n’a pas été ajoutée : l’événement a été annulé.} other {La date n’a pas pu être ajoutée. Réessayez.}}",
+    "description": "Under the part that adds a candidate date to an event's poll, when the server refused it: cause is invalid (20 dates already, the same date twice, a date out of the limits), scheduled, closed, or other."
+  },
+  "events.poll.full": {
+    "defaultMessage": "Un sondage comporte jusqu’à {count} dates. Retirez-en une pour en ajouter une autre.",
+    "description": "In place of the part that adds a candidate date, when the poll has as many as it can: count is that number (20)."
+  },
+  "events.room_unavailable_organizer": {
+    "defaultMessage": "{reason, select, disabled {Ouverture impossible : le chat vocal est désactivé sur ce serveur. L’événement continue.} not_eligible {Ouverture impossible : vous ne pouvez pas héberger de salons vocaux sur ce serveur. L’événement continue.} too_many_rooms {Ouverture impossible : le nombre de salons ouverts autorisé par ce serveur était atteint. L’événement continue.} other {Ouverture impossible : vous animiez un autre salon. L’événement continue.}}",
+    "description": "Under an event's voice chat room that could not open at the start, why, for its organizer in their own words: reason is disabled, not_eligible, too_many_rooms, or other (hosting_elsewhere)."
+  },
+  "events.people.search": {
+    "defaultMessage": "Nom ou identifiant",
+    "description": "The label of the field that finds people to invite to an event or to name its co-organizers."
+  },
+  "events.people.search_hint": {
+    "defaultMessage": "Seules les personnes de ce serveur peuvent être choisies.",
+    "description": "Under the label of the field that finds people to invite to an event or name co-organizers."
+  },
+  "events.people.clear": {
+    "defaultMessage": "Effacer",
+    "description": "The button that empties the field that finds people for an event."
+  },
+  "events.people.searching": {
+    "defaultMessage": "Recherche…",
+    "description": "In place of the people found for an event while the search runs."
+  },
+  "events.people.search_failed": {
+    "defaultMessage": "La recherche n’a pas abouti. Réessayez.",
+    "description": "In place of the people found for an event when the search failed."
+  },
+  "events.people.none_found": {
+    "defaultMessage": "Personne sur ce serveur ne correspond.",
+    "description": "In place of the people found for an event when the search found none."
+  },
+  "events.people.found": {
+    "defaultMessage": "Personnes trouvées",
+    "description": "The name of the list of people found to invite to an event or name co-organizers, for assistive technology."
+  },
+  "events.people.organizer": {
+    "defaultMessage": "Organisateur",
+    "description": "In place of the button beside an account found that organizes the event."
+  },
+  "events.people.canceled": {
+    "defaultMessage": "Cet événement a été annulé : personne ne peut être invité ni nommé co-organisateur.",
+    "description": "In place of an event's invitations or co-organizers, when it was cancelled."
+  },
+  "events.people.menu": {
+    "defaultMessage": "Actions pour {name}",
+    "description": "The name of the menu of an account on an event's invitations or co-organizers: name is the account's."
+  },
+  "events.invitations.loading": {
+    "defaultMessage": "Chargement des invitations…",
+    "description": "In place of the invitations of an event while they load."
+  },
+  "events.invitations.failed": {
+    "defaultMessage": "Les invitations n’ont pas pu être chargées.",
+    "description": "In place of the invitations of an event when they could not be loaded, beside a button to try again."
+  },
+  "events.invitations.none": {
+    "defaultMessage": "Personne n’est encore invité. Les personnes invitées voient toujours l’événement.",
+    "description": "In place of the invitations of an event while there are none."
+  },
+  "events.invitations.revoke": {
+    "defaultMessage": "Révoquer l’invitation…",
+    "description": "The last item of the menu of an invited account on an event's invitations, apart: revokes the invitation, asked first."
+  },
+  "events.invitations.revoked": {
+    "defaultMessage": "Vous avez révoqué l’invitation de {name}.",
+    "description": "Said on an event's invitations once one was revoked: name is the account's."
+  },
+  "events.invitations.revoke_failed": {
+    "defaultMessage": "L’invitation de {name} n’a pas pu être révoquée. Réessayez.",
+    "description": "Said on an event's invitations when a revocation did not finish: name is the account's."
+  },
+  "events.invitations.organizers_only": {
+    "defaultMessage": "Seuls l’organisateur de l’événement, {organizer}, et ses co-organisateurs peuvent y inviter des personnes.",
+    "description": "In place of an event's invitations, for a reader who neither organizes nor co-organizes it: organizer is the organizer's name."
+  },
+  "events.invitations.organizers_only.unavailable": {
+    "defaultMessage": "Seuls l’organisateur de l’événement et ses co-organisateurs peuvent y inviter des personnes.",
+    "description": "In place of an event's invitations, for a reader who neither organizes nor co-organizes it, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.invitations.organizers_only otherwise."
+  },
+  "events.invitations.list": {
+    "defaultMessage": "Invités",
+    "description": "The heading of the list of the people invited to an event, on its invitations' screen, and the list's name."
+  },
+  "events.invitations.revoke_title": {
+    "defaultMessage": "Révoquer l’invitation de {name} ?",
+    "description": "The question of the dialog before an organizer revokes an invitation to an event: name is the account's."
+  },
+  "events.invitations.revoke_text": {
+    "defaultMessage": "Une personne ne peut être invitée qu’une fois à un événement : {name} ne pourra donc plus y être invité. Cette action est irréversible.",
+    "description": "What follows revoking an invitation to an event, in its dialog: name is the account's."
+  },
+  "events.invitations.revoke_confirm": {
+    "defaultMessage": "Révoquer",
+    "description": "The button that confirms revoking an invitation to an event."
+  },
+  "events.invitations.revoke_keep": {
+    "defaultMessage": "Conserver l’invitation",
+    "description": "The button that closes the dialog of revoking an invitation without revoking it, and the dialog's close."
+  },
+  "events.invite.heading": {
+    "defaultMessage": "Inviter quelqu’un",
+    "description": "The heading of the part of an event's invitations that finds people and invites them."
+  },
+  "events.invite.invite": {
+    "defaultMessage": "Inviter",
+    "description": "The button beside an account found that invites it to the event."
+  },
+  "events.invite.invited": {
+    "defaultMessage": "Invité",
+    "description": "In place of Invite beside an account found that is invited to the event already."
+  },
+  "events.invite.done": {
+    "defaultMessage": "Vous avez invité {name}.",
+    "description": "Said on an event's invitations after an invitation: name is the account's."
+  },
+  "events.invite.refused": {
+    "defaultMessage": "{kind, select, already_invited {{name} a déjà été invité à cet événement. Une personne ne peut être invitée qu’une fois à un événement.} invalid_invitee {{name} ne peut pas être invité à cet événement.} rate_limited {Cet événement a envoyé {count} invitations cette dernière heure, le maximum possible. Réessayez plus tard.} other {{name} n’a pas pu être invité. Réessayez.}}",
+    "description": "Said on an event's invitations when an invitation was refused: kind is already_invited (once per event, also after a revocation), invalid_invitee (a block between them and an organizer, an organizer, not an active local account), rate_limited (count, 100, an hour), or other; name is the account's."
+  },
+  "events.coorganizers.count": {
+    "defaultMessage": "{count, plural, =0 {Co-organisateurs} other {Co-organisateurs ({count} sur {max})}}",
+    "description": "The heading of an event's co-organizers on their screen: count is how many, max the most an event has (3)."
+  },
+  "events.coorganizers.none": {
+    "defaultMessage": "Aucun co-organisateur pour le moment. Ils modifient l’événement, invitent des personnes et approuvent les participants avec vous.",
+    "description": "In place of an event's co-organizers while there are none."
+  },
+  "events.coorganizers.remove": {
+    "defaultMessage": "Retirer comme co-organisateur…",
+    "description": "The last item of the menu of a co-organizer on an event's co-organizers, apart: removes them as co-organizer, asked first."
+  },
+  "events.coorganizers.removed": {
+    "defaultMessage": "{name} n’est plus co-organisateur.",
+    "description": "Said on an event's co-organizers once one was removed: name is the account's."
+  },
+  "events.coorganizers.remove_failed": {
+    "defaultMessage": "{name} n’a pas pu être retiré. Réessayez.",
+    "description": "Said on an event's co-organizers when a removal did not finish: name is the account's."
+  },
+  "events.coorganizers.heading": {
+    "defaultMessage": "Nommer un co-organisateur",
+    "description": "The heading of the part of an event's co-organizers that finds people and names them."
+  },
+  "events.coorganizers.name": {
+    "defaultMessage": "Nommer co-organisateur",
+    "description": "The button beside an account found that names it a co-organizer of the event."
+  },
+  "events.coorganizers.named": {
+    "defaultMessage": "Co-organisateur",
+    "description": "In place of the button beside an account found that co-organizes the event already."
+  },
+  "events.coorganizers.full": {
+    "defaultMessage": "Un événement a jusqu’à {count} co-organisateurs. Retirez-en un pour en nommer un autre.",
+    "description": "In place of the search of an event's co-organizers, when it has as many as it can: count is that number (3)."
+  },
+  "events.coorganizers.done": {
+    "defaultMessage": "{name} co-organise désormais l’événement.",
+    "description": "Said on an event's co-organizers once one was named: name is the account's."
+  },
+  "events.coorganizers.refused": {
+    "defaultMessage": "{kind, select, invalid_coorganizer {{name} ne peut pas co-organiser cet événement.} too_many_coorganizers {Un événement a jusqu’à {count} co-organisateurs. Retirez-en un d’abord.} other {{name} n’a pas pu être nommé. Réessayez.}}",
+    "description": "Said on an event's co-organizers when naming one was refused: kind is invalid_coorganizer (a block between them and an organizer, the organizer, not an active local account), too_many_coorganizers (count, 3), or other; name is the account's."
+  },
+  "events.coorganizers.organizer_only": {
+    "defaultMessage": "Seul l’organisateur de l’événement, {organizer}, peut nommer ses co-organisateurs.",
+    "description": "In place of an event's co-organizers, for a reader who is not its organizer: organizer is the organizer's name."
+  },
+  "events.coorganizers.organizer_only.unavailable": {
+    "defaultMessage": "Seul l’organisateur de l’événement peut nommer ses co-organisateurs.",
+    "description": "In place of an event's co-organizers, for a reader who is not its organizer, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.coorganizers.organizer_only otherwise."
+  },
+  "events.coorganizers.remove_title": {
+    "defaultMessage": "Retirer {name} comme co-organisateur ?",
+    "description": "The question of the dialog before the organizer removes a co-organizer of an event: name is theirs."
+  },
+  "events.coorganizers.remove_text": {
+    "defaultMessage": "Cette personne ne pourra plus modifier l’événement, inviter des personnes ni approuver les participants. Vous pourrez la nommer de nouveau plus tard.",
+    "description": "What follows removing a co-organizer of an event, in its dialog."
+  },
+  "events.coorganizers.remove_confirm": {
+    "defaultMessage": "Retirer",
+    "description": "The button that confirms removing a co-organizer of an event."
+  },
+  "events.coorganizers.remove_keep": {
+    "defaultMessage": "La conserver",
+    "description": "The button that closes the dialog of removing a co-organizer without removing them, and the dialog's close."
+  }
+}

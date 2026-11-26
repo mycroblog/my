@@ -1,0 +1,6 @@
+{
+  "article.kind": {
+    "defaultMessage": "Article",
+    "description": "The caption above the title of an article in a timeline, with an article glyph, telling an article (a long post with a title, read on its own page) from a post."
+  }
+}

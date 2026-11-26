@@ -1,0 +1,78 @@
+{
+  "records.select_all": {
+    "defaultMessage": "全选",
+    "description": "The checkbox at the head of a table of records (reports, accounts, jobs in the staff's screens) that checks every row shown, or unchecks them all; shown beside it on a phone, read to assistive technology at every width."
+  },
+  "records.select_row": {
+    "defaultMessage": "选择 {name}",
+    "description": "The name, for assistive technology, of the checkbox at the start of a row of a table of records, which picks the row for an action on all the rows picked: name is what the row's head shows (an account's handle, a domain, a job's name)."
+  },
+  "records.selected": {
+    "defaultMessage": "{count, plural, =0 {未选择} other {已选择 # 项}}",
+    "description": "Above a table of records, beside the actions that act on every row picked: how many rows are picked; also read to assistive technology as it changes."
+  },
+  "records.facet": {
+    "defaultMessage": "{facet}：{value}",
+    "description": "A filter of a list in the staff's screens while a value of it is applied, on its button: facet is what it filters by (State, Category), value the value applied (Open, Spam)."
+  },
+  "records.clear_filters": {
+    "defaultMessage": "清除筛选",
+    "description": "After the filters over a list in the staff's screens, while any is applied: removes every filter and empties the search, showing the whole list again."
+  },
+  "records.pages": {
+    "defaultMessage": "页码",
+    "description": "The name, for assistive technology, of the navigation under a long list paged by cursor (reports, accounts, a staff queue) that moves to the page before or after."
+  },
+  "records.page": {
+    "defaultMessage": "第 {page, number} 页",
+    "description": "Between Previous and Next under a long list paged by cursor: which page of it is shown, counted from the first (the server gives no total, so no 'of N'); also read to assistive technology as it changes."
+  },
+  "records.previous": {
+    "defaultMessage": "上一页",
+    "description": "Under a long list, moves to the page before the one shown (newer records, in a list of the latest first)."
+  },
+  "records.next": {
+    "defaultMessage": "下一页",
+    "description": "Under a long list, moves to the page after the one shown (older records, in a list of the latest first)."
+  },
+  "records.later": {
+    "defaultMessage": "{granularity, select, week {更晚的周} month {更晚的月} other {更晚的年}}",
+    "description": "In place of Previous under a window of periods (the finance totals): shows the periods after those shown, up to today's (granularity: week, month or year)."
+  },
+  "records.earlier": {
+    "defaultMessage": "{granularity, select, week {更早的周} month {更早的月} other {更早的年}}",
+    "description": "In place of Next under a window of periods (the finance totals): shows the periods before those shown (granularity: week, month or year)."
+  },
+  "records.page_failed": {
+    "defaultMessage": "{direction, select, previous {无法加载上一页。} other {无法加载下一页。}}",
+    "description": "Over Previous and Next under a long list, when the page asked for could not be read: direction is previous or next, the way the reader asked for; the button that asked for it reads Try again (records.retry) meanwhile."
+  },
+  "records.periods_failed": {
+    "defaultMessage": "{direction, select, previous {{granularity, select, week {无法加载更晚的周。} month {无法加载更晚的月。} other {无法加载更晚的年。}}} other {{granularity, select, week {无法加载更早的周。} month {无法加载更早的月。} other {无法加载更早的年。}}}}",
+    "description": "Over Later and Earlier under a window of periods (the finance totals), when the periods asked for could not be read: direction is previous (Later, toward today) or next (Earlier), granularity week, month or year; the button that asked for them reads Try again (records.retry) meanwhile."
+  },
+  "records.more": {
+    "defaultMessage": "显示更多",
+    "description": "Under a list that grows in place (a table of records, a list inside a detail or the settings), adds the next items under those shown."
+  },
+  "records.more_failed": {
+    "defaultMessage": "无法加载列表的其余部分。",
+    "description": "Over Show more under a list that grows in place, when its next items could not be read; the button reads Try again (records.retry) meanwhile."
+  },
+  "records.retry": {
+    "defaultMessage": "重试",
+    "description": "The button under a list in place of Previous, Next or Show more after it failed (records.page_failed, records.more_failed): asks for the same items again."
+  },
+  "records.sort_by": {
+    "defaultMessage": "排序依据",
+    "description": "The name of the menu that a narrow table of records (the staff's screens on a phone) opens to choose the column it is sorted by and the direction; also shown on its button while the table is sorted by none."
+  },
+  "records.ascending": {
+    "defaultMessage": "升序",
+    "description": "In the sort menu of a table of records: sorts it from the least to the most (A to Z, oldest first); also read after the sorted column's name on the menu's button."
+  },
+  "records.descending": {
+    "defaultMessage": "降序",
+    "description": "In the sort menu of a table of records: sorts it from the most to the least (Z to A, newest first); also read after the sorted column's name on the menu's button."
+  }
+}

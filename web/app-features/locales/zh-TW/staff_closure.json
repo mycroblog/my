@@ -1,0 +1,258 @@
+{
+  "staff_closure.loading": {
+    "defaultMessage": "正在載入關閉資訊…",
+    "description": "In place of the closure's screens while the closure is read. Read by administrators."
+  },
+  "staff_closure.failed": {
+    "defaultMessage": "無法載入關閉資訊。",
+    "description": "In place of the closure's screens when the closure could not be read, before Try again. Read by administrators."
+  },
+  "staff_closure.announcement": {
+    "defaultMessage": "公告",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section of the announcement of the closure. Read by administrators."
+  },
+  "staff_closure.none": {
+    "defaultMessage": "目前沒有已宣布的關閉。",
+    "description": "On the closure's screen of the administration (/admin/closure), while no closure is announced. Read by administrators."
+  },
+  "staff_closure.announce": {
+    "defaultMessage": "宣布關閉",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the form that announces the closure, and that form's title. Read by administrators."
+  },
+  "staff_closure.announce.press": {
+    "defaultMessage": "宣布",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the button that sends the announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.change": {
+    "defaultMessage": "變更日期",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the form that changes the dates of the announcement, and that form's title. Read by administrators."
+  },
+  "staff_closure.withdraw": {
+    "defaultMessage": "撤回",
+    "description": "On the closure's screen of the administration (/admin/closure), the button that withdraws the announcement (asked first), and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.withdraw.title": {
+    "defaultMessage": "要撤回關閉嗎？",
+    "description": "On the closure's screen of the administration (/admin/closure), the question before withdrawing the announcement. Read by administrators."
+  },
+  "staff_closure.withdraw.text": {
+    "defaultMessage": "伺服器會照常運作，每位使用者都會收到通知與電子郵件。已拒絕的註冊與已結束的支持者訂閱維持原樣。",
+    "description": "On the closure's screen of the administration (/admin/closure), what follows withdrawing the announcement. Read by administrators."
+  },
+  "staff_closure.short_notice": {
+    "defaultMessage": "通知期不足 30 天：部分使用者可能來不及匯出資料並搬家。",
+    "description": "On the closure's screen of the administration (/admin/closure), under the announcement's facts when it gives less than 30 days' notice. Read by administrators."
+  },
+  "staff_closure.close": {
+    "defaultMessage": "關閉伺服器",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section that leads to closing the server, and the title of the check before it. Read by administrators."
+  },
+  "staff_closure.check": {
+    "defaultMessage": "檢查並關閉",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the check before closing the server, once the closing date has passed. Read by administrators."
+  },
+  "staff_closure.close.wait": {
+    "defaultMessage": "{date} 過後即可關閉伺服器。",
+    "description": "On the closure's screen of the administration (/admin/closure), in place of the way to close the server before the closing date ({date}, a date and time). Read by administrators."
+  },
+  "staff_closure.close.press": {
+    "defaultMessage": "關閉伺服器",
+    "description": "On the check before closing the server (/admin/closure/close), the button that asks before closing the server, and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.close.refused": {
+    "defaultMessage": "目前無法關閉伺服器。請回到關閉頁面確認狀態。",
+    "description": "On the check before closing the server (/admin/closure/close), when the server refused the closure in the state it is in. Read by administrators."
+  },
+  "staff_closure.close.not_yet": {
+    "defaultMessage": "{why, select, none {請先宣布關閉。} early {{date} 過後即可關閉伺服器。} other {伺服器已關閉。}}",
+    "description": "On the check before closing the server (/admin/closure/close), in place of Close the server while it cannot be closed ({date}, the closing date and time). Read by administrators."
+  },
+  "staff_closure.close.title": {
+    "defaultMessage": "要關閉 {domain} 嗎？",
+    "description": "On the check before closing the server (/admin/closure/close), the question before closing the server ({domain}, the server's domain, typed to confirm). Read by administrators."
+  },
+  "staff_closure.close.text": {
+    "defaultMessage": "到 {date} 為止，使用者只能登入並匯出資料。約有 {deletes, number} 筆投遞會要求其他伺服器刪除這個伺服器的帳號。這無法復原。",
+    "description": "On the check before closing the server (/admin/closure/close), what follows closing the server ({date}, the export deadline; {deletes}, a number). Read by administrators."
+  },
+  "staff_closure.close.heading": {
+    "defaultMessage": "關閉中",
+    "description": "On the check before closing the server (/admin/closure/close), the heading of the last section, which holds the mark of what cannot be undone and the button that closes the server. Read by administrators."
+  },
+  "staff_closure.closed": {
+    "defaultMessage": "已關閉",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section of a closed server. Read by administrators."
+  },
+  "staff_closure.progress": {
+    "defaultMessage": "正在刪除本機與其他伺服器上的帳號",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the progress of the delivery of the deletion of every local account. Read by administrators."
+  },
+  "staff_closure.progress.accounts": {
+    "defaultMessage": "已刪除的帳號",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of local accounts whose deletion was recorded. Read by administrators."
+  },
+  "staff_closure.progress.fanouts": {
+    "defaultMessage": "正在尋找對方伺服器",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deletions whose receiving servers are still being found. Read by administrators."
+  },
+  "staff_closure.progress.pending": {
+    "defaultMessage": "等待中",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries not attempted yet or to be attempted again. Read by administrators."
+  },
+  "staff_closure.progress.refused": {
+    "defaultMessage": "已拒絕",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries refused for good. Read by administrators."
+  },
+  "staff_closure.progress.skipped": {
+    "defaultMessage": "已略過",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries not sent, to a suspended or unavailable server. Read by administrators."
+  },
+  "staff_closure.progress.dead": {
+    "defaultMessage": "已用盡重試次數",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries that used up their attempts. Read by administrators."
+  },
+  "staff_closure.progress.going": {
+    "defaultMessage": "投遞仍在進行。請讓伺服器與其工作程序持續運作，直到投遞結束。",
+    "description": "On the closure's screen of the administration (/admin/closure), under the progress while deliveries go on. Read by administrators."
+  },
+  "staff_closure.progress.done": {
+    "defaultMessage": "所有投遞都已結束。",
+    "description": "On the closure's screen of the administration (/admin/closure), under the progress once every delivery has ended. Read by administrators."
+  },
+  "staff_closure.progress.meter": {
+    "defaultMessage": "已完成的投遞",
+    "description": "On the closure's screen of the administration (/admin/closure), the name of the meter of the deliveries of the deletion of the accounts that have ended, delivered or not, of all of them (staff_closure.progress.ended under it says the numbers). Read by administrators."
+  },
+  "staff_closure.progress.undelivered": {
+    "defaultMessage": "未投遞",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading over the deliveries that failed: refused, skipped, out of attempts. Read by administrators."
+  },
+  "staff_closure.progress.ended": {
+    "defaultMessage": "已結束 {ended, number} / {all, number}：已投遞 {succeeded, number}，未投遞 {failed, number}",
+    "description": "On the closure's screen of the administration (/admin/closure), under the meter of the deliveries of the deletion of the accounts: those ended of all, and of them those delivered and those not delivered (numbers). Read by administrators."
+  },
+  "staff_closure.state": {
+    "defaultMessage": "{state, select, due {已過關閉日期} other {已宣布}}",
+    "description": "On the closure's screen of the administration (/admin/closure), the state of an announced closure beside its mark: announced, or its closing date passed and the server not closed yet. Read by administrators."
+  },
+  "staff_closure.fact.state": {
+    "defaultMessage": "狀態",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of where the closure stands. Read by administrators."
+  },
+  "staff_closure.fact.closes": {
+    "defaultMessage": "關閉日期",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the closing date and time. Read by administrators."
+  },
+  "staff_closure.fact.closed": {
+    "defaultMessage": "關閉時間",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of when the server was closed. Read by administrators."
+  },
+  "staff_closure.fact.export_until": {
+    "defaultMessage": "匯出期限",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the last moment the users can export their data. Read by administrators."
+  },
+  "staff_closure.fact.announced": {
+    "defaultMessage": "宣布時間",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of when the announcement or its last change of dates was made. Read by administrators."
+  },
+  "staff_closure.fact.message": {
+    "defaultMessage": "訊息",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the operator's message to the users. Read by administrators."
+  },
+  "staff_closure.irreversible": {
+    "defaultMessage": "關閉後服務即告終止。這無法復原。",
+    "description": "On the check before closing the server (/admin/closure/close), the mark beside Close the server. Read by administrators."
+  },
+  "staff_closure.form.dates": {
+    "defaultMessage": "日期",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the heading of the section of the closing date and the export deadline. Read by administrators."
+  },
+  "staff_closure.form.closes": {
+    "defaultMessage": "關閉日期",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the name of the closing date and time's field. Read by administrators."
+  },
+  "staff_closure.form.closes.missing": {
+    "defaultMessage": "請選擇關閉的日期與時間。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the closing date when it is empty or no whole date and time. Read by administrators."
+  },
+  "staff_closure.form.until": {
+    "defaultMessage": "匯出期限",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the name of the field of the last moment the users can export their data. Read by administrators."
+  },
+  "staff_closure.form.until.about": {
+    "defaultMessage": "若留空，匯出期限為關閉日期後 30 天。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the line under the heading of the dates: the export deadline's default. Read by administrators."
+  },
+  "staff_closure.form.until.before": {
+    "defaultMessage": "請選擇不早於關閉日期的時間。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the export deadline when it is before the closing date. Read by administrators."
+  },
+  "staff_closure.form.message": {
+    "defaultMessage": "給使用者的訊息",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the heading of the section of the operator's message, shown in the notices and on the closed server's page. Read by administrators."
+  },
+  "staff_closure.form.closed": {
+    "defaultMessage": "伺服器已關閉，因此無法宣布關閉。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), when the server is closed already. Read by administrators."
+  },
+  "staff_closure.form.short": {
+    "defaultMessage": "通知期不足 30 天。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), beside the button when the closing date is less than 30 days away. Read by administrators."
+  },
+  "staff_closure.form.refused": {
+    "defaultMessage": "{field, select, closes_at {請選擇其他關閉日期。} export_until {請選擇不早於關閉日期的時間。} other {請將訊息縮短至 5,000 字元以內。}}",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the field the server refused. Read by administrators."
+  },
+  "staff_closure.ask.announce.title": {
+    "defaultMessage": "要宣布關閉嗎？",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the question before announcing the closure. Read by administrators."
+  },
+  "staff_closure.ask.announce.text": {
+    "defaultMessage": "每位使用者都會收到通知與電子郵件。註冊與邀請將停止，等待中的註冊會被拒絕，支持者訂閱會在期間結束時終止。撤回關閉並不會還原這些變更。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), what follows announcing the closure. Read by administrators."
+  },
+  "staff_closure.ask.change.title": {
+    "defaultMessage": "要變更日期嗎？",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the question before changing the dates of the announcement. Read by administrators."
+  },
+  "staff_closure.ask.change.text": {
+    "defaultMessage": "每位使用者都會收到附上新日期的通知與電子郵件。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), what follows changing the dates of the announcement. Read by administrators."
+  },
+  "staff_closure.check.heading": {
+    "defaultMessage": "關閉會造成的影響",
+    "description": "On the check before closing the server (/admin/closure/close), the heading of what closing would end. Read by administrators."
+  },
+  "staff_closure.check.deletes": {
+    "defaultMessage": "待投遞的刪除",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the estimate of the deliveries of the deletion of every local account. Read by administrators."
+  },
+  "staff_closure.check.migrations": {
+    "defaultMessage": "尚未結束的帳號搬遷",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the account migrations not ended. Read by administrators."
+  },
+  "staff_closure.check.holds": {
+    "defaultMessage": "受保留限制的帳號",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the accounts whose records are held. Read by administrators."
+  },
+  "staff_closure.check.count": {
+    "defaultMessage": "{count, number}",
+    "description": "On the check before closing the server (/admin/closure/close), a count of the check, as a number. Read by administrators."
+  },
+  "staff_closure.check.migrations.warning": {
+    "defaultMessage": "請等搬遷結束：關閉後就無法再開始搬遷。",
+    "description": "On the check before closing the server (/admin/closure/close), while account moves have not ended. Read by administrators."
+  },
+  "staff_closure.check.holds.warning": {
+    "defaultMessage": "請用命令列匯出受保留限制的紀錄，並保存在伺服器之外。",
+    "description": "On the check before closing the server (/admin/closure/close), while accounts are under a retention hold. Read by administrators."
+  },
+  "staff_closure.check.deletes.value": {
+    "defaultMessage": "約 {deletes, number} 筆（{accounts, number} 個帳號，送往 {inboxes, number} 個伺服器）",
+    "description": "On the check before closing the server (/admin/closure/close), the estimate of the deliveries ({deletes}), the local accounts ({accounts}) and the known inboxes ({inboxes}), numbers. Read by administrators."
+  },
+  "staff_closure.check.subscriptions": {
+    "defaultMessage": "立即結束且不退款的支持者訂閱",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the supporter subscriptions that the closure cancels. Read by administrators."
+  }
+}

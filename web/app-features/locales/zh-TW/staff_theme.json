@@ -1,0 +1,266 @@
+{
+  "staff_theme.section.text": {
+    "defaultMessage": "文字與連結",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the text colors. Read by administrators."
+  },
+  "staff_theme.section.accent": {
+    "defaultMessage": "強調色",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the accent color, the fill of the primary button and the text on it. Read by administrators."
+  },
+  "staff_theme.section.surfaces": {
+    "defaultMessage": "背景",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the background colors (the page, sections, controls, hovered and pressed). Read by administrators."
+  },
+  "staff_theme.section.fonts": {
+    "defaultMessage": "字型",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the fonts. Read by administrators."
+  },
+  "staff_theme.section.sizes": {
+    "defaultMessage": "文字大小",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the sizes of the type scale. Read by administrators."
+  },
+  "staff_theme.section.line_heights": {
+    "defaultMessage": "行高",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the line heights of the type scale; each field is named by its size (Body). Read by administrators."
+  },
+  "staff_theme.section.shape": {
+    "defaultMessage": "圓角與動態",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the corners' radii and the spinner's turn. Read by administrators."
+  },
+  "staff_theme.token.color_text": {
+    "defaultMessage": "文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of most text. Read by administrators."
+  },
+  "staff_theme.token.color_muted_text": {
+    "defaultMessage": "次要文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of secondary text. Read by administrators."
+  },
+  "staff_theme.token.color_accent_text": {
+    "defaultMessage": "強調文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of links and the focus ring. Read by administrators."
+  },
+  "staff_theme.token.color_quote_bar": {
+    "defaultMessage": "引用線",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the bar at the start of a quote. Read by administrators."
+  },
+  "staff_theme.token.color_accent": {
+    "defaultMessage": "強調色",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the accent fill color. Read by administrators."
+  },
+  "staff_theme.token.color_on_accent": {
+    "defaultMessage": "強調色上的文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the text on the accent fill. Read by administrators."
+  },
+  "staff_theme.token.color_surface": {
+    "defaultMessage": "頁面背景",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the page's background color. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised": {
+    "defaultMessage": "欄位與按鈕",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of sections, buttons and fields. Read by administrators."
+  },
+  "staff_theme.token.font_sans_override": {
+    "defaultMessage": "文字字型",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the font families of text. Read by administrators."
+  },
+  "staff_theme.token.font_sans_override.about": {
+    "defaultMessage": "字型家族名稱，以逗號分隔。你的字型缺少的字，會由應用程式自己的字型補上。",
+    "description": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the text font's name. Read by administrators."
+  },
+  "staff_theme.token.font_mono_override": {
+    "defaultMessage": "程式碼字型",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the font families of code. Read by administrators."
+  },
+  "staff_theme.token.font_mono_override.about": {
+    "defaultMessage": "字型家族名稱，以逗號分隔。",
+    "description": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the code font's name. Read by administrators."
+  },
+  "staff_theme.token.text_tagline": {
+    "defaultMessage": "標語",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the largest step of the type scale (the landing page's line); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_heading": {
+    "defaultMessage": "標題",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a section's heading); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_title": {
+    "defaultMessage": "名稱",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a screen's title); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_reading": {
+    "defaultMessage": "閱讀",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (an article's text); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_body": {
+    "defaultMessage": "內文",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (most text); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_caption": {
+    "defaultMessage": "說明文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the smallest step of the type scale; also names its line height. Read by administrators."
+  },
+  "staff_theme.token.radius_control": {
+    "defaultMessage": "控制項的圓角",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the radius of buttons and fields. Read by administrators."
+  },
+  "staff_theme.token.radius_overlay": {
+    "defaultMessage": "選單與對話框的圓角",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the radius of menus, dialogs and notices. Read by administrators."
+  },
+  "staff_theme.token.duration_spin": {
+    "defaultMessage": "載入圖示的轉動",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the time one turn of the loading spinner takes. Read by administrators."
+  },
+  "staff_theme.token.unknown": {
+    "defaultMessage": "顏色",
+    "description": "On the theme editor of the administration (/admin/theme/draft), in a refusal, the name of a token the app does not know (one a newer server added). Read by administrators."
+  },
+  "staff_theme.token.color_surface_hover": {
+    "defaultMessage": "頁面背景（游標停留）",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a control without a surface under the pointer. Read by administrators."
+  },
+  "staff_theme.token.color_surface_pressed": {
+    "defaultMessage": "頁面背景（按下）",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a control without a surface while pressed. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised_hover": {
+    "defaultMessage": "欄位與按鈕（游標停留）",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a button or a field under the pointer. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised_pressed": {
+    "defaultMessage": "按鈕（按下）",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a button while pressed. Read by administrators."
+  },
+  "staff_theme.token.text_headline": {
+    "defaultMessage": "大標題",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a page's headline); also names its line height. Read by administrators."
+  },
+  "staff_theme.pair": {
+    "defaultMessage": "{role, select, text {位於 {name} 之上} other {位於 {name} 之下}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), a pair the color makes with another one, beside its contrast ratio: the color as text on {name}, or as the background under {name} ({name}, the other color's name). Read by administrators."
+  },
+  "staff_theme.error.range": {
+    "defaultMessage": "{kind, select, length {請寫下 {min}rem 到 {max}rem 的值。} duration {請寫下 {min}ms 到 {max}ms 的值。} other {請寫下 {min} 到 {max} 的值。}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), under a field whose value the server refused as out of its bounds ({min}, {max}). Read by administrators."
+  },
+  "staff_theme.error.contrast": {
+    "defaultMessage": "尚未儲存任何內容。在{scheme, select, light {淺色} other {深色}}模式下，{token}在{background}上的對比為 {ratio}:1，需要 {minimum}:1。請變更其中一個顏色。",
+    "description": "On the theme editor of the administration (/admin/theme/draft), beside Save when the server refused the draft for a pair under its minimum contrast ({token} and {background}, the colors' names; {ratio} and {minimum}, numbers). Read by administrators."
+  },
+  "staff_theme.error.invalid": {
+    "defaultMessage": "{kind, select, length {請寫下 0，或帶有 rem 或 px 的數字（0.875rem）。} number {請寫下數字（1.5）。} duration {請寫下帶有 ms 或 s 的數字（800ms）。} other {請寫下字型家族名稱，以逗號分隔。}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), under a field whose value the server refused as no value of its kind, how to write one. Read by administrators."
+  },
+  "staff_theme.draft.title": {
+    "defaultMessage": "佈景主題草稿",
+    "description": "The title of the theme editor of the administration (/admin/theme/draft). Read by administrators."
+  },
+  "staff_theme.draft.none": {
+    "defaultMessage": "尚未儲存草稿。請從目前生效的佈景主題開始。",
+    "description": "On the theme's screen of the administration (/admin/theme), in the draft's section while no draft was saved. Read by administrators."
+  },
+  "staff_theme.draft.same": {
+    "defaultMessage": "與已發布的佈景主題相同",
+    "description": "On the theme's screen of the administration (/admin/theme), the draft's state: it overrides what the published theme does. Read by administrators."
+  },
+  "staff_theme.draft.differs": {
+    "defaultMessage": "尚未發布",
+    "description": "On the theme's screen of the administration (/admin/theme), the draft's state: it differs from the published theme. Read by administrators."
+  },
+  "staff_theme.loading": {
+    "defaultMessage": "正在載入佈景主題…",
+    "description": "In place of the theme's screens while the theme is read. Read by administrators."
+  },
+  "staff_theme.failed": {
+    "defaultMessage": "無法載入佈景主題。",
+    "description": "In place of the theme's screens when the theme could not be read, before Try again. Read by administrators."
+  },
+  "staff_theme.draft": {
+    "defaultMessage": "草稿",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the section of the draft, which is published from there. Read by administrators."
+  },
+  "staff_theme.fact.saved": {
+    "defaultMessage": "儲存時間",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of when the draft was saved, beside the date. Read by administrators."
+  },
+  "staff_theme.fact.published": {
+    "defaultMessage": "發布時間",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of when the theme in effect was published, beside the date. Read by administrators."
+  },
+  "staff_theme.fact.changes": {
+    "defaultMessage": "變更",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of how many tokens the set changes from the default. Read by administrators."
+  },
+  "staff_theme.fact.state": {
+    "defaultMessage": "狀態",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of whether the draft is published. Read by administrators."
+  },
+  "staff_theme.fact.stale": {
+    "defaultMessage": "已不再適用",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of the overrides an upgrade of the server left without effect. Read by administrators."
+  },
+  "staff_theme.stale": {
+    "defaultMessage": "{count, plural, other {# 項變更：{tokens}。下次儲存時會捨棄它們。}}",
+    "description": "On the theme's screen of the administration (/admin/theme), the overrides an upgrade renamed, retired or put out of bounds ({tokens}: their names as this screen says them, in a list of the reader's language; the code name, such as color-link, for a token the app no longer knows). Read by administrators."
+  },
+  "staff_theme.publish": {
+    "defaultMessage": "發布",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that publishes the draft to every visitor. Read by administrators."
+  },
+  "staff_theme.preview": {
+    "defaultMessage": "預覽",
+    "description": "On the theme's screen of the administration (/admin/theme), the toggle that lays the draft over every screen of this tab, pressed while it does. Read by administrators."
+  },
+  "staff_theme.preview.on": {
+    "defaultMessage": "在你再次按下「預覽」之前，這個分頁的每個畫面都會顯示草稿。",
+    "description": "On the theme's screen of the administration (/admin/theme), while the draft is previewed: where and until when. Read by administrators."
+  },
+  "staff_theme.edit": {
+    "defaultMessage": "編輯草稿",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that opens the theme editor on the draft. Read by administrators."
+  },
+  "staff_theme.start": {
+    "defaultMessage": "開始草稿",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that opens the theme editor while no draft is saved. Read by administrators."
+  },
+  "staff_theme.published": {
+    "defaultMessage": "生效中",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the section of the published theme. Read by administrators."
+  },
+  "staff_theme.published.none": {
+    "defaultMessage": "預設佈景主題。",
+    "description": "On the theme's screen of the administration (/admin/theme), in the section of the published theme while none was published. Read by administrators."
+  },
+  "staff_theme.restore": {
+    "defaultMessage": "還原先前的佈景主題",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that publishes again the theme in effect before the current one. Read by administrators."
+  },
+  "staff_theme.done": {
+    "defaultMessage": "{what, select, publish {已發布。} other {已還原。}}訪客會在幾分鐘內看到，已開啟的頁面在重新載入後也會看到。",
+    "description": "On the theme's screen of the administration (/admin/theme), after the draft was published or the previous theme restored. Read by administrators."
+  },
+  "staff_theme.restore.none": {
+    "defaultMessage": "沒有先前發布過的佈景主題。",
+    "description": "On the theme's screen of the administration (/admin/theme), when restoring found no theme published before the current one. Read by administrators."
+  },
+  "staff_theme.publish.none": {
+    "defaultMessage": "尚未儲存草稿。請先儲存一份，再發布。",
+    "description": "On the theme's screen of the administration (/admin/theme), when publishing found no draft saved. Read by administrators."
+  },
+  "staff_theme.brand": {
+    "defaultMessage": "在伺服器設定頁面上",
+    "description": "On the theme's screen of the administration (/admin/theme), under Icon and logo, the door to that page: where it is."
+  },
+  "staff_theme.changes": {
+    "defaultMessage": "{count, plural, =0 {無：預設佈景主題} other {與預設相比有 # 項不同}}",
+    "description": "On the theme's screen of the administration (/admin/theme), how many tokens the set changes from the default. Read by administrators."
+  },
+  "staff_theme.elsewhere": {
+    "defaultMessage": "其他地方",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the last section, which leads to the icon and logo page of Server settings. Read by administrators."
+  },
+  "staff_theme.invalid": {
+    "defaultMessage": "{what, select, publish {草稿尚未發布：伺服器更新變更了佈景主題的規則，草稿已不符合。請修正草稿標示的部分，儲存後再發布。} other {先前的佈景主題尚未還原：伺服器更新變更了佈景主題的規則，該佈景主題已不符合。請在草稿中做出你想要的佈景主題，再發布。}}",
+    "description": "On the theme's screen of the administration (/admin/theme), when the server refused to publish the draft or restore the previous theme because the set no longer meets a rule (an upgrade changed the defaults its pairs are checked with); in both cases a link to the draft's form follows (staff_theme.edit). Read by administrators."
+  }
+}

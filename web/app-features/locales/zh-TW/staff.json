@@ -1,0 +1,618 @@
+{
+  "staff.retry": {
+    "defaultMessage": "重試",
+    "description": "The button after a sentence on a moderator's screen that says something could not be loaded or done."
+  },
+  "staff.account_gone": {
+    "defaultMessage": "已不存在的帳號",
+    "description": "On a moderator's screen, in the place of an account's handle when the server no longer has the account."
+  },
+  "staff.root.moderation": {
+    "defaultMessage": "審核畫面",
+    "description": "The name, for assistive technology, of the list of moderation screens at /moderation."
+  },
+  "staff.root.admin": {
+    "defaultMessage": "管理畫面",
+    "description": "The name, for assistive technology, of the list of server administration screens at /admin."
+  },
+  "staff.root.title": {
+    "defaultMessage": "{area, select, moderation {審核} other {管理}}",
+    "description": "Title of the root of the moderation screens (/moderation) or of the administration screens (/admin), as the navigation names it."
+  },
+  "staff.root.loading": {
+    "defaultMessage": "正在載入你可使用的畫面…",
+    "description": "At /moderation or /admin while the server has not yet said which screens the reader's permissions open."
+  },
+  "staff.root.none.moderation": {
+    "defaultMessage": "你的帳號沒有審核權限，因此沒有可使用的審核畫面。",
+    "description": "At /moderation, for a reader whose account has no moderation permission."
+  },
+  "staff.root.none.admin": {
+    "defaultMessage": "你的帳號沒有伺服器管理權限，因此沒有可使用的管理畫面。",
+    "description": "At /admin, for a reader whose account has no server administration permission."
+  },
+  "staff.root.none_yet": {
+    "defaultMessage": "這裡目前沒有符合你權限的畫面。",
+    "description": "At /moderation or /admin, for a reader who has permissions of the area but whom no screen built so far is open to."
+  },
+  "staff.group.queues": {
+    "defaultMessage": "等待版主處理",
+    "description": "The heading of the group of moderation screens that hold what waits for a moderator (reports, later appeals and registrations)."
+  },
+  "staff.group.server": {
+    "defaultMessage": "此伺服器",
+    "description": "The heading at /admin of the group of screens of the server's own settings, texts and rules. Read by administrators."
+  },
+  "staff.group.connections": {
+    "defaultMessage": "連線",
+    "description": "The heading at /admin of the group of screens of what the server connects to: relays, login providers, OAuth apps. Read by administrators."
+  },
+  "staff.entry.reports": {
+    "defaultMessage": "檢舉",
+    "description": "The name of the moderators' queue of reports, in the list at /moderation and as the title of its screen."
+  },
+  "staff.entry.reports.count": {
+    "defaultMessage": "{count, plural, other {# 則未處理檢舉}}",
+    "description": "For assistive technology, what the badge at the end of Reports in the list of moderation screens counts."
+  },
+  "staff.entry.settings": {
+    "defaultMessage": "伺服器設定",
+    "description": "The name of the screen of the instance's settings, by topic, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.documents": {
+    "defaultMessage": "條款與政策",
+    "description": "The name of the screen of the terms, the privacy policy and the commerce disclosure, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.rules": {
+    "defaultMessage": "規則",
+    "description": "The name of the screen of the instance's rules, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.translation": {
+    "defaultMessage": "貼文翻譯",
+    "description": "The name of the screen of the settings of post translation, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.relays": {
+    "defaultMessage": "中繼站",
+    "description": "The name of the screen of the relays, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.login_providers": {
+    "defaultMessage": "登入提供者",
+    "description": "The name of the screen of the external login providers, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.oauth_apps": {
+    "defaultMessage": "OAuth 應用程式",
+    "description": "The name of the screen of the OAuth apps and the denied hosts of metadata documents, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.theme": {
+    "defaultMessage": "佈景主題",
+    "description": "The name of the screen of the server's theme (its colors, type and corners), in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.closure": {
+    "defaultMessage": "伺服器關閉",
+    "description": "The name of the screen of the closure of the server (announcing it, checking, closing), in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.missing": {
+    "defaultMessage": "這個網址沒有你可使用的畫面。",
+    "description": "In a moderation or administration screen's place, at an address that names no screen, or one the reader's permissions do not open; a link to the area's screens follows."
+  },
+  "staff.missing.moderation": {
+    "defaultMessage": "所有審核畫面",
+    "description": "The link after the sentence that an address names no moderation screen, to /moderation."
+  },
+  "staff.missing.admin": {
+    "defaultMessage": "所有管理畫面",
+    "description": "The link after the sentence that an address names no administration screen, to /admin."
+  },
+  "staff.reports.filters": {
+    "defaultMessage": "篩選檢舉",
+    "description": "For assistive technology, the name of the filters over the moderators' queue of reports."
+  },
+  "staff.reports.state": {
+    "defaultMessage": "狀態",
+    "description": "The filter of the queue of reports by whether a report is open or resolved; its button and its menu."
+  },
+  "staff.reports.state.any": {
+    "defaultMessage": "任何狀態",
+    "description": "The first value of the state filter of the queue of reports: no filter."
+  },
+  "staff.reports.state.open": {
+    "defaultMessage": "未處理",
+    "description": "A value of the state filter of the queue of reports: the reports that wait for a moderator."
+  },
+  "staff.reports.state.resolved": {
+    "defaultMessage": "已解決",
+    "description": "A value of the state filter of the queue of reports: the reports a moderator resolved."
+  },
+  "staff.reports.category": {
+    "defaultMessage": "類別",
+    "description": "The filter of the queue of reports by why the account was reported; its button and its menu."
+  },
+  "staff.reports.category.any": {
+    "defaultMessage": "任何類別",
+    "description": "The first value of the category filter of the queue of reports: no filter."
+  },
+  "staff.reports.assignee": {
+    "defaultMessage": "處理者",
+    "description": "The filter of the queue of reports by which moderator handles a report; its button and its menu."
+  },
+  "staff.reports.assignee.any": {
+    "defaultMessage": "任何人或無人",
+    "description": "The first value of the Handled by filter of the queue of reports: no filter."
+  },
+  "staff.reports.assignee.me": {
+    "defaultMessage": "你",
+    "description": "A value of the Handled by filter of the queue of reports: the reports the reader handles."
+  },
+  "staff.reports.assignee.none": {
+    "defaultMessage": "無人",
+    "description": "A value of the Handled by filter of the queue of reports: the reports no moderator handles."
+  },
+  "staff.reports.table": {
+    "defaultMessage": "檢舉",
+    "description": "For assistive technology, the name of the table of the moderators' queue of reports."
+  },
+  "staff.reports.column.account": {
+    "defaultMessage": "帳號",
+    "description": "The name of the column of the queue of reports that holds the reported account's handle."
+  },
+  "staff.reports.column.category": {
+    "defaultMessage": "類別",
+    "description": "The name of the column of the queue of reports that holds why the account was reported."
+  },
+  "staff.reports.column.filed": {
+    "defaultMessage": "提出時間",
+    "description": "The name of the column of the queue of reports that holds when a report was filed; it sorts the queue."
+  },
+  "staff.reports.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The name of the column of the queue of reports that holds whether a report is open, who handles it, or that it is resolved."
+  },
+  "staff.reports.by": {
+    "defaultMessage": "由 {handle} 檢舉",
+    "description": "Under a reported account's handle in the queue of reports: who filed the report. {handle} is their handle."
+  },
+  "staff.reports.by_server": {
+    "defaultMessage": "由 {domain} 傳送",
+    "description": "Under a reported account's handle in the queue of reports: another server sent the report. {domain} is that server."
+  },
+  "staff.reports.by_review": {
+    "defaultMessage": "由自動審查提出",
+    "description": "Under a reported account's handle in the queue of reports: an external review of this server filed it."
+  },
+  "staff.reports.by_gone": {
+    "defaultMessage": "由已不存在的帳號檢舉",
+    "description": "Under a reported account's handle in the queue of reports: the account that filed it is gone."
+  },
+  "staff.reports.empty.open": {
+    "defaultMessage": "沒有未處理的檢舉。",
+    "description": "In the place of the queue of reports when no report is open and no filter is applied."
+  },
+  "staff.reports.empty.filtered": {
+    "defaultMessage": "沒有符合這些篩選條件的檢舉。",
+    "description": "In the place of the queue of reports when the filters match none; Clear filters follows."
+  },
+  "staff.reports.loading": {
+    "defaultMessage": "正在載入檢舉…",
+    "description": "In the place of the queue of reports while it loads."
+  },
+  "staff.reports.failed": {
+    "defaultMessage": "無法載入檢舉。",
+    "description": "In the place of the queue of reports when it could not be loaded; Try again follows."
+  },
+  "staff.reports.forbidden": {
+    "defaultMessage": "你的帳號已無法處理檢舉。",
+    "description": "In the place of the queue of reports or a report when the server refuses it: the reader's account lost the permission meanwhile."
+  },
+  "staff.report.state.open": {
+    "defaultMessage": "未處理",
+    "description": "The state of a report that waits for a moderator and that nobody handles; in the queue and in the report's facts."
+  },
+  "staff.report.state.assigned_you": {
+    "defaultMessage": "已指派給你",
+    "description": "The state of an open report that the reader handles, in the queue of reports."
+  },
+  "staff.report.state.assigned": {
+    "defaultMessage": "已指派給 {handle}",
+    "description": "The state of an open report that another moderator handles, in the queue of reports. {handle} is their handle."
+  },
+  "staff.report.state.assigned_someone": {
+    "defaultMessage": "已指派",
+    "description": "The state of an open report that another moderator handles, in the queue, while their account loads or once it is gone."
+  },
+  "staff.report.state.resolved": {
+    "defaultMessage": "已解決",
+    "description": "The state of a report a moderator resolved, in the queue of reports."
+  },
+  "staff.report.category": {
+    "defaultMessage": "{category, select, spam {垃圾訊息} legal {違法內容} violation {違反伺服器規則} other {其他}}",
+    "description": "Why an account was reported, in the queue of reports, its filter, and the report's facts."
+  },
+  "staff.report.back": {
+    "defaultMessage": "檢舉",
+    "description": "The way back from a report's screen to the queue of reports."
+  },
+  "staff.report.loading": {
+    "defaultMessage": "正在載入檢舉…",
+    "description": "In the place of a report's screen while it loads."
+  },
+  "staff.report.failed": {
+    "defaultMessage": "無法載入這則檢舉。",
+    "description": "In the place of a report's screen when it could not be loaded; Try again follows."
+  },
+  "staff.report.missing": {
+    "defaultMessage": "這個網址沒有檢舉。",
+    "description": "In the place of a report's screen when the server has no such report; a link to the queue follows."
+  },
+  "staff.report.missing.all": {
+    "defaultMessage": "所有檢舉",
+    "description": "The link to the queue of reports after the sentence that an address names no report."
+  },
+  "staff.report.assign": {
+    "defaultMessage": "指派給我",
+    "description": "The button of a report's screen that makes the reader the moderator who handles it."
+  },
+  "staff.report.unassign": {
+    "defaultMessage": "取消指派",
+    "description": "The button of a report's screen that leaves the report the reader handles to nobody."
+  },
+  "staff.report.resolve": {
+    "defaultMessage": "標示為已解決",
+    "description": "The button of an open report's screen that opens the choice of how it was resolved."
+  },
+  "staff.report.resolve.menu": {
+    "defaultMessage": "如何解決的？",
+    "description": "The name of the menu that Resolve opens on a report's screen."
+  },
+  "staff.report.resolve.actioned": {
+    "defaultMessage": "已採取行動",
+    "description": "An item of the Resolve menu of a report: a moderator acted on the account."
+  },
+  "staff.report.resolve.dismissed": {
+    "defaultMessage": "無需處理",
+    "description": "An item of the Resolve menu of a report: there was nothing to act on."
+  },
+  "staff.report.reopen": {
+    "defaultMessage": "重新開啟",
+    "description": "The button of a resolved report's screen that puts it back in the queue, open."
+  },
+  "staff.report.done.assigned": {
+    "defaultMessage": "現在由你處理這則檢舉。",
+    "description": "Said on a report's screen once the reader took it."
+  },
+  "staff.report.done.unassigned": {
+    "defaultMessage": "現在沒有人處理這則檢舉。",
+    "description": "Said on a report's screen once the reader left it to nobody."
+  },
+  "staff.report.done.resolved": {
+    "defaultMessage": "檢舉已解決。",
+    "description": "Said on a report's screen once the reader resolved it. The reporter, if local, is notified, without how."
+  },
+  "staff.report.done.reopened": {
+    "defaultMessage": "檢舉已重新開啟。",
+    "description": "Said on a report's screen once the reader reopened it."
+  },
+  "staff.report.done.forwarded": {
+    "defaultMessage": "檢舉已傳送給 {domain}。",
+    "description": "Said on a report's screen once it was forwarded. {domain} is the reported account's server."
+  },
+  "staff.report.write_failed": {
+    "defaultMessage": "無法完成。請再試一次。",
+    "description": "Said on a report's screen when the server did not do what the reader pressed."
+  },
+  "staff.report.facts": {
+    "defaultMessage": "檢舉資訊",
+    "description": "For assistive technology, the name of the list of a report's facts."
+  },
+  "staff.report.fact.state": {
+    "defaultMessage": "狀態",
+    "description": "The term of a report's state in its facts."
+  },
+  "staff.report.fact.category": {
+    "defaultMessage": "類別",
+    "description": "The term of why an account was reported, in the report's facts."
+  },
+  "staff.report.fact.rules": {
+    "defaultMessage": "規則",
+    "description": "The term of the server's rules a report cites, in its facts."
+  },
+  "staff.report.fact.filed": {
+    "defaultMessage": "提出時間",
+    "description": "The term of when a report was filed, in its facts."
+  },
+  "staff.report.fact.reporter": {
+    "defaultMessage": "檢舉者",
+    "description": "The term of who filed a report, in its facts."
+  },
+  "staff.report.fact.assignee": {
+    "defaultMessage": "處理者",
+    "description": "The term of which moderator handles a report, in its facts."
+  },
+  "staff.report.fact.forwarded": {
+    "defaultMessage": "對方伺服器",
+    "description": "The term, in a report's facts, of whether a report of a remote account went to that account's server."
+  },
+  "staff.report.fact.history": {
+    "defaultMessage": "此帳號的紀錄",
+    "description": "The term, in a report's facts, of what the moderators had about the reported account: its other reports and actions."
+  },
+  "staff.report.fact.resolved_at": {
+    "defaultMessage": "解決時間",
+    "description": "The term, in a report's facts, of when a resolved report was resolved."
+  },
+  "staff.report.rule_retired": {
+    "defaultMessage": "已不再生效的規則",
+    "description": "In the list of rules a report cites, in the place of a rule the server retired since."
+  },
+  "staff.report.nobody": {
+    "defaultMessage": "無人",
+    "description": "Who handles a report that no moderator handles, in its facts."
+  },
+  "staff.report.you": {
+    "defaultMessage": "你",
+    "description": "Who handles a report the reader handles, in its facts."
+  },
+  "staff.report.someone": {
+    "defaultMessage": "一位版主",
+    "description": "Who handles a report, in its facts, while their account loads or once it is gone."
+  },
+  "staff.report.forwarded.yes": {
+    "defaultMessage": "已傳送給 {domain}",
+    "description": "In a report's facts: the report went to the reported account's server. {domain} is that server."
+  },
+  "staff.report.forwarded.no": {
+    "defaultMessage": "未傳送給 {domain}",
+    "description": "In a report's facts: the report did not go to the reported account's server. {domain} is that server."
+  },
+  "staff.report.history": {
+    "defaultMessage": "{reports, plural, =0 {沒有其他檢舉} other {另有 # 則檢舉}}，{actions, plural, =0 {沒有審核動作} other {# 個審核動作}}",
+    "description": "In a report's facts: how many other reports the account has, open or resolved, and how many moderation actions it had, ended ones included."
+  },
+  "staff.report.account": {
+    "defaultMessage": "被檢舉的帳號",
+    "description": "The heading of the section of a report's screen that names the reported account."
+  },
+  "staff.report.comment": {
+    "defaultMessage": "留言",
+    "description": "The heading of the reporter's comment on a report's screen."
+  },
+  "staff.report.comment.none": {
+    "defaultMessage": "檢舉者沒有留言。",
+    "description": "In the place of the comment of a report that has none."
+  },
+  "staff.report.translate": {
+    "defaultMessage": "翻譯",
+    "description": "The button under a report's comment that translates it into the reader's language."
+  },
+  "staff.report.original": {
+    "defaultMessage": "顯示原文",
+    "description": "The button under a translated comment of a report that shows the comment as written."
+  },
+  "staff.report.translating": {
+    "defaultMessage": "正在翻譯…",
+    "description": "Under a report's comment while it is translated."
+  },
+  "staff.report.translated": {
+    "defaultMessage": "由 {provider} 從 {language} 翻譯",
+    "description": "Under a report's translated comment. {language} is the language it was written in, {provider} the provider that translated it."
+  },
+  "staff.report.translate_failed": {
+    "defaultMessage": "{reason, select, limit {已達這個伺服器的每月翻譯上限。下個月即可再次翻譯。} visibility {無法將這則留言傳送給這個伺服器的翻譯服務。} language {這個伺服器的翻譯服務不支援這些語言之間的翻譯。} other {無法翻譯這則留言。}}",
+    "description": "Under a report's comment when the server did not translate it, by why: limit (the reader or the whole server used up this month's characters), visibility (no translation service of the server may receive a report's text), language (none translates from the comment's language into the reader's), other (the service failed). Try again follows only other. Read by moderators, who still read the comment as written."
+  },
+  "staff.report.posts": {
+    "defaultMessage": "{count, plural, other {# 則貼文}}",
+    "description": "The heading of the posts a report points at, on its screen: how many it points at."
+  },
+  "staff.report.posts.gone": {
+    "defaultMessage": "{count, plural, other {檢舉中有 # 則貼文已不在伺服器上。}}",
+    "description": "Under the posts of a report, for those the server deleted for good since."
+  },
+  "staff.report.deleted": {
+    "defaultMessage": "已刪除",
+    "description": "Over a post a report points at that was deleted since; when it was deleted follows at the line's end."
+  },
+  "staff.report.room.name": {
+    "defaultMessage": "房間名稱",
+    "description": "The term of a voice chat room's name, in a report's facts of the room."
+  },
+  "staff.report.room.description": {
+    "defaultMessage": "房間說明",
+    "description": "The term of a voice chat room's description, in a report's facts of the room."
+  },
+  "staff.report.room.opened": {
+    "defaultMessage": "房間開啟時間",
+    "description": "The term of when a voice chat room opened, in a report's facts of the room."
+  },
+  "staff.report.room.ended": {
+    "defaultMessage": "房間結束時間",
+    "description": "The term of when and how a voice chat room ended, in a report's facts of the room."
+  },
+  "staff.report.room.open_now": {
+    "defaultMessage": "仍開啟中",
+    "description": "In a report's facts of a voice chat room that is still open."
+  },
+  "staff.report.room.end_note": {
+    "defaultMessage": "結束原因",
+    "description": "The term of the reason a moderator gave for ending a voice chat room."
+  },
+  "staff.report.room.settings": {
+    "defaultMessage": "房間設定",
+    "description": "For assistive technology, the name of the facts of one change of a voice chat room's settings."
+  },
+  "staff.report.room.log": {
+    "defaultMessage": "房間內的成員",
+    "description": "The heading, and the name for assistive technology, of the log of the voice chat room a report points at."
+  },
+  "staff.report.room.left": {
+    "defaultMessage": "{reason, select, moved {{handle} 移到了另一個房間} disconnected {{handle} 失去連線} removed {{handle} 被移出房間} blocked {{handle} 在被封鎖後離開} suspended {{handle} 在被停權時離開} room_ended {{handle} 待到房間結束} other {{handle} 已離開}}",
+    "description": "An entry of a voice chat room's log on a report's screen: how the account of {handle} left."
+  },
+  "staff.report.room.removed": {
+    "defaultMessage": "{by} 將 {handle} 移出房間",
+    "description": "An entry of a voice chat room's log on a report's screen. {by} removed {handle}, who may not join again."
+  },
+  "staff.report.room.end": {
+    "defaultMessage": "{reason, select, host {由主持人結束} moderator {由版主結束} other {自行結束}}",
+    "description": "In a report's facts: how the voice chat room ended."
+  },
+  "staff.report.room.how": {
+    "defaultMessage": "結束方式",
+    "description": "The term, in a report's facts, of how the voice chat room it points at ended."
+  },
+  "staff.report.room.joined": {
+    "defaultMessage": "{handle} 已加入",
+    "description": "An entry of a voice chat room's log on a report's screen. {handle} is who joined."
+  },
+  "staff.report.revision.by": {
+    "defaultMessage": "{handle} 變更了設定",
+    "description": "An entry of the log of a voice chat room or an event on a report's screen: a change of its settings. Details shows them."
+  },
+  "staff.report.revision.reported": {
+    "defaultMessage": "檢舉者看到的內容",
+    "description": "Under the change of a room's or an event's settings that was in effect when it was reported."
+  },
+  "staff.report.event.title": {
+    "defaultMessage": "活動標題",
+    "description": "The term of an event's title, in a report's facts of the event."
+  },
+  "staff.report.event.description": {
+    "defaultMessage": "活動說明",
+    "description": "The term of an event's description, in a report's facts of the event."
+  },
+  "staff.report.event.places": {
+    "defaultMessage": "地點",
+    "description": "The term of an event's places, every one whoever they were shown to, in a report's facts of the event."
+  },
+  "staff.report.event.no_places": {
+    "defaultMessage": "無",
+    "description": "In a report's facts of an event that has no places."
+  },
+  "staff.report.event.voice_place": {
+    "defaultMessage": "這個伺服器的語音聊天室",
+    "description": "In the list of an event's places on a report's screen, for a voice chat room."
+  },
+  "staff.report.event.when": {
+    "defaultMessage": "活動日期",
+    "description": "The term of when an event starts, in a report's facts of the event."
+  },
+  "staff.report.event.no_date": {
+    "defaultMessage": "尚未決定",
+    "description": "In a report's facts of an event that has no date yet."
+  },
+  "staff.report.event.canceled": {
+    "defaultMessage": "已取消",
+    "description": "The term, in a report's facts, of who or what cancelled the event it points at."
+  },
+  "staff.report.event.open": {
+    "defaultMessage": "開啟活動",
+    "description": "The link of a report's screen to the page of the event it points at."
+  },
+  "staff.report.event.settings": {
+    "defaultMessage": "活動設定",
+    "description": "For assistive technology, the name of the facts of one change of an event's settings."
+  },
+  "staff.report.event.log": {
+    "defaultMessage": "活動的變更紀錄",
+    "description": "The heading, and the name for assistive technology, of the log of the changes of the event a report points at."
+  },
+  "staff.report.event.canceled_by": {
+    "defaultMessage": "{reason, select, moderator {由版主取消} organizer_suspended {在主辦者被停權時取消} organizer_deleted {在主辦者被刪除時取消} other {由主辦者取消}}",
+    "description": "In a report's facts of a cancelled event: who or what cancelled it."
+  },
+  "staff.report.event.canceled_at": {
+    "defaultMessage": "取消時間",
+    "description": "The term, in a report's facts, of when the event it points at was cancelled."
+  },
+  "staff.report.notes": {
+    "defaultMessage": "備註",
+    "description": "The heading of the moderators' internal notes on a report's screen."
+  },
+  "staff.report.notes.none": {
+    "defaultMessage": "尚無備註。",
+    "description": "In the place of a report's notes while it has none."
+  },
+  "staff.report.note.by": {
+    "defaultMessage": "由 {handle} 留下",
+    "description": "Under a note on a report: who wrote it. {handle} is their handle."
+  },
+  "staff.report.note.cli": {
+    "defaultMessage": "來自命令列",
+    "description": "Under a note on a report that was written with the command line."
+  },
+  "staff.report.note.field": {
+    "defaultMessage": "新備註",
+    "description": "The label of the field of a new note on a report."
+  },
+  "staff.report.note.blank": {
+    "defaultMessage": "請先寫下備註。",
+    "description": "Under the field of a new note when Add note was pressed with nothing written."
+  },
+  "staff.report.note.add": {
+    "defaultMessage": "新增備註",
+    "description": "The button that adds the note written to a report."
+  },
+  "staff.report.note.failed": {
+    "defaultMessage": "無法新增備註。請再試一次。",
+    "description": "Before Add note when the server did not add the note; what was written stays in the field."
+  },
+  "staff.report.note.final": {
+    "defaultMessage": "備註無法編輯或移除。",
+    "description": "Beside Add note on a report's screen."
+  },
+  "staff.report.forward": {
+    "defaultMessage": "傳送給對方伺服器",
+    "description": "The heading of the section of a report of a remote account that forwards it to the account's server."
+  },
+  "staff.report.forward.field": {
+    "defaultMessage": "給對方版主的文字",
+    "description": "The label of the field of the text a forwarded report carries to the account's server."
+  },
+  "staff.report.forward.send": {
+    "defaultMessage": "傳送",
+    "description": "The button of the confirmation that sends a report to the reported account's server."
+  },
+  "staff.report.forward.confirm": {
+    "defaultMessage": "要將這則檢舉傳送給 {domain} 嗎？",
+    "description": "The question of the confirmation of forwarding a report. {domain} is the reported account's server."
+  },
+  "staff.report.forward.confirm.about": {
+    "defaultMessage": "對方的版主會收到帳號、貼文與你寫的文字，但不會收到任何關於檢舉者的資訊。每則檢舉只能傳送一次，且無法復原。",
+    "description": "What the confirmation of sending a report to the account's server says it sends, and that it goes once."
+  },
+  "staff.report.forward.refused": {
+    "defaultMessage": "這則檢舉已無法傳送給對方伺服器。",
+    "description": "Before the button that forwards a report, when the server refused: it was sent meanwhile, or can no longer be."
+  },
+  "staff.report.forward.too_long": {
+    "defaultMessage": "請將文字縮短至 1,000 字元以內。",
+    "description": "Under the field of the text a forwarded report carries, when it is longer than the server takes."
+  },
+  "staff.report.forward.ask": {
+    "defaultMessage": "傳送給對方伺服器…",
+    "description": "The button that asks, in a confirmation, before a report goes to the reported account's server."
+  },
+  "staff.report.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button of a confirmation on a report's screen that does nothing."
+  },
+  "staff.report.resolved": {
+    "defaultMessage": "{outcome, select, actioned {已解決，已採取行動} other {已解決，無需處理}}",
+    "description": "A resolved report's state in its facts, with how it was resolved."
+  },
+  "staff.report.reporter.review": {
+    "defaultMessage": "這個伺服器的自動審查（{hook}）",
+    "description": "Who filed a report that an external review filed, in its facts. {hook} names the review's hook (local.status)."
+  },
+  "staff.report.reporter.server": {
+    "defaultMessage": "伺服器 {domain}",
+    "description": "Who filed a report that another server sent, in its facts. {domain} is that server."
+  },
+  "staff.report.title": {
+    "defaultMessage": "對 {handle} 的檢舉",
+    "description": "The title of a report's screen, for assistive technology and the browser's tab. {handle} is the reported account's handle."
+  },
+  "staff.report.translated_unnamed": {
+    "defaultMessage": "從 {language} 翻譯",
+    "description": "Under a report's translated comment when the server names no provider. {language} is the language it was written in."
+  }
+}

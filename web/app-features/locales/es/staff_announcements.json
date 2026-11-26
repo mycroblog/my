@@ -1,0 +1,290 @@
+{
+  "staff_announcements.entry": {
+    "defaultMessage": "Anuncios",
+    "description": "The name of the screen of the server's announcements to every local user, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_announcements.write": {
+    "defaultMessage": "Escribir un anuncio",
+    "description": "The button at the end of the title of /admin/announcements that opens the form of a new announcement. Read by administrators."
+  },
+  "staff_announcements.filters": {
+    "defaultMessage": "Filtrar anuncios",
+    "description": "For assistive technology, the name of the filters over the list of announcements at /admin/announcements. Read by administrators."
+  },
+  "staff_announcements.filter.state": {
+    "defaultMessage": "Estado",
+    "description": "The filter of the announcements by where they stand (a draft, scheduled, showing, ended, withdrawn). Read by administrators."
+  },
+  "staff_announcements.filter.any": {
+    "defaultMessage": "Cualquier estado",
+    "description": "The choice of the state filter that keeps every announcement. Read by administrators."
+  },
+  "staff_announcements.loading": {
+    "defaultMessage": "Cargando los anuncios…",
+    "description": "At /admin/announcements while the list is read. Read by administrators."
+  },
+  "staff_announcements.failed": {
+    "defaultMessage": "No se pudieron cargar los anuncios.",
+    "description": "At /admin/announcements when the list could not be read, before Try again. Read by administrators."
+  },
+  "staff_announcements.table": {
+    "defaultMessage": "Anuncios",
+    "description": "For assistive technology, the name of the table of announcements at /admin/announcements. Read by administrators."
+  },
+  "staff_announcements.column.title": {
+    "defaultMessage": "Título",
+    "description": "The header of the column of the announcements' titles. Read by administrators."
+  },
+  "staff_announcements.column.window": {
+    "defaultMessage": "Se muestra",
+    "description": "The header of the column of when each announcement shows to the readers. Read by administrators."
+  },
+  "staff_announcements.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The header of the column of where each announcement stands. Read by administrators."
+  },
+  "staff_announcements.empty": {
+    "defaultMessage": "Todavía no se ha escrito ningún anuncio.",
+    "description": "At /admin/announcements while there is none. Read by administrators."
+  },
+  "staff_announcements.empty.filtered": {
+    "defaultMessage": "Ningún anuncio está en este estado. Quita el filtro para ver todos.",
+    "description": "At /admin/announcements when the state filter keeps none. Read by administrators."
+  },
+  "staff_announcements.standing": {
+    "defaultMessage": "{standing, select, draft {Borrador} scheduled {Programado} showing {Visible} ended {Finalizado} withdrawn {Retirado} other {{standing}}}",
+    "description": "Where an announcement stands: a draft nobody sees, published and waiting for its window to start, showing to every local user now, published and its window over, or withdrawn for good. Read by administrators."
+  },
+  "staff_announcements.window.both": {
+    "defaultMessage": "Del {from} al {until}",
+    "description": "When an announcement shows: both sides of its window, each a date and a time. Read by administrators."
+  },
+  "staff_announcements.window.from": {
+    "defaultMessage": "Desde el {from}",
+    "description": "When an announcement shows: from a moment, until it is withdrawn. Read by administrators."
+  },
+  "staff_announcements.window.until": {
+    "defaultMessage": "Desde su publicación hasta el {until}",
+    "description": "When an announcement shows: from its publication until a moment. Read by administrators."
+  },
+  "staff_announcements.window.open": {
+    "defaultMessage": "Desde su publicación hasta que se retire",
+    "description": "When an announcement shows, with no window set. Read by administrators."
+  },
+  "staff_announcements.new": {
+    "defaultMessage": "Anuncio nuevo",
+    "description": "The title of the form of a new announcement, at /admin/announcements/new. Read by administrators."
+  },
+  "staff_announcements.one": {
+    "defaultMessage": "Anuncio",
+    "description": "The title of an announcement's page while it is read, or when its address names none. Read by administrators."
+  },
+  "staff_announcements.section": {
+    "defaultMessage": "Título",
+    "description": "The heading of the section of an announcement's title. Read by administrators."
+  },
+  "staff_announcements.title": {
+    "defaultMessage": "Título",
+    "description": "The field of an announcement's title, plain text on one line. Read by administrators."
+  },
+  "staff_announcements.title.rule": {
+    "defaultMessage": "Escribe un título de hasta {max} caracteres en una sola línea.",
+    "description": "Under the title of an announcement when it is empty, too long or has a line break. Read by administrators."
+  },
+  "staff_announcements.text": {
+    "defaultMessage": "Texto",
+    "description": "The heading of the section of an announcement's text, and the name of its editor. Read by administrators."
+  },
+  "staff_announcements.text.about": {
+    "defaultMessage": "Markdown, hasta {max} caracteres.",
+    "description": "Under the heading of an announcement's text: its format and its limit. Read by administrators."
+  },
+  "staff_announcements.text.placeholder": {
+    "defaultMessage": "Lo que todos en este servidor deben saber",
+    "description": "In the empty editor of an announcement's text. Read by administrators."
+  },
+  "staff_announcements.text.rule": {
+    "defaultMessage": "Acorta el texto a {max} caracteres o menos.",
+    "description": "Under the text of an announcement when it is empty or too long. Read by administrators."
+  },
+  "staff_announcements.editor_failed": {
+    "defaultMessage": "No se pudo cargar el editor. Recarga la página e inténtalo de nuevo.",
+    "description": "In the place of an announcement's editor when its part of the app could not be fetched. Read by administrators."
+  },
+  "staff_announcements.when": {
+    "defaultMessage": "Cuándo se muestra",
+    "description": "The heading of the section of when an announcement shows to the readers. Read by administrators."
+  },
+  "staff_announcements.when.about": {
+    "defaultMessage": "En tu zona horaria.",
+    "description": "Under the heading of when an announcement shows: the zone its start and end are in. Read by administrators."
+  },
+  "staff_announcements.when.invalid": {
+    "defaultMessage": "Introduce una fecha y una hora que existan, o déjalo vacío.",
+    "description": "Under a side of an announcement's window that holds no valid date and time. Read by administrators."
+  },
+  "staff_announcements.starts": {
+    "defaultMessage": "Empieza",
+    "description": "The field of the moment an announcement starts to show, a date and a time. Read by administrators."
+  },
+  "staff_announcements.ends": {
+    "defaultMessage": "Termina",
+    "description": "The field of the moment an announcement stops showing, a date and a time. Read by administrators."
+  },
+  "staff_announcements.ends.after": {
+    "defaultMessage": "Elige un final posterior al inicio.",
+    "description": "Under the end of an announcement's window when it is not after its start. Read by administrators."
+  },
+  "staff_announcements.save_draft": {
+    "defaultMessage": "Guardar como borrador",
+    "description": "The button of a new announcement's form that keeps it as a draft, which nobody sees. Read by administrators."
+  },
+  "staff_announcements.save": {
+    "defaultMessage": "Guardar",
+    "description": "The button of an announcement's form that saves its changes. Read by administrators."
+  },
+  "staff_announcements.publish": {
+    "defaultMessage": "Publicar",
+    "description": "The button of a new or a draft announcement's form that publishes it, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.publish.title": {
+    "defaultMessage": "¿Publicar este anuncio?",
+    "description": "The question before publishing an announcement. Read by administrators."
+  },
+  "staff_announcements.publish.text": {
+    "defaultMessage": "Todos en este servidor lo ven y reciben una notificación cuando empieza a mostrarse. Los cambios posteriores no vuelven a notificar a nadie.",
+    "description": "Under the question before publishing an announcement. Read by administrators."
+  },
+  "staff_announcements.publish.cancel": {
+    "defaultMessage": "Ahora no",
+    "description": "The button that closes the question before publishing an announcement, keeping it as it was. Read by administrators."
+  },
+  "staff_announcements.published": {
+    "defaultMessage": "Publicado",
+    "description": "Beside Save once an announcement was published. Read by administrators."
+  },
+  "staff_announcements.save.refused": {
+    "defaultMessage": "No se guardó nada. Corrige lo marcado e inténtalo de nuevo.",
+    "description": "Beside the buttons of an announcement's form when a field was refused, which is marked under it. Read by administrators."
+  },
+  "staff_announcements.save.failed": {
+    "defaultMessage": "No se guardó nada. Comprueba tu conexión e inténtalo de nuevo.",
+    "description": "Beside the buttons of an announcement's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_announcements.save.withdrawn": {
+    "defaultMessage": "Este anuncio se retiró mientras tanto, así que ya no se puede cambiar. Recarga la página para verlo.",
+    "description": "Beside the buttons of an announcement's form when the server refused the change because it was withdrawn. Read by administrators."
+  },
+  "staff_announcements.standing.heading": {
+    "defaultMessage": "En qué estado está",
+    "description": "The heading of the first section of an announcement's page: its state, when it shows, when it was published and revised. Read by administrators."
+  },
+  "staff_announcements.published_at": {
+    "defaultMessage": "Publicado el {date}",
+    "description": "A fact of an announcement: when it was last published (a date and a time). Read by administrators."
+  },
+  "staff_announcements.revised_at": {
+    "defaultMessage": "Último cambio el {date}",
+    "description": "A fact of an announcement: when its text or window last changed (a date and a time). Read by administrators."
+  },
+  "staff_announcements.preview": {
+    "defaultMessage": "Lo que ven los lectores",
+    "description": "The heading of the section of an announcement's page that shows its title and its text as readers get them. Read by administrators."
+  },
+  "staff_announcements.preview.about": {
+    "defaultMessage": "Tal como se guardó por última vez.",
+    "description": "Under the heading of what readers see of an announcement. Read by administrators."
+  },
+  "staff_announcements.preview.about_draft": {
+    "defaultMessage": "Tal como se guardó por última vez, si se publicara ahora.",
+    "description": "Under the heading of what readers see of a draft announcement, which shows it as its page would if it were published now (its date is today's or the start of its window). Read by administrators."
+  },
+  "staff_announcements.withdraw": {
+    "defaultMessage": "Retirar el anuncio",
+    "description": "The heading of the last section of an announcement's page, apart, which withdraws it. Read by administrators."
+  },
+  "staff_announcements.withdraw.about": {
+    "defaultMessage": "Nadie volverá a verlo y ya no se podrá cambiar ni publicar. Sus notificaciones se ocultan.",
+    "description": "Under the heading of the section that withdraws an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.press": {
+    "defaultMessage": "Retirar",
+    "description": "The button that withdraws an announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.withdraw.title": {
+    "defaultMessage": "¿Retirar este anuncio?",
+    "description": "The question before withdrawing an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.text": {
+    "defaultMessage": "Nadie volverá a verlo. No se puede deshacer.",
+    "description": "Under the question before withdrawing an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.cancel": {
+    "defaultMessage": "Conservarlo",
+    "description": "The button that closes the question before withdrawing an announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.withdraw.failed": {
+    "defaultMessage": "No se retiró el anuncio. Comprueba tu conexión e inténtalo de nuevo.",
+    "description": "In the section that withdraws an announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete": {
+    "defaultMessage": "Eliminar el borrador",
+    "description": "The heading of the section of a draft announcement's page that deletes it. Read by administrators."
+  },
+  "staff_announcements.delete.about": {
+    "defaultMessage": "Los lectores aún no lo han visto. Sale de la lista de anuncios y solo su título queda en el registro de auditoría.",
+    "description": "Under the heading of the section that deletes a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.press": {
+    "defaultMessage": "Eliminar",
+    "description": "The button that deletes a draft announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.delete.title": {
+    "defaultMessage": "¿Eliminar este borrador?",
+    "description": "The question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.cancel": {
+    "defaultMessage": "Conservarlo",
+    "description": "The button that closes the question before deleting a draft announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.delete.text": {
+    "defaultMessage": "Su texto se pierde y solo su título queda en el registro de auditoría. No se puede deshacer.",
+    "description": "Under the question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.failed": {
+    "defaultMessage": "No se eliminó el borrador. Comprueba tu conexión e inténtalo de nuevo.",
+    "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete.published": {
+    "defaultMessage": "No se eliminó el borrador: se publicó mientras tanto.",
+    "description": "In the section that withdraws an announcement, once a Delete of it as a draft was refused because someone published it meanwhile (409); the page then shows it published. Read by administrators."
+  },
+  "staff_announcements.irreversible": {
+    "defaultMessage": "No se puede deshacer.",
+    "description": "The mark beside the button that withdraws an announcement. Read by administrators."
+  },
+  "staff_announcements.loading_one": {
+    "defaultMessage": "Cargando el anuncio…",
+    "description": "On an announcement's page while it is read. Read by administrators."
+  },
+  "staff_announcements.failed_one": {
+    "defaultMessage": "No se pudo cargar el anuncio.",
+    "description": "On an announcement's page when it could not be read, before Try again. Read by administrators."
+  },
+  "staff_announcements.missing": {
+    "defaultMessage": "No hay ningún anuncio en esta dirección.",
+    "description": "At /admin/announcements/{id} for an ID no announcement has, before the link to all announcements. Read by administrators."
+  },
+  "staff_announcements.all": {
+    "defaultMessage": "Todos los anuncios",
+    "description": "The link to /admin/announcements under the sentence that an address names no announcement. Read by administrators."
+  },
+  "staff_announcements.section.about": {
+    "defaultMessage": "Texto sin formato en una sola línea, hasta {max} caracteres.",
+    "description": "Under the heading of an announcement's title: its format and its limit. Read by administrators."
+  },
+  "staff_announcements.list.all": {
+    "defaultMessage": "Todos los anuncios",
+    "description": "The heading of the list of announcements at /admin/announcements while no state filter is applied, with Write an announcement at its end. Read by administrators."
+  }
+}

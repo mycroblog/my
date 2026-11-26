@@ -1,0 +1,610 @@
+{
+  "staff_finance.group": {
+    "defaultMessage": "Finanzierung",
+    "description": "Heading of the group of administration screens about the server's running costs, income and supporter plans, at /admin."
+  },
+  "staff_finance.entry": {
+    "defaultMessage": "Kosten und Einnahmen",
+    "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title; apart from Finance, the menu's page of the finance for its readers. Read by administrators."
+  },
+  "staff_finance.back.root": {
+    "defaultMessage": "Kosten und Einnahmen",
+    "description": "The way back from a screen under Costs and income to its first page, at /admin/finance."
+  },
+  "staff_finance.back.costs": {
+    "defaultMessage": "Kosten",
+    "description": "The way back from a cost item's screen, or the form of a new one, to the list of cost items."
+  },
+  "staff_finance.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "The button of a question on a Finance screen that does nothing."
+  },
+  "staff_finance.forbidden": {
+    "defaultMessage": "Dein Konto darf die Finanzen des Servers möglicherweise nicht mehr verwalten.",
+    "description": "On a Finance screen, when the server refuses the reader because their roles no longer allow it."
+  },
+  "staff_finance.doors": {
+    "defaultMessage": "Finanzbereiche",
+    "description": "Heading of the list of the screens under Finance (costs, income, billing imports, publication) on /admin/finance."
+  },
+  "staff_finance.costs": {
+    "defaultMessage": "Kosten",
+    "description": "Name of the screen of the cost items, at /admin/finance/costs, and its title."
+  },
+  "staff_finance.costs.record": {
+    "defaultMessage": "Kosten erfassen",
+    "description": "Button at the head of the list of cost items that opens the form of a new one."
+  },
+  "staff_finance.costs.record_it": {
+    "defaultMessage": "Die Kosten erfassen",
+    "description": "The submit button of the form of a new cost item."
+  },
+  "staff_finance.costs.new": {
+    "defaultMessage": "Kosten erfassen",
+    "description": "Title of the form of a new cost item, at /admin/finance/costs/new."
+  },
+  "staff_finance.costs.loading": {
+    "defaultMessage": "Kosten werden geladen …",
+    "description": "On the list of cost items while it loads."
+  },
+  "staff_finance.costs.failed": {
+    "defaultMessage": "Die Kosten konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+    "description": "On the list of cost items when it could not be loaded, before Try again."
+  },
+  "staff_finance.costs.empty": {
+    "defaultMessage": "Es sind noch keine Kosten erfasst.",
+    "description": "In the place of the list of cost items while there is none; Record a cost stands over it."
+  },
+  "staff_finance.costs.column.item": {
+    "defaultMessage": "Posten",
+    "description": "Column of the list of cost items: the item's name, its provider under it."
+  },
+  "staff_finance.costs.column.schedule": {
+    "defaultMessage": "Wie oft",
+    "description": "Column of the list of cost items: how often it is paid."
+  },
+  "staff_finance.costs.column.price": {
+    "defaultMessage": "Preis",
+    "description": "Column of the list of cost items: its price today."
+  },
+  "staff_finance.costs.column.end": {
+    "defaultMessage": "Status",
+    "description": "Column of the list of cost items: whether it goes on, ends, or ended."
+  },
+  "staff_finance.costs.going_on": {
+    "defaultMessage": "Laufend",
+    "description": "State of a repeating cost item without an end."
+  },
+  "staff_finance.costs.ends": {
+    "defaultMessage": "Endet am {date}",
+    "description": "State of a repeating cost item whose last payment date is today or later. {date} is that date."
+  },
+  "staff_finance.costs.ended": {
+    "defaultMessage": "Beendet am {date}",
+    "description": "State of a repeating cost item whose last payment date has passed. {date} is that date."
+  },
+  "staff_finance.costs.once_on": {
+    "defaultMessage": "Einmalig bezahlt am {date}",
+    "description": "State of a cost item paid once. {date} is its payment date."
+  },
+  "staff_finance.income": {
+    "defaultMessage": "Einnahmen",
+    "description": "Name of the screen of the income and its money movements, at /admin/finance/income, and its title."
+  },
+  "staff_finance.income.totals": {
+    "defaultMessage": "Einnahmen je Zeitraum",
+    "description": "Name, for assistive technology, of the table of the income per period."
+  },
+  "staff_finance.income.column.gross": {
+    "defaultMessage": "Brutto",
+    "description": "Column of the income: the amount paid, before fees."
+  },
+  "staff_finance.income.column.fee": {
+    "defaultMessage": "Gebühren",
+    "description": "Column of the income: the payment provider's fees."
+  },
+  "staff_finance.income.column.net": {
+    "defaultMessage": "Netto",
+    "description": "Column of the income: what remains after the fees."
+  },
+  "staff_finance.income.column.balance": {
+    "defaultMessage": "Saldo",
+    "description": "Column of the income per period: the net income less the costs."
+  },
+  "staff_finance.income.column.source": {
+    "defaultMessage": "Von",
+    "description": "Column of the net income of a period by where it came from."
+  },
+  "staff_finance.income.column.on": {
+    "defaultMessage": "Datum",
+    "description": "Column of the money movements: the date it falls on."
+  },
+  "staff_finance.income.column.payer": {
+    "defaultMessage": "Bezahlt von",
+    "description": "Column of the money movements: the account that paid, or none."
+  },
+  "staff_finance.income.by_source": {
+    "defaultMessage": "Nettoeinnahmen von {period} nach Quelle",
+    "description": "Heading of the net income of the latest period by where it came from. {period} is the period's name."
+  },
+  "staff_finance.income.source": {
+    "defaultMessage": "{source, select, subscription {Abos} one_time {Trinkgelder} unknown {Sonstiges Geld} other {}}",
+    "description": "Where income came from: the supporter plans' subscriptions, the tips, or other money of the payment provider's account."
+  },
+  "staff_finance.income.movements": {
+    "defaultMessage": "Geldbewegungen",
+    "description": "Heading of the list of the payment provider's money movements, newest first."
+  },
+  "staff_finance.income.filters": {
+    "defaultMessage": "Geldbewegungen filtern",
+    "description": "Name, for assistive technology, of the filters over the money movements."
+  },
+  "staff_finance.income.kind.label": {
+    "defaultMessage": "Art",
+    "description": "Name of the filter of the money movements by kind."
+  },
+  "staff_finance.income.kind.any": {
+    "defaultMessage": "Alle Arten",
+    "description": "The filter of the money movements that shows every kind."
+  },
+  "staff_finance.income.kind": {
+    "defaultMessage": "{kind, select, payment {Zahlungen} refund {Erstattungen} chargeback {Rückbuchungen} chargeback_reversal {Gewonnene Streitfälle} fee {Gebühren} other {}}",
+    "description": "A kind of money movement, as a filter."
+  },
+  "staff_finance.income.what": {
+    "defaultMessage": "{kind, select, payment {Zahlung} refund {Erstattung} chargeback {Rückbuchung} chargeback_reversal {Gewonnener Streitfall} fee {Gebühr} other {}} für {source, select, subscription {ein Abo} one_time {ein Trinkgeld} unknown {sonstiges Geld} other {}}",
+    "description": "Line under a money movement's payer: what kind of movement it is, and of what."
+  },
+  "staff_finance.income.erased": {
+    "defaultMessage": "Ein gelöschtes Konto",
+    "description": "In the place of the payer of a money movement whose account was erased."
+  },
+  "staff_finance.income.none": {
+    "defaultMessage": "Kein Konto",
+    "description": "In the place of the payer of a money movement that no account made (a fee)."
+  },
+  "staff_finance.income.movements.loading": {
+    "defaultMessage": "Geldbewegungen werden geladen …",
+    "description": "In the place of the money movements while they load."
+  },
+  "staff_finance.income.movements.failed": {
+    "defaultMessage": "Die Geldbewegungen konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+    "description": "In the place of the money movements when they could not be loaded, before Try again."
+  },
+  "staff_finance.income.movements.empty": {
+    "defaultMessage": "Es wurde noch kein Geld bewegt.",
+    "description": "In the place of the money movements while there is none."
+  },
+  "staff_finance.income.movements.none": {
+    "defaultMessage": "Keine Geldbewegung dieser Art. Entferne den Filter, um alle Arten zu sehen.",
+    "description": "In the place of the money movements filtered by a kind that has none."
+  },
+  "staff_finance.imports": {
+    "defaultMessage": "Abrechnungsimporte",
+    "description": "Name of the screen of the imports of cloud providers' usage charges, at /admin/finance/imports, and its title."
+  },
+  "staff_finance.imports.loading": {
+    "defaultMessage": "Abrechnungsimporte werden geladen …",
+    "description": "On the billing imports' screen while it loads."
+  },
+  "staff_finance.imports.failed": {
+    "defaultMessage": "Die Abrechnungsimporte konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+    "description": "On the billing imports' screen when it could not be loaded, before Try again."
+  },
+  "staff_finance.imports.facts": {
+    "defaultMessage": "Die Importe von {provider}",
+    "description": "Name, for assistive technology, of the facts of a billing source. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.method": {
+    "defaultMessage": "Liest",
+    "description": "Fact of a billing source: how it reads the provider's data."
+  },
+  "staff_finance.imports.zone": {
+    "defaultMessage": "Abrechnungsmonate in",
+    "description": "Fact of a billing source: the time zone of its billing months."
+  },
+  "staff_finance.imports.never": {
+    "defaultMessage": "Nie",
+    "description": "Fact of a billing source that has never imported, or never succeeded."
+  },
+  "staff_finance.imports.succeeded": {
+    "defaultMessage": "Erfolgreich am {at}",
+    "description": "Fact of a billing source's last import that succeeded. {at} is when."
+  },
+  "staff_finance.imports.failed_at": {
+    "defaultMessage": "Fehlgeschlagen am {at}",
+    "description": "Fact of a billing source's last import that failed. {at} is when."
+  },
+  "staff_finance.imports.error": {
+    "defaultMessage": "{kind, select, permission {Die Zugangsdaten dürfen die Abrechnungsdaten möglicherweise nicht lesen. Gib ihnen die Berechtigung, die das Betriebshandbuch nennt.} not_enabled {Die Abrechnungsdaten des Anbieters sind nicht aktiviert. Aktiviere sie in der Konsole des Anbieters.} not_found {Das Dataset, die Tabelle oder das Abonnement existiert nicht. Prüfe die Namen in der Konfiguration.} throttled {Der Anbieter hat darum gebeten, langsamer zu werden. Warte auf den nächsten Import oder importiere später jetzt.} request_cap {Das Limit der abgerechneten Anfragen ist erreicht, daher wurde nichts aufgerufen. Erhöhe das Limit oder warte auf den nächsten Tag oder Monat.} bytes_cap {Die Abfrage würde mehr als ihr Limit scannen. Erhöhe das Limit in der Konfiguration.} invalid_response {Der Anbieter hat etwas geantwortet, das der Server nicht lesen konnte. Warte auf den nächsten Import oder importiere später jetzt.} unavailable {Der Anbieter war nicht erreichbar. Warte auf den nächsten Import oder importiere später jetzt.} other {Sieh im Protokoll des Servers nach und importiere dann jetzt.}}",
+    "description": "Why a billing source's last import failed, and what to do. Read by administrators."
+  },
+  "staff_finance.imports.last_success": {
+    "defaultMessage": "Letzter Erfolg",
+    "description": "Fact of a billing source: when its last successful import ran."
+  },
+  "staff_finance.imports.requests_of": {
+    "defaultMessage": "{count, number} von {cap, number}",
+    "description": "A count of billed requests against its cap."
+  },
+  "staff_finance.imports.months": {
+    "defaultMessage": "Abrechnungsmonate von {provider}",
+    "description": "Name, for assistive technology, of the table of a billing source's months. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.no_months": {
+    "defaultMessage": "Es sind noch keine Nutzungsgebühren importiert.",
+    "description": "In the place of a billing source's months while none is imported."
+  },
+  "staff_finance.imports.column.month": {
+    "defaultMessage": "Abrechnungsmonat",
+    "description": "Column of a billing source's months: the month."
+  },
+  "staff_finance.imports.column.kind": {
+    "defaultMessage": "Zahlen",
+    "description": "Column of a billing source's months: whether its figures are an estimate, final, or corrected."
+  },
+  "staff_finance.imports.column.total": {
+    "defaultMessage": "Gesamt",
+    "description": "Column of a billing source's months: its total, a figure a currency."
+  },
+  "staff_finance.imports.kind": {
+    "defaultMessage": "{kind, select, estimate {Schätzung} final {Endgültig} correction {Korrigiert} other {}}",
+    "description": "Whether the figures of a billing month are an estimate, final, or corrected after they were final."
+  },
+  "staff_finance.imports.now": {
+    "defaultMessage": "Jetzt importieren",
+    "description": "Button that asks for an import of a billing source now, besides the daily one."
+  },
+  "staff_finance.imports.run": {
+    "defaultMessage": "{answer, select, queued {Der Import von {provider} ist eingereiht. Sein Ergebnis erscheint hier, sobald er gelaufen ist.} too_soon {{provider} wurde in der letzten Stunde importiert. Versuche es später erneut.} unknown {Die Konfiguration importiert {provider} nicht mehr.} other {}}",
+    "description": "Said after Import now: queued, refused because one ran in the last UTC hour, or refused because the source is no longer enabled. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.run_failed": {
+    "defaultMessage": "Der Import wurde nicht eingereiht. Prüfe deine Verbindung und versuche es erneut.",
+    "description": "Said when Import now failed for another reason."
+  },
+  "staff_finance.imports.none": {
+    "defaultMessage": "Der Server importiert keine Nutzungsgebühren. Ein Cloud-Anbieter wird in der Konfiguration des Servers eingerichtet (billing_sources).",
+    "description": "On the billing imports' screen while the configuration enables no billing source. Read by administrators."
+  },
+  "staff_finance.imports.method.value": {
+    "defaultMessage": "{method, select, cost_explorer {AWS Cost Explorer, nach Service} bigquery {Der Cloud-Billing-Export nach BigQuery, nach Service} budget {Ein Cloud-Billing-Budget, eine geschätzte Summe pro Monat} billable_usage {Abrechenbare Nutzung von Cloudflare, nach Produkt} plugin {Was das Plugin meldet} other {}}",
+    "description": "How a billing source reads the provider's data."
+  },
+  "staff_finance.imports.requests_today": {
+    "defaultMessage": "Abgerechnete Anfragen heute (UTC)",
+    "description": "Fact of a billing source: the billed requests of its imports this UTC day."
+  },
+  "staff_finance.imports.requests_month": {
+    "defaultMessage": "Abgerechnete Anfragen in diesem Monat (UTC)",
+    "description": "Fact of a billing source: the billed requests of its imports this UTC month."
+  },
+  "staff_finance.imports.bytes": {
+    "defaultMessage": "Abgerechnete Bytes in diesem Monat (UTC)",
+    "description": "Fact of a billing source that reads BigQuery or a plugin: the bytes billed this UTC month. Read by administrators."
+  },
+  "staff_finance.publication": {
+    "defaultMessage": "Was veröffentlicht wird",
+    "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title. Read by administrators."
+  },
+  "staff_finance.publication.loading": {
+    "defaultMessage": "Veröffentlichtes wird geladen …",
+    "description": "On the publication screen while the settings load."
+  },
+  "staff_finance.publication.failed": {
+    "defaultMessage": "Das Veröffentlichte konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+    "description": "On the publication screen when the settings could not be loaded, before Try again."
+  },
+  "staff_finance.publication.costs": {
+    "defaultMessage": "Kosten",
+    "description": "Heading and name of the choice of what the server publishes of its costs."
+  },
+  "staff_finance.publication.costs.option": {
+    "defaultMessage": "{value, select, private {Nicht veröffentlicht} totals {Summen} breakdown {Summen und Aufschlüsselung} other {}}",
+    "description": "An option of what the server publishes of its costs, and the fact of what it publishes now."
+  },
+  "staff_finance.publication.costs.about": {
+    "defaultMessage": "{value, select, private {Außer den Administratoren sieht niemand die Kosten.} totals {Alle sehen die Summe jedes Zeitraums in jeder Währung auf der Seite Über uns.} breakdown {Alle sehen außerdem die Kosten nach Anbieter und Kategorie, woran sich erkennen lässt, auf welcher Cloud der Server läuft.} other {}}",
+    "description": "Under an option of what the server publishes of its costs: what it publishes. Item names, memos and payments are never published."
+  },
+  "staff_finance.publication.income": {
+    "defaultMessage": "Einnahmen",
+    "description": "Heading and name of the choice of what the server publishes of its income."
+  },
+  "staff_finance.publication.income.option": {
+    "defaultMessage": "{value, select, private {Nicht veröffentlicht} totals {Summen} plans {Summen und Mitglieder je Plan} other {}}",
+    "description": "An option of what the server publishes of its income, and the fact of what it publishes now."
+  },
+  "staff_finance.publication.income.about": {
+    "defaultMessage": "{value, select, private {Außer den Administratoren sieht niemand die Einnahmen.} totals {Alle sehen die Nettoeinnahmen jedes Zeitraums. Sind auch die Kosten veröffentlicht, wird der Saldo angezeigt.} plans {Alle sehen außerdem, wie viele Mitglieder jeder Plan hat. Bei wenigen Mitgliedern lässt sich vielleicht erraten, wer sie sind.} other {}}",
+    "description": "Under an option of what the server publishes of its income: what it publishes. Payments and who paid are never published."
+  },
+  "staff_finance.publication.meter": {
+    "defaultMessage": "Finanzierungsanzeige",
+    "description": "Heading and name of the choice of the funding meter: how far this month's net income goes toward the monthly target."
+  },
+  "staff_finance.publication.meter.allowed": {
+    "defaultMessage": "{case, select, both_private {Solange Kosten und Einnahmen beide nicht veröffentlicht sind, kann die Anzeige nur den Prozentwert zeigen.} both_published {Solange Kosten und Einnahmen beide veröffentlicht sind, kann die Anzeige auch die Beträge zeigen.} one_side {Solange nur die Kosten oder nur die Einnahmen veröffentlicht sind, kann die Anzeige nicht gezeigt werden: Sie würde die andere Seite verraten.} other {}}",
+    "description": "Over the choice of the funding meter: which choices the costs' and the income's publication allow, and why."
+  },
+  "staff_finance.publication.meter.option": {
+    "defaultMessage": "{value, select, off {Nicht angezeigt} percent {Prozentwert} amounts {Prozentwert und Beträge} other {}}",
+    "description": "An option of the funding meter, and the fact of what it shows now."
+  },
+  "staff_finance.publication.meter.about": {
+    "defaultMessage": "{value, select, off {Nirgends wird eine Anzeige gezeigt.} percent {Alle sehen, welchen Teil des Ziels die Einnahmen dieses Monats decken, auf 1 % abgerundet.} amounts {Alle sehen außerdem die Nettoeinnahmen dieses Monats und das Ziel.} other {}}",
+    "description": "Under an option of the funding meter: what it shows."
+  },
+  "staff_finance.publication.target": {
+    "defaultMessage": "Monatsziel",
+    "description": "Field of the funding meter's monthly target, an amount."
+  },
+  "staff_finance.publication.target.hint": {
+    "defaultMessage": "Lasse das Feld leer, um die Kosten dieses Monats zu verwenden, wenn sie in einer Währung vorliegen.",
+    "description": "Under the funding meter's target."
+  },
+  "staff_finance.publication.target.shown": {
+    "defaultMessage": "{amount} pro Monat",
+    "description": "Under the funding meter's monthly target once it holds an amount: that amount as money. {amount} is the amount with its currency."
+  },
+  "staff_finance.publication.target.currency": {
+    "defaultMessage": "Währung des Ziels",
+    "description": "Field of the currency of the funding meter's target."
+  },
+  "staff_finance.publication.target.costs_currency": {
+    "defaultMessage": "Währung der Kosten dieses Monats",
+    "description": "Option of the currency of the funding meter's target: the currency of this month's costs."
+  },
+  "staff_finance.publication.target.invalid": {
+    "defaultMessage": "Schreibe den Betrag in Ziffern, mit nicht mehr Dezimalstellen als die Währung hat (20000, 150.50).",
+    "description": "Under the funding meter's target when it is not an amount of its currency."
+  },
+  "staff_finance.publication.rail": {
+    "defaultMessage": "Die Anzeige auch in der Seitenspalte breiter Bildschirme zeigen",
+    "description": "Checkbox of the funding meter: whether the wide layout's side column shows it too."
+  },
+  "staff_finance.publication.viewer": {
+    "defaultMessage": "Finanzbereich",
+    "description": "Heading of what people with the permission to read the finance see on /finance."
+  },
+  "staff_finance.publication.viewer.names": {
+    "defaultMessage": "Die Namen der Kostenposten zeigen",
+    "description": "Checkbox: whether people who read the finance see the cost items' names."
+  },
+  "staff_finance.publication.viewer.memos": {
+    "defaultMessage": "Die Notizen der Kostenposten zeigen",
+    "description": "Checkbox: whether people who read the finance see the cost items' memos."
+  },
+  "staff_finance.publication.viewer.income": {
+    "defaultMessage": "Ihre Einnahmen",
+    "description": "Name of the choice of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.viewer_income.option": {
+    "defaultMessage": "{value, select, totals {Summen} plans {Summen und Mitglieder je Plan} other {}}",
+    "description": "An option of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.viewer_income.about": {
+    "defaultMessage": "{value, select, totals {Die Nettoeinnahmen und der Saldo jedes Zeitraums.} plans {Außerdem, wie viele Mitglieder jeder Plan hat. Wer zahlt und wie viel, wird nie gezeigt.} other {}}",
+    "description": "Under an option of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.save": {
+    "defaultMessage": "Speichern",
+    "description": "The submit button of the publication screen."
+  },
+  "staff_finance.publication.saved": {
+    "defaultMessage": "Gespeichert. Die Änderung gilt sofort.",
+    "description": "Said once the publication settings are saved."
+  },
+  "staff_finance.publication.unchanged": {
+    "defaultMessage": "Nichts wurde geändert.",
+    "description": "Said when Save is pressed on the publication screen without a change."
+  },
+  "staff_finance.publication.not_saved": {
+    "defaultMessage": "Es wurde nichts gespeichert. Korrigiere die markierten Stellen und speichere erneut.",
+    "description": "Before the submit button of the publication screen when a choice or the target was refused."
+  },
+  "staff_finance.publication.not_yours": {
+    "defaultMessage": "Nur ein Administrator, der die Servereinstellungen ändern darf, ändert, was veröffentlicht wird.",
+    "description": "On the publication screen, to a reader who may not change the server's settings, under what is published now."
+  },
+  "staff_finance.schedule": {
+    "defaultMessage": "{schedule, select, once {Einmalig} weeks {{count, plural, one {Jede Woche} other {Alle # Wochen}}} months {{count, plural, one {Jeden Monat} other {Alle # Monate}}} years {{count, plural, one {Jedes Jahr} other {Alle # Jahre}}} other {}}",
+    "description": "How often a cost item is paid. {count} is its N of every N weeks, months or years."
+  },
+  "staff_finance.cost.name": {
+    "defaultMessage": "Name",
+    "description": "Field of a cost item: its name, such as VPS or Domain example.org."
+  },
+  "staff_finance.cost.name.blank": {
+    "defaultMessage": "Schreibe, wofür bezahlt wird.",
+    "description": "Under the name field of a cost item when it is empty."
+  },
+  "staff_finance.cost.provider": {
+    "defaultMessage": "Anbieter",
+    "description": "Field of a cost item: who is paid, such as Sakura Cloud or AWS."
+  },
+  "staff_finance.cost.provider.blank": {
+    "defaultMessage": "Schreibe, wer bezahlt wird.",
+    "description": "Under the provider field of a cost item when it is empty."
+  },
+  "staff_finance.cost.category": {
+    "defaultMessage": "Kategorie",
+    "description": "Field of a cost item: its category (servers, storage, domain…)."
+  },
+  "staff_finance.cost.schedule": {
+    "defaultMessage": "Wie oft",
+    "description": "Field of a cost item: how often it is paid, a choice of once, weeks, months or years, and the N beside it."
+  },
+  "staff_finance.cost.schedule.option": {
+    "defaultMessage": "{schedule, select, once {Einmalig} weeks {{count, plural, one {Woche} other {Wochen}}} months {{count, plural, one {Monat} other {Monate}}} years {{count, plural, one {Jahr} other {Jahre}}} other {}}",
+    "description": "Option of how often a cost item is paid: once, or the unit after the number of weeks, months or years between two payments, which stands before it. {count} is that number."
+  },
+  "staff_finance.cost.interval": {
+    "defaultMessage": "Alle",
+    "description": "Name, for assistive technology, of the number of weeks, months or years between two payments of a cost item."
+  },
+  "staff_finance.cost.interval.blank": {
+    "defaultMessage": "Schreibe eine Zahl von 1 bis {max}.",
+    "description": "Under the number of weeks, months or years of a cost item when it is empty or out of range."
+  },
+  "staff_finance.cost.paid_on": {
+    "defaultMessage": "Bezahlt am",
+    "description": "Field and fact of a cost item paid once: its payment date."
+  },
+  "staff_finance.cost.starts": {
+    "defaultMessage": "Erste Zahlung am",
+    "description": "Field and fact of a repeating cost item: its first payment date."
+  },
+  "staff_finance.cost.starts.blank": {
+    "defaultMessage": "Wähle das Datum der Zahlung.",
+    "description": "Under the first payment date of a cost item when it is empty."
+  },
+  "staff_finance.cost.ends": {
+    "defaultMessage": "Letzte Zahlung am",
+    "description": "Field and fact of a repeating cost item: its last payment date, which may be left empty."
+  },
+  "staff_finance.cost.ends.before": {
+    "defaultMessage": "Wähle ein Datum am oder nach der ersten Zahlung.",
+    "description": "Under the last payment date of a cost item when it is before the first payment."
+  },
+  "staff_finance.cost.no_end": {
+    "defaultMessage": "Kein Ende",
+    "description": "Fact of a repeating cost item without a last payment date."
+  },
+  "staff_finance.cost.amount": {
+    "defaultMessage": "Betrag",
+    "description": "Field of the price of a new cost item, in its currency."
+  },
+  "staff_finance.cost.currency": {
+    "defaultMessage": "Währung",
+    "description": "Field of the currency of a new cost item's price."
+  },
+  "staff_finance.cost.memo": {
+    "defaultMessage": "Notiz",
+    "description": "Field and fact of a cost item: a note of the administrators'."
+  },
+  "staff_finance.cost.memo.hint": {
+    "defaultMessage": "Wird nie veröffentlicht.",
+    "description": "Under the memo field of a cost item."
+  },
+  "staff_finance.cost.not_recorded": {
+    "defaultMessage": "Es wurde nichts erfasst. Korrigiere die markierten Stellen und erfasse es erneut.",
+    "description": "Before the submit button of a new cost item when a field is wrong."
+  },
+  "staff_finance.cost.loading": {
+    "defaultMessage": "Kosten werden geladen …",
+    "description": "On a cost item's screen while it loads."
+  },
+  "staff_finance.cost.failed": {
+    "defaultMessage": "Die Kosten konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+    "description": "On a cost item's screen when it could not be loaded, before Try again."
+  },
+  "staff_finance.cost.missing": {
+    "defaultMessage": "Diese Kosten sind nicht erfasst. Sie wurden möglicherweise gelöscht.",
+    "description": "At the address of a cost item the server does not have."
+  },
+  "staff_finance.cost.missing.all": {
+    "defaultMessage": "Alle Kosten",
+    "description": "Link from a cost item that is not recorded to the list of cost items."
+  },
+  "staff_finance.cost.facts": {
+    "defaultMessage": "Zu diesen Kosten",
+    "description": "Name, for assistive technology, of the facts of a cost item."
+  },
+  "staff_finance.cost.recorded": {
+    "defaultMessage": "Erfasst",
+    "description": "Fact of a cost item: when it was recorded."
+  },
+  "staff_finance.cost.prices": {
+    "defaultMessage": "Preise",
+    "description": "Heading of a cost item's prices, each with the date it applies from, and of the form of a new price."
+  },
+  "staff_finance.cost.revise": {
+    "defaultMessage": "Preis anpassen",
+    "description": "Button that records a new price of a cost item from a date."
+  },
+  "staff_finance.cost.revise.date": {
+    "defaultMessage": "Gilt ab",
+    "description": "Field of a new price of a cost item: the date from which the payments take it."
+  },
+  "staff_finance.cost.revise.date_before": {
+    "defaultMessage": "Wähle ein Datum am oder nach der ersten Zahlung.",
+    "description": "Under the date of a new price of a cost item when it is before the first payment."
+  },
+  "staff_finance.cost.revise.done": {
+    "defaultMessage": "Ab dem {date} beträgt der Preis {price}.",
+    "description": "Said once a new price of a cost item is recorded."
+  },
+  "staff_finance.cost.revise.amount": {
+    "defaultMessage": "Neuer Preis in {currency}",
+    "description": "Field of a new price of a cost item. {currency} is its currency's code."
+  },
+  "staff_finance.cost.label": {
+    "defaultMessage": "Details",
+    "description": "Heading of the form that changes a cost item's name, provider, category and memo."
+  },
+  "staff_finance.cost.label.save": {
+    "defaultMessage": "Speichern",
+    "description": "Button that saves a cost item's name, provider, category and memo."
+  },
+  "staff_finance.cost.label.done": {
+    "defaultMessage": "Gespeichert.",
+    "description": "Said once a cost item's name, provider, category and memo are saved."
+  },
+  "staff_finance.cost.end": {
+    "defaultMessage": "Ende",
+    "description": "Heading of the form of a repeating cost item's last payment date."
+  },
+  "staff_finance.cost.end.date": {
+    "defaultMessage": "Letzte Zahlung am",
+    "description": "Field of a repeating cost item's last payment date, on its screen."
+  },
+  "staff_finance.cost.end.set": {
+    "defaultMessage": "An diesem Datum beenden",
+    "description": "Button that sets a repeating cost item's last payment date. Its payments after that date go away; past ones stay."
+  },
+  "staff_finance.cost.end.move": {
+    "defaultMessage": "Ende verschieben",
+    "description": "Button that moves a repeating cost item's last payment date."
+  },
+  "staff_finance.cost.end.remove": {
+    "defaultMessage": "Ende entfernen",
+    "description": "Button that makes a repeating cost item go on with no end."
+  },
+  "staff_finance.cost.end.done": {
+    "defaultMessage": "Die letzte Zahlung ist am {date}.",
+    "description": "Said once a repeating cost item's last payment date is set."
+  },
+  "staff_finance.cost.end.removed": {
+    "defaultMessage": "Die Kosten laufen ohne Ende weiter.",
+    "description": "Said once a repeating cost item's end is removed."
+  },
+  "staff_finance.cost.delete": {
+    "defaultMessage": "Löschen",
+    "description": "Heading of the last section of a cost item's screen, which deletes it."
+  },
+  "staff_finance.cost.delete.about": {
+    "defaultMessage": "Beim Löschen werden diese Kosten aus jedem Zeitraum entfernt, auch aus vergangenen, als wären sie nie erfasst worden. Das lässt sich nicht rückgängig machen.",
+    "description": "Under Delete on a cost item's screen, and in its confirmation."
+  },
+  "staff_finance.cost.delete.ask": {
+    "defaultMessage": "Kosten löschen…",
+    "description": "Button that asks before deleting a cost item."
+  },
+  "staff_finance.cost.delete.confirm": {
+    "defaultMessage": "{name} löschen?",
+    "description": "Title of the confirmation of deleting a cost item. {name} is its name."
+  },
+  "staff_finance.cost.delete.do": {
+    "defaultMessage": "Löschen",
+    "description": "Button of the confirmation that deletes a cost item."
+  },
+  "staff_finance.cost.write_failed": {
+    "defaultMessage": "Das wurde nicht gespeichert. Prüfe deine Verbindung und versuche es erneut.",
+    "description": "Said when a change of a cost item failed for a reason that names no field."
+  },
+  "staff_finance.cost.amount.invalid": {
+    "defaultMessage": "Schreibe den Betrag in Ziffern, mit nicht mehr Dezimalstellen als die Währung hat (1650, 12.50).",
+    "description": "Under an amount of a cost item when it is not a number, or has more decimals than its currency."
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "closure.closed_title": {
+    "defaultMessage": "{name} 已关闭",
+    "description": "The title of the screen that replaces every other after the server closed (its name in place of {name}); the reader can only take their data away."
+  },
+  "closure.closed_export": {
+    "defaultMessage": "你可以在 {date} 之前下载你的数据。",
+    "description": "Under the title of the closed server's screen: the last day the reader can still sign in and take their data ({date}, a date written out in the reader's language)."
+  },
+  "closure.request_export": {
+    "defaultMessage": "申请导出你的数据",
+    "description": "The button on the closed server's screen that starts building an archive of everything the reader has (posts, profile, follows), to download when it is ready."
+  },
+  "closure.export_requested": {
+    "defaultMessage": "正在准备你的导出文件，准备好后可在此下载。",
+    "description": "What the closed server's screen says while the archive of the reader's data is being built (after a request, and on every visit until it is ready); the request button waits meanwhile."
+  },
+  "closure.export_failed": {
+    "defaultMessage": "无法申请导出。请稍后重试。",
+    "description": "What the closed server's screen says when the server refused the request of an archive of the reader's data (one already being built, too many today)."
+  },
+  "closure.download_follows": {
+    "defaultMessage": "下载关注列表（CSV）",
+    "description": "The button on the closed server's screen that saves the list of accounts the reader follows as a CSV file, which another server can import."
+  },
+  "closure.download_failed": {
+    "defaultMessage": "无法下载你的关注列表。请重试。",
+    "description": "What the closed server's screen says when the download of the reader's follows as CSV failed."
+  },
+  "closure.sign_out": {
+    "defaultMessage": "退出登录",
+    "description": "The link at the end of the closed server's screen that signs the reader out."
+  },
+  "closure.export_ready": {
+    "defaultMessage": "你的导出文件已准备好，可在 {date} 之前下载。",
+    "description": "On the closed server's screen once the archive of the reader's data is built: until when it can be downloaded ({date}, a date written out in the reader's language)."
+  },
+  "closure.download_export": {
+    "defaultMessage": "下载导出文件",
+    "description": "The button on the closed server's screen that saves the archive of the reader's data once it is ready."
+  },
+  "closure.export_build_failed": {
+    "defaultMessage": "上一次导出未能准备好。请重新申请。",
+    "description": "On the closed server's screen when the server failed to build the archive the reader requested last."
+  },
+  "closure.export_download_failed": {
+    "defaultMessage": "无法下载导出文件。请重试。",
+    "description": "What the closed server's screen says when the download of the ready archive of the reader's data failed."
+  },
+  "closure.progress": {
+    "defaultMessage": "关闭进度",
+    "description": "The link on the closed server's screen, for an administrator who closes it, to the progress of the deletion of the accounts on other servers. Read by administrators."
+  }
+}

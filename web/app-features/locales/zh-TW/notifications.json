@@ -1,0 +1,450 @@
+{
+  "notifications.label": {
+    "defaultMessage": "通知",
+    "description": "The name of the feed of the reader's notifications, for assistive technology."
+  },
+  "notifications.filters": {
+    "defaultMessage": "顯示",
+    "description": "What the tabs over the notifications choose between (all of them, or the mentions), for assistive technology."
+  },
+  "notifications.all": {
+    "defaultMessage": "全部",
+    "description": "The tab that shows every notification."
+  },
+  "notifications.mentions": {
+    "defaultMessage": "提及",
+    "description": "The tab that shows only the notifications that speak to the reader: mentions, quotes and new posts of the accounts they asked to be notified of."
+  },
+  "notifications.waiting": {
+    "defaultMessage": "等待核准",
+    "description": "The title of the screen of the replies, boosts and quotes of the reader's posts that wait for the reader's approval."
+  },
+  "notifications.waiting_count": {
+    "defaultMessage": "{count, plural, other {# 項等待你核准}}",
+    "description": "The row at the top of the notifications that opens the replies, boosts and quotes that wait for the reader's approval; count is how many."
+  },
+  "notifications.waiting_loading": {
+    "defaultMessage": "正在載入待核准的回覆、轉發和引用…",
+    "description": "What the screen of the replies, boosts and quotes waiting for the reader's approval (notifications.waiting) says while the first of them load."
+  },
+  "notifications.waiting_loading_more": {
+    "defaultMessage": "正在載入更多…",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says under its list while more load."
+  },
+  "notifications.waiting_failed": {
+    "defaultMessage": "無法載入待核准的回覆、轉發和引用。",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says when the first of them could not be loaded, beside a button to try again."
+  },
+  "notifications.waiting_failed_more": {
+    "defaultMessage": "無法載入更多。",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says under its list when more could not be loaded, beside a button to try again."
+  },
+  "notifications.waiting_empty": {
+    "defaultMessage": "沒有等待你核准的項目。",
+    "description": "What the screen of the replies, boosts and quotes waiting for the reader's approval (notifications.waiting) says when none waits."
+  },
+  "notifications.requests_hint": {
+    "defaultMessage": "來自被你的通知設定擋下的帳號",
+    "description": "The hint under the row of the notification requests."
+  },
+  "notifications.unread": {
+    "defaultMessage": "未讀",
+    "description": "The mark of an unread notification, for assistive technology."
+  },
+  "notifications.read_all": {
+    "defaultMessage": "全部標示為已讀",
+    "description": "The button over the notifications that marks every notification read."
+  },
+  "notifications.dismiss": {
+    "defaultMessage": "關閉通知",
+    "description": "The button or menu item at the end of a notification that takes it out of the list for good."
+  },
+  "notifications.dismiss_failed": {
+    "defaultMessage": "無法關閉通知。",
+    "description": "The notice at the bottom of the page when dismissing a notification failed; it is back in the list, and Try again follows."
+  },
+  "notifications.gone": {
+    "defaultMessage": "該通知已不存在。",
+    "description": "Over the notifications, when a link to one notification (from a push or an email) led to one that is dismissed, or is not the reader's."
+  },
+  "notifications.approve": {
+    "defaultMessage": "核准",
+    "description": "The button of a notification asking to reply to, boost or quote the reader's post that approves it."
+  },
+  "notifications.decline": {
+    "defaultMessage": "拒絕",
+    "description": "The button of a follow request, or of a request to reply to, boost or quote the reader's post, that refuses it."
+  },
+  "notifications.open_draft": {
+    "defaultMessage": "開啟草稿",
+    "description": "Under a notification that a scheduled post could not be published: opens its draft in the composer, to fix it and post or schedule it again."
+  },
+  "notifications.approved": {
+    "defaultMessage": "已核准",
+    "description": "What a request to reply to, boost or quote the reader's post says on the screen of what waits for approval once the reader approved it (notifications.approve); focus moves to it."
+  },
+  "notifications.declined": {
+    "defaultMessage": "已拒絕",
+    "description": "What a follow request, or a request to reply to, boost or quote the reader's post, says once the reader declined it (notifications.decline); on the screen of what waits for approval, focus moves to it."
+  },
+  "notifications.loading": {
+    "defaultMessage": "正在載入通知…",
+    "description": "What the notifications say while the first of them load."
+  },
+  "notifications.loading_more": {
+    "defaultMessage": "正在載入更多通知…",
+    "description": "What the notifications say under them while more load."
+  },
+  "notifications.failed": {
+    "defaultMessage": "無法載入通知。",
+    "description": "What the notifications say when the first of them could not be loaded, beside a button to try again."
+  },
+  "notifications.retry": {
+    "defaultMessage": "重試",
+    "description": "The button after the notifications in the column beside the timeline that could not be loaded; it loads them again."
+  },
+  "notifications.failed_more": {
+    "defaultMessage": "無法載入更多通知。",
+    "description": "What the notifications say under them when more could not be loaded, beside a button to try again."
+  },
+  "notifications.empty": {
+    "defaultMessage": "還沒有通知。",
+    "description": "What the notifications say when the reader has none."
+  },
+  "notifications.untitled_event": {
+    "defaultMessage": "一個活動",
+    "description": "The name of an event without a title, in the sentence of a notification about it."
+  },
+  "notifications.kind.account_moved": {
+    "defaultMessage": "{name} 已搬到另一個帳號",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of an account that the user followed, which moved to another account. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_account_moved": {
+    "defaultMessage": "在 {instance} 上被限制的帳號已搬到另一個帳號",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_appeal": {
+    "defaultMessage": "有新的申訴等待 {instance} 的版主處理",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a user appealed a moderation action. It never names the user. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_custom_emoji_request": {
+    "defaultMessage": "有自訂表情符號申請等待 {instance} 審核",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_report": {
+    "defaultMessage": "有新的檢舉等待 {instance} 的版主處理",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: someone reported an account that had no open report. It never names the accounts. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_sign_up": {
+    "defaultMessage": "有新的註冊等待 {instance} 核准",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a new user signed up and waits for approval. It never names the user. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_webhook_disabled": {
+    "defaultMessage": "{instance} 的 webhook 已被關閉",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.announcement": {
+    "defaultMessage": "{instance} 的公告：{title}",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.auto_delete_limit": {
+    "defaultMessage": "{instance}：超過 {days, plural, other {# 天}}的貼文將{daysLeft, plural, =0 {從現在起} other {在 # 天後}}自動刪除",
+    "description": "The sentence of a notification in the reader's list of notifications: {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.scheduled_status_failed": {
+    "defaultMessage": "{instance}：你的排程貼文無法發布{reason, select, restricted {，因為你的帳號目前無法發布貼文} reply_unavailable {，因為它回覆的貼文已不存在} quote_unavailable {，因為它引用的貼文已不存在} media_unavailable {，因為附加的檔案已不存在} invalid {，因為它不符合貼文的要求} rejected {，因為伺服器的自動審查未接受它} other {}}",
+    "description": "The sentence of a notification in the reader's list of notifications: {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.appeal_decided": {
+    "defaultMessage": "{instance} 的版主已審查你的申訴",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.custom_emoji_request_decided": {
+    "defaultMessage": "{instance} 的管理員已審查你的自訂表情符號申請",
+    "description": "The sentence of a notification in the reader's list of notifications: an administrator approved or rejected the user's request for a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.boost": {
+    "defaultMessage": "{name} 轉發了你的貼文",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that boosted the user's post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.favourite": {
+    "defaultMessage": "{name} 喜歡你的貼文",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that favourited the user's post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow": {
+    "defaultMessage": "{name} 追蹤了你",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that followed the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow_accepted": {
+    "defaultMessage": "{name} 接受了你的追蹤請求",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that accepted the user's follow request. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow_request": {
+    "defaultMessage": "{name} 請求追蹤你",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that asked to follow the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.mention": {
+    "defaultMessage": "{name} 提及了你",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that wrote a post that mentions the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.moderation_notice": {
+    "defaultMessage": "{instance} 的版主傳送了通知給你",
+    "description": "The sentence of a notification in the reader's list of notifications: a notice to the user from the moderators. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.other": {
+    "defaultMessage": "你在 {instance} 有新通知",
+    "description": "The sentence of a notification in the reader's list of notifications: {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.poll_closed": {
+    "defaultMessage": "你參與的投票已結束",
+    "description": "The sentence of a notification in the reader's list of notifications: a poll that the user created or voted in has ended. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.quote": {
+    "defaultMessage": "{name} 引用了你的貼文",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that quoted the user's post in a post of its own. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.reaction": {
+    "defaultMessage": "{name} 回應了你的貼文",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.relationships_severed": {
+    "defaultMessage": "{instance} 結束了你與其他伺服器上部分帳號的追蹤關係",
+    "description": "The sentence of a notification in the reader's list of notifications: follows between the user and accounts of other servers ended, because the moderators suspended a server or an account, or because this server stopped federating with a server (it federates only with the servers it allows). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.report_resolved": {
+    "defaultMessage": "你在 {instance} 提出的檢舉已處理完畢",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators resolved a report that the user filed. It never says how. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.status": {
+    "defaultMessage": "{name} 發布了貼文",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of an account that the user subscribes to, which made a new post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_payment_failed": {
+    "defaultMessage": "你在 {instance} 的支持者方案扣款失敗",
+    "description": "The sentence of a notification in the reader's list of notifications: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_plan_retired": {
+    "defaultMessage": "你在 {instance} 的支持者方案已停售",
+    "description": "The sentence of a notification in the reader's list of notifications: the administrators retired the user's supporter plan, whose subscription ends with its period. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_subscription_ended": {
+    "defaultMessage": "你在 {instance} 的支持者方案已結束",
+    "description": "The sentence of a notification in the reader's list of notifications: the user's supporter subscription ended (a payment kept failing, a refund, a retired plan, or a cancellation). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_announced": {
+    "defaultMessage": "{instance} 即將關閉：請在關閉前匯出你的資料",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_rescheduled": {
+    "defaultMessage": "{instance} 的關閉日期已變更",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_withdrawn": {
+    "defaultMessage": "{instance} 的關閉計畫已撤回",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_service_closure_due": {
+    "defaultMessage": "{instance} 的關閉日期已過：請關閉伺服器",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_created": {
+    "defaultMessage": "{instance} 回報了新的錯誤",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_regressed": {
+    "defaultMessage": "{instance} 上已解決的錯誤再次發生",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: an error that an administrator marked resolved happened again with a newer version of the server. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_others": {
+    "defaultMessage": "{instance} 回報了更多錯誤",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_hook_failing": {
+    "defaultMessage": "{instance} 的外部審查持續失敗",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_domain_list_failing": {
+    "defaultMessage": "{instance} 的封鎖清單訂閱持續失敗",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_hook_appeal": {
+    "defaultMessage": "有被拒絕貼文的申訴等待 {instance} 的版主處理",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.hook_appeal_decided": {
+    "defaultMessage": "{instance} 的版主已審查你對被拒絕貼文的申訴",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_service_closure": {
+    "defaultMessage": "由於伺服器即將關閉，你在 {instance} 的支持者訂閱已取消",
+    "description": "The sentence of a notification in the reader's list of notifications: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.voice_room_started": {
+    "defaultMessage": "{name} 開啟了語音聊天室",
+    "description": "The sentence of a notification in the reader's list of notifications: an account that the user follows opened a voice chat room that the user may join. {name} is the display name, or the @handle, of the host. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.voice_room_invited": {
+    "defaultMessage": "{name} 邀請你加入語音聊天室",
+    "description": "The sentence of a notification in the reader's list of notifications: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.reply_request": {
+    "defaultMessage": "{name} 請求回覆你的貼文",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose reply to the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.boost_request": {
+    "defaultMessage": "{name} 請求轉發你的貼文",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose boost of the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.quote_request": {
+    "defaultMessage": "{name} 請求引用你的貼文",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.interaction_accepted": {
+    "defaultMessage": "{name} 核准了你的回覆、轉發或引用",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.interaction_rejected": {
+    "defaultMessage": "{name} 拒絕了你的回覆、轉發或引用",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_invited": {
+    "defaultMessage": "{name} 邀請你參加「{title}」",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that invited them. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_schedule_confirmed": {
+    "defaultMessage": "「{title}」的日期已確定",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_changed": {
+    "defaultMessage": "「{title}」的日期或地點已變更",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_canceled": {
+    "defaultMessage": "「{title}」已取消",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_reminder": {
+    "defaultMessage": "{unit, select, day {{count, plural, other {「{title}」將在 # 天後開始}}} hour {{count, plural, other {「{title}」將在 # 小時後開始}}} other {{count, plural, other {「{title}」將在 # 分鐘後開始}}}}",
+    "description": "The sentence of a notification in the reader's list of notifications: {unit} is day, hour, or minute, and {count} how many of them before the start. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_started": {
+    "defaultMessage": "「{title}」即將開始",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_room_unavailable": {
+    "defaultMessage": "「{title}」的語音聊天室無法開啟",
+    "description": "The sentence of a notification in the reader's list of notifications: The event itself stays. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_board_posted": {
+    "defaultMessage": "{name} 在「{title}」的留言板上留言",
+    "description": "The sentence of a notification in the reader's list of notifications: someone wrote a new post on the board of an event the reader reads and answered going or maybe; the post's first words follow under it. {name} is the display name, or the @handle, of the writer. {title} is the title of the event, as its organizers wrote it, or the words of notifications.untitled_event when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.requests": {
+    "defaultMessage": "{count, plural, other {# 則被擋下的通知}} · {people, plural, other {來自 # 人}}",
+    "description": "The row at the top of the notifications that opens the requests: notifications the reader's notification policy held back, one request per account. people is how many accounts, count how many notifications."
+  },
+  "notifications.follow_requests": {
+    "defaultMessage": "追蹤請求",
+    "description": "The title of the screen of the accounts that ask to follow the reader."
+  },
+  "notifications.follow_requests_count": {
+    "defaultMessage": "{count, plural, other {# 個追蹤請求}}",
+    "description": "The row over the notifications that counts the follow requests and opens their screen. count is how many."
+  },
+  "notifications.follow_requests_empty": {
+    "defaultMessage": "沒有追蹤請求。",
+    "description": "In place of the follow requests when there are none."
+  },
+  "notifications.follow_requests_loading": {
+    "defaultMessage": "正在載入追蹤請求…",
+    "description": "While the follow requests load."
+  },
+  "notifications.follow_requests_failed": {
+    "defaultMessage": "無法載入追蹤請求。",
+    "description": "When the follow requests failed to load; Try again follows it."
+  },
+  "notifications.held": {
+    "defaultMessage": "被擋下的通知",
+    "description": "The title of the screen of the notifications the reader's notification policy held back, one row per account that sent them, and of the screen of one account's."
+  },
+  "notifications.held_about": {
+    "defaultMessage": "接受會把某人的通知移到你的通知中，之後他們的通知也會直接送達。忽略則會刪除這些通知。",
+    "description": "The line under the title of the held-back notifications (notifications.held), over the accounts, that says what accepting and dismissing do."
+  },
+  "notifications.held_count": {
+    "defaultMessage": "{count, plural, other {# 則通知}}",
+    "description": "Under an account on the screen of the held-back notifications: how many of its notifications are held back. count is how many."
+  },
+  "notifications.held_accept": {
+    "defaultMessage": "接受",
+    "description": "The button of an account's held-back notifications that moves them into the notifications and lets its later ones through."
+  },
+  "notifications.held_dismiss": {
+    "defaultMessage": "忽略",
+    "description": "The button of an account's held-back notifications that drops them; later ones are held back again."
+  },
+  "notifications.held_accepted": {
+    "defaultMessage": "已接受",
+    "description": "What an account's held-back notifications say in place of the buttons once the reader accepted them (notifications.held_accept); focus moves to it."
+  },
+  "notifications.held_dismissed": {
+    "defaultMessage": "已忽略",
+    "description": "What an account's held-back notifications say in place of the buttons once the reader dismissed them (notifications.held_dismiss); focus moves to it."
+  },
+  "notifications.held_loading": {
+    "defaultMessage": "正在載入被擋下的通知…",
+    "description": "What the screens of the held-back notifications say while the first of them load."
+  },
+  "notifications.held_failed": {
+    "defaultMessage": "無法載入被擋下的通知。",
+    "description": "What the screens of the held-back notifications say when they could not be loaded, beside a button to try again."
+  },
+  "notifications.held_empty": {
+    "defaultMessage": "沒有被擋下的通知。",
+    "description": "What the screen of the held-back notifications says when none is held back."
+  },
+  "notifications.held_none": {
+    "defaultMessage": "目前沒有被擋下的此人的通知。",
+    "description": "What the screen of one account's held-back notifications says when it holds none (they were answered elsewhere, or about posts gone)."
+  },
+  "notifications.held_gone": {
+    "defaultMessage": "此人目前沒有被擋下的通知。",
+    "description": "What the screen of one account's held-back notifications says when the server no longer lists its request (answered elsewhere)."
+  },
+  "notifications.push_offer": {
+    "defaultMessage": "即使應用程式已關閉，也能在這台裝置上收到通知。",
+    "description": "The prompt over the notifications' tabs that offers to turn Web Push on for this device."
+  },
+  "notifications.push_turn_on": {
+    "defaultMessage": "開啟",
+    "description": "The primary button of the Web Push prompt (notifications.push_offer): asks the browser's permission if it must, then turns push notifications on for this device."
+  },
+  "notifications.push_not_now": {
+    "defaultMessage": "暫時不要",
+    "description": "The button of the Web Push prompt that closes it for good on this device; push stays off."
+  },
+  "notifications.push_closed": {
+    "defaultMessage": "瀏覽器的詢問在未回答的情況下關閉了。選擇「開啟」可再次詢問。",
+    "description": "Under the Web Push prompt when the reader closed the browser's permission question without allowing or blocking; Turn on stays."
+  },
+  "notifications.push_blocked": {
+    "defaultMessage": "你的瀏覽器封鎖了此網站的通知。請在瀏覽器設定中允許。",
+    "description": "Under the Web Push prompt when the browser blocks the site's notifications (the reader refused); only Not now stays."
+  },
+  "notifications.push_failed": {
+    "defaultMessage": "無法開啟通知。請重新載入或更新應用程式，然後再試一次。",
+    "description": "Under the Web Push prompt when subscribing or registering the subscription failed; Turn on stays."
+  },
+  "notifications.push_on": {
+    "defaultMessage": "這台裝置已開啟通知。",
+    "description": "The line in place of the Web Push prompt once push notifications are on for this device."
+  },
+  "notifications.push_settings": {
+    "defaultMessage": "在設定中選擇要通知的類型",
+    "description": "The link after notifications.push_on, once the reader turned Web Push on from the prompt over the notifications: it leads to the notification settings page (settings.entry.notifications), where they choose which kinds of notification are pushed, and turn it off."
+  },
+  "notifications.held_settings": {
+    "defaultMessage": "通知設定",
+    "description": "The link on the screen Held-back notifications (notifications.held), after notifications.held_about or notifications.held_empty: it leads to the notification settings page (settings.entry.notifications), where the reader chooses whose notifications are held back."
+  }
+}

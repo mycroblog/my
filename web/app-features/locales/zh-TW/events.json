@@ -1,0 +1,890 @@
+{
+  "events.list": {
+    "defaultMessage": "即將舉行的活動",
+    "description": "The name of the list of upcoming events on the events' screen, for assistive technology."
+  },
+  "events.loading": {
+    "defaultMessage": "正在載入活動…",
+    "description": "In place of the list of events while the first of them load."
+  },
+  "events.failed": {
+    "defaultMessage": "無法載入活動。",
+    "description": "In place of the list of events when they could not be loaded, beside a button to try again."
+  },
+  "events.retry": {
+    "defaultMessage": "重試",
+    "description": "The button after a sentence that says something of an event's screens could not be loaded."
+  },
+  "events.empty": {
+    "defaultMessage": "沒有即將舉行的活動。",
+    "description": "In place of the list of events when there is none the reader sees."
+  },
+  "events.create": {
+    "defaultMessage": "建立活動",
+    "description": "The button under the list of events, for a reader who may create events, that leads to the form that creates one; and the title of that form."
+  },
+  "events.back": {
+    "defaultMessage": "活動",
+    "description": "The back button at the top of an event's page, which leads to the list of events."
+  },
+  "events.event_loading": {
+    "defaultMessage": "正在載入活動…",
+    "description": "In place of an event's page while it loads."
+  },
+  "events.event_failed": {
+    "defaultMessage": "無法載入活動。",
+    "description": "In place of an event's page when it could not be loaded, beside a button to try again."
+  },
+  "events.gone": {
+    "defaultMessage": "此活動不存在，或你無法查看。",
+    "description": "All an event's page says when the server has no event at its address that the reader sees."
+  },
+  "events.local_only": {
+    "defaultMessage": "只有此伺服器上有帳號的人才能查看它的活動。請登入以查看這個活動。",
+    "description": "All an event's page says to a visitor who is not signed in, over the sign-in button."
+  },
+  "events.sign_in": {
+    "defaultMessage": "登入",
+    "description": "The button on an event's page for a visitor, which signs in and comes back to the event."
+  },
+  "events.canceled": {
+    "defaultMessage": "{reason, select, moderator {此活動已被版主取消。} organizer_suspended {此活動已取消：主辦者的帳號已被停權。} organizer_deleted {此活動已取消：主辦者的帳號已被刪除。} other {此活動已被主辦者取消。}}",
+    "description": "At the top of a cancelled event's page, by who or what cancelled it; the organizer's note, if any, follows on its own line."
+  },
+  "events.date_polled": {
+    "defaultMessage": "日期尚未確定。",
+    "description": "In place of an event's time on its page while its organizers poll its date; the poll follows below, under its own heading."
+  },
+  "events.visibility": {
+    "defaultMessage": "{visibility, select, public {顯示給此伺服器上的所有人} followers {顯示給 {organizer} 的追蹤者} following {顯示給 {organizer} 追蹤的人} mutuals {顯示給 {organizer} 的互相追蹤對象} other {只顯示給受邀的人}}",
+    "description": "Who sees an event, under its time on its page: organizer is the organizer's display name. Those invited and those who answered always see it too."
+  },
+  "events.visibility.unavailable": {
+    "defaultMessage": "{visibility, select, public {顯示給此伺服器上的所有人} followers {顯示給主辦者的追蹤者} following {顯示給主辦者追蹤的人} mutuals {顯示給主辦者的互相追蹤對象} other {只顯示給受邀的人}}",
+    "description": "Who sees an event, under its time on its page, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.visibility otherwise. Those invited and those who answered always see it too."
+  },
+  "events.capacity": {
+    "defaultMessage": "{going, plural, other {{capacity} 人中有 # 人參加}}",
+    "description": "How many answered going to an event that has a capacity, under its time on its page: going is how many, capacity the most it takes."
+  },
+  "events.where": {
+    "defaultMessage": "地點",
+    "description": "The heading of an event's places on its page, and the name of their list."
+  },
+  "events.place_voice": {
+    "defaultMessage": "語音聊天室",
+    "description": "The name of an event's voice chat room among its places."
+  },
+  "events.place_physical": {
+    "defaultMessage": "實體",
+    "description": "Said before the name of an event's place to meet in person, for assistive technology."
+  },
+  "events.place_url": {
+    "defaultMessage": "線上",
+    "description": "Said before the name of an event's place online, for assistive technology."
+  },
+  "events.place_hidden": {
+    "defaultMessage": "{kind, select, physical {實體：地點只會顯示給主辦者核准的參加者} voice {語音聊天室} other {線上：連結只會顯示給主辦者核准的參加者}}",
+    "description": "A place of an event the reader does not see, by its kind alone: it is shown to the attendees the organizers approve."
+  },
+  "events.map": {
+    "defaultMessage": "開啟地圖",
+    "description": "The link to the map of an event's place in person, which leaves the site."
+  },
+  "events.room_opens": {
+    "defaultMessage": "活動開始時開啟",
+    "description": "Under an event's voice chat room before the event starts."
+  },
+  "events.room_opening": {
+    "defaultMessage": "正在開啟…",
+    "description": "Under an event's voice chat room once the event started, before the server opened the room."
+  },
+  "events.room_open": {
+    "defaultMessage": "立即開啟",
+    "description": "Under an event's voice chat room while it is open, over the button that joins it."
+  },
+  "events.room_ended": {
+    "defaultMessage": "聊天室已結束",
+    "description": "Under an event's voice chat room once the room it opened ended."
+  },
+  "events.room_canceled": {
+    "defaultMessage": "不會開啟：活動已取消",
+    "description": "Under the voice chat room of a cancelled event."
+  },
+  "events.room_unavailable": {
+    "defaultMessage": "{reason, select, disabled {無法開啟：此伺服器已關閉語音聊天} not_eligible {無法開啟：主辦者不能主持語音聊天室} too_many_rooms {無法開啟：已開啟的聊天室數量達到此伺服器的上限} other {無法開啟：主辦者正在主持另一個聊天室}}",
+    "description": "Under an event's voice chat room that could not open at the start, why; the event goes on."
+  },
+  "events.join": {
+    "defaultMessage": "加入聊天室",
+    "description": "The button under an event's open voice chat room, which joins the room and opens its page."
+  },
+  "events.join_failed": {
+    "defaultMessage": "無法加入聊天室。請稍後再試。",
+    "description": "Said when joining an event's voice chat room failed."
+  },
+  "events.your_answer": {
+    "defaultMessage": "你的回覆",
+    "description": "The heading of the reader's answer to an event (going, maybe, not going), and the name of the answers."
+  },
+  "events.answer": {
+    "defaultMessage": "{answer, select, going {參加} maybe {可能參加} other {不參加}}",
+    "description": "An answer to an event, on its button."
+  },
+  "events.answer_full": {
+    "defaultMessage": "活動已額滿。你仍可回覆「可能參加」或「不參加」。",
+    "description": "Under the answers to an event whose going reached its capacity, when the reader is not among them."
+  },
+  "events.answer_started": {
+    "defaultMessage": "活動開始後已停止回覆。",
+    "description": "Under the answers to an event that started."
+  },
+  "events.answer_refused_full": {
+    "defaultMessage": "未儲存：活動已額滿。",
+    "description": "In place of the line under the answers to an event when going was refused at capacity."
+  },
+  "events.answer_refused_closed": {
+    "defaultMessage": "未儲存：活動已開始或已取消。",
+    "description": "In place of the line under the answers to an event when the answer was refused for an event that started or was cancelled."
+  },
+  "events.answer_refused_unscheduled": {
+    "defaultMessage": "未儲存：日期尚未確定。",
+    "description": "In place of the line under the answers to an event when the answer was refused while its date is polled."
+  },
+  "events.calendar": {
+    "defaultMessage": "加入行事曆",
+    "description": "The button on an event's page that downloads its calendar file (.ics) to import into the reader's calendar."
+  },
+  "events.calendar_saved": {
+    "defaultMessage": "已下載 {name}。開啟後即可將活動加入你的行事曆。",
+    "description": "Under the calendar button of an event once its file was downloaded: name is the file's name."
+  },
+  "events.calendar_failed": {
+    "defaultMessage": "無法下載行事曆檔案。請稍後再試。",
+    "description": "Under the calendar button of an event when its file could not be downloaded."
+  },
+  "events.calendar_unscheduled": {
+    "defaultMessage": "日期確定後即可下載行事曆檔案。",
+    "description": "Under the calendar button of an event when the server refused its file while its date is polled."
+  },
+  "events.poll_heading": {
+    "defaultMessage": "你什麼時候可以參加？",
+    "description": "The heading of an event's date poll on its page."
+  },
+  "events.poll_note": {
+    "defaultMessage": "回覆後，所有能看到此活動的人都會看到你的名字。",
+    "description": "Over an event's date poll."
+  },
+  "events.poll": {
+    "defaultMessage": "日期投票",
+    "description": "The name of the table of an event's candidate dates, for assistive technology."
+  },
+  "events.poll_date": {
+    "defaultMessage": "日期",
+    "description": "The head of the column of the dates in an event's date poll, for assistive technology."
+  },
+  "events.vote": {
+    "defaultMessage": "{vote, select, yes {可以參加} maybe {可能參加} other {無法參加}}",
+    "description": "An answer to a candidate date of an event, the head of the column of its count and on its button."
+  },
+  "events.yours": {
+    "defaultMessage": "你的回覆",
+    "description": "The head of the column of the reader's own answer in an event's date poll."
+  },
+  "events.poll_loading": {
+    "defaultMessage": "正在載入日期…",
+    "description": "In place of an event's date poll while its dates load."
+  },
+  "events.poll_failed": {
+    "defaultMessage": "無法載入日期。",
+    "description": "In place of an event's date poll when its dates could not be loaded, beside a button to try again."
+  },
+  "events.vote_scheduled": {
+    "defaultMessage": "未儲存：日期已確定，投票已結束。",
+    "description": "Under an event's date poll when an answer was refused because the organizers confirmed a date."
+  },
+  "events.vote_closed": {
+    "defaultMessage": "未儲存：活動已取消。",
+    "description": "Under an event's date poll when an answer was refused for a cancelled event."
+  },
+  "events.answered": {
+    "defaultMessage": "回覆者",
+    "description": "The heading over who answered each candidate date of an event's date poll."
+  },
+  "events.who_answered": {
+    "defaultMessage": "{count, plural, =0 {{date} 還沒有人回覆} other {{date} 有 # 則回覆}}",
+    "description": "The summary of who answered a candidate date, over the button that shows them: date is the candidate's date and time."
+  },
+  "events.vote_group": {
+    "defaultMessage": "{vote, select, yes {可以參加} maybe {可能參加} other {無法參加}}（{count}）",
+    "description": "The heading of who answered a candidate date one way, with how many."
+  },
+  "events.ballots_loading": {
+    "defaultMessage": "正在載入回覆者…",
+    "description": "In place of who answered a candidate date while they load."
+  },
+  "events.ballots_failed": {
+    "defaultMessage": "無法載入回覆者。",
+    "description": "In place of who answered a candidate date when they could not be loaded, beside a button to try again."
+  },
+  "events.ballots_none": {
+    "defaultMessage": "這個日期還沒有人回覆。",
+    "description": "In place of who answered a candidate date when no one did."
+  },
+  "events.organizers": {
+    "defaultMessage": "{count, plural, other {主辦者}}",
+    "description": "The heading of who organizes an event on its page: the organizer, then the co-organizers."
+  },
+  "events.going_group": {
+    "defaultMessage": "參加（{count}）",
+    "description": "The heading of who answered going to an event, with how many."
+  },
+  "events.maybe_group": {
+    "defaultMessage": "可能參加",
+    "description": "The heading of who answered maybe to an event."
+  },
+  "events.attendees_loading": {
+    "defaultMessage": "正在載入參加者…",
+    "description": "In place of who is going to an event while they load."
+  },
+  "events.attendees_failed": {
+    "defaultMessage": "無法載入參加者。",
+    "description": "In place of who is going to an event when they could not be loaded, beside a button to try again."
+  },
+  "events.attendees_none": {
+    "defaultMessage": "還沒有人回覆參加或可能參加。",
+    "description": "In place of who is going to an event when no one answered going or maybe."
+  },
+  "events.vote_failed": {
+    "defaultMessage": "未能完成儲存你對 {date} 的回覆。",
+    "description": "Under an event's date poll when the answer to one date could not be saved, beside a button to try it again: date is the candidate's date and time."
+  },
+  "events.mark": {
+    "defaultMessage": "{state, select, canceled {已取消} other {已結束}}",
+    "description": "At the top of an event's page, beside its glyph, as its line in a list marks it: it was cancelled (the reason follows under it) or it ended."
+  },
+  "events.tab": {
+    "defaultMessage": "{tab, select, board {留言板} other {詳細資料}}",
+    "description": "A tab under an event's head on its page, for a reader of its board: board shows the event's board, other (details) what the event is, the answers and who goes. A reader who may not read the board gets no tabs."
+  },
+  "events.board.feed": {
+    "defaultMessage": "活動留言板",
+    "description": "The name of the list of the posts on an event's board, under its Board tab, for assistive technology."
+  },
+  "events.board.write": {
+    "defaultMessage": "在留言板上留言",
+    "description": "The bar at the top of an event's board, for a reader who may write on it, beside their avatar: it opens the composer for a post on the board. Also the bar's name for assistive technology."
+  },
+  "events.board.empty": {
+    "defaultMessage": "留言板上還沒有內容。",
+    "description": "In place of the posts of an event's board when nothing is on it."
+  },
+  "events.board.closed": {
+    "defaultMessage": "{reason, select, canceled {活動已取消，所以留言板為唯讀。} other {活動結束已滿 7 天，所以留言板為唯讀。}}",
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, when nobody writes on it any more: canceled, the event was cancelled; other, 7 days passed since the event's end (it is writable for the 7 days after the end). Its words are those of the error server:errors.event.board_closed."
+  },
+  "events.board.not_writer": {
+    "defaultMessage": "{writers, select, organizer {只有主辦者可以在此留言板上留言。} other {只有主辦者和共同主辦者可以在此留言板上留言。}}",
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, for a reader the event's board_writers leave out: organizer, only the organizer writes on it; other (coorganizers), the organizer and the co-organizers."
+  },
+  "events.create.submit": {
+    "defaultMessage": "建立活動",
+    "description": "The button at the foot of the form that creates an event."
+  },
+  "events.create.not_allowed": {
+    "defaultMessage": "你無法在此伺服器上建立活動。由管理員決定誰可以建立。",
+    "description": "In place of the form that creates an event, for a reader who may not create events (the server's setting, a role without the permission, or an account a moderator limited)."
+  },
+  "events.create.loading": {
+    "defaultMessage": "正在載入…",
+    "description": "In place of the form that creates an event while the server's settings and the reader's account, which say whether they may create events, load."
+  },
+  "events.create.failed": {
+    "defaultMessage": "無法載入建立活動的表單。",
+    "description": "In place of the form that creates an event when the server's settings or the reader's account could not be loaded, beside a button to try again."
+  },
+  "events.edit": {
+    "defaultMessage": "變更活動",
+    "description": "The title of the form that changes an event, and the item of the event's menu that leads to it, for its organizers."
+  },
+  "events.edit.submit": {
+    "defaultMessage": "儲存",
+    "description": "The button at the foot of the form that changes an event."
+  },
+  "events.edit.canceled": {
+    "defaultMessage": "此活動已取消，無法再變更。",
+    "description": "In place of the form that changes an event, when the event was cancelled."
+  },
+  "events.back_to_event": {
+    "defaultMessage": "返回活動",
+    "description": "The back button of a screen under an event (changing it, its invitations, its co-organizers), which leads to the event's page."
+  },
+  "events.organizers_only": {
+    "defaultMessage": "只有活動主辦者 {organizer} 和共同主辦者可以變更它。",
+    "description": "In place of the form that changes an event, for a reader who neither organizes nor co-organizes it: organizer is the organizer's name."
+  },
+  "events.organizers_only.unavailable": {
+    "defaultMessage": "只有活動主辦者和共同主辦者可以變更它。",
+    "description": "In place of the form that changes an event, for a reader who neither organizes nor co-organizes it, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.organizers_only otherwise."
+  },
+  "events.form.title": {
+    "defaultMessage": "標題",
+    "description": "The label of the field of an event's title, in the form that creates or changes an event."
+  },
+  "events.form.title_empty": {
+    "defaultMessage": "請為活動取個標題。",
+    "description": "Under the title field of an event's form, when the reader sends it with no title."
+  },
+  "events.form.title_rule": {
+    "defaultMessage": "標題為單行 1 到 100 個字元。",
+    "description": "Under the title field of an event's form, when the title is too long, has a line break, or the server refused it."
+  },
+  "events.form.description": {
+    "defaultMessage": "說明",
+    "description": "The label of the field of an event's description, in the event's form."
+  },
+  "events.form.description_hint": {
+    "defaultMessage": "最多 3,000 個字元。其中的 URL 會變成連結。",
+    "description": "Under the label of the description field of an event's form."
+  },
+  "events.form.description_rule": {
+    "defaultMessage": "說明最多 3,000 個字元。",
+    "description": "Under the description field of an event's form, when it is too long or the server refused it."
+  },
+  "events.form.when": {
+    "defaultMessage": "時間",
+    "description": "The heading of an event's date in its form, and the name of the choice between a fixed date and a date poll."
+  },
+  "events.form.dating": {
+    "defaultMessage": "{dating, select, fixed {固定日期} other {日期投票：提供候選日期，讓大家回覆}}",
+    "description": "An option of how a new event's date is set: dating is fixed (a start and an end now) or other (poll: candidate dates people answer, the organizers confirm one later)."
+  },
+  "events.form.starts": {
+    "defaultMessage": "開始",
+    "description": "The label of the field of the start of an event, or of a candidate date, in the event's form."
+  },
+  "events.form.ends": {
+    "defaultMessage": "結束",
+    "description": "The label of the field of the end of an event, or of a candidate date, in the event's form."
+  },
+  "events.form.start_rule": {
+    "defaultMessage": "開始時間須晚於現在，且最多在 1 年內。",
+    "description": "Under the start of an event or of a candidate date, when it is not after now or more than a year ahead."
+  },
+  "events.form.end_rule": {
+    "defaultMessage": "結束時間須晚於開始時間，且最多 7 天內。",
+    "description": "Under the end of an event or of a candidate date, when it is not after the start or more than 7 days after it."
+  },
+  "events.form.candidate": {
+    "defaultMessage": "日期 {n}",
+    "description": "The name of a candidate date in the form that creates an event with a date poll: n is its place in the list, from 1."
+  },
+  "events.form.candidate_remove": {
+    "defaultMessage": "移除日期 {n}",
+    "description": "The button beside a candidate date in the form of a new event's poll, which takes it out: n is its place, from 1."
+  },
+  "events.form.candidate_add": {
+    "defaultMessage": "新增日期",
+    "description": "The button under the candidate dates of a new event's poll, which adds one more."
+  },
+  "events.form.candidate_twice": {
+    "defaultMessage": "已提供這個日期。",
+    "description": "Under a candidate date of an event's poll that is the same as another (the same start and end)."
+  },
+  "events.form.candidates_note": {
+    "defaultMessage": "最多可提供 {count} 個日期。看到活動的人會逐一回覆，你之後再確定其中一個。",
+    "description": "Over the candidate dates in the form that creates an event with a date poll: count is the most dates a poll has (20)."
+  },
+  "events.form.candidates_rule": {
+    "defaultMessage": "投票有 1 到 20 個不同的日期，每個都須晚於現在且最多在一年內，長度最多 7 天。",
+    "description": "Under the candidate dates of an event's form, when the server refused them."
+  },
+  "events.form.poll_elsewhere": {
+    "defaultMessage": "日期正在投票中。請在活動頁面的投票中新增、撤回和確定日期。",
+    "description": "In place of the date in the form that changes an event whose date is polled."
+  },
+  "events.form.zone_note": {
+    "defaultMessage": "以 {zone}（活動的時區）為準。",
+    "description": "Under the date fields of an event's form: zone is the IANA name of the event's time zone (Asia/Tokyo), in which the dates are read."
+  },
+  "events.form.time_zone": {
+    "defaultMessage": "時區",
+    "description": "The heading and the name of the choice of an event's time zone, in its form."
+  },
+  "events.form.time_zone_rule": {
+    "defaultMessage": "請從清單中選擇時區。",
+    "description": "Under the time zone of an event's form, when the server refused it."
+  },
+  "events.form.places": {
+    "defaultMessage": "地點",
+    "description": "The heading of an event's places in its form."
+  },
+  "events.form.voice": {
+    "defaultMessage": "在活動開始時開啟的語音聊天室",
+    "description": "The checkbox of an event's voice chat room place, in its form."
+  },
+  "events.form.speakers": {
+    "defaultMessage": "誰可以不經申請直接發言",
+    "description": "The heading of the choice of who may speak in an event's voice chat room without raising a hand, in its form; also the choice's name."
+  },
+  "events.form.speakers_choice": {
+    "defaultMessage": "{speakers, select, everyone {聊天室中的所有人} followers {你的追蹤者} following {你追蹤的人} mutuals {你追蹤且也追蹤你的人} other {只有獲准發言的人}}",
+    "description": "An option of who speaks in an event's voice chat room without asking: speakers is everyone, followers, following, mutuals, or other (manual: only the people a host lets speak)."
+  },
+  "events.form.physical": {
+    "defaultMessage": "實體",
+    "description": "The checkbox of an event's place to meet in person, in its form."
+  },
+  "events.form.place_name": {
+    "defaultMessage": "名稱",
+    "description": "The label of the name of an event's place in person or online, in its form."
+  },
+  "events.form.place_name_rule": {
+    "defaultMessage": "名稱為單行 1 到 100 個字元。",
+    "description": "Under the name of an event's place, when it is empty, too long or has a line break."
+  },
+  "events.form.address": {
+    "defaultMessage": "地址",
+    "description": "The label of the address of an event's place in person, in its form."
+  },
+  "events.form.address_rule": {
+    "defaultMessage": "地址最多 500 個字元。",
+    "description": "Under the address of an event's place in person, when it is too long."
+  },
+  "events.form.map_url": {
+    "defaultMessage": "地圖連結（選填）",
+    "description": "The label of the URL of a map of an event's place in person, in its form."
+  },
+  "events.form.map_url_hint": {
+    "defaultMessage": "以 https 或 http 開頭的連結。頁面上不會顯示地圖，只會顯示連結。",
+    "description": "Under the label of the map link of an event's place in person."
+  },
+  "events.form.url_rule": {
+    "defaultMessage": "請輸入以 https 或 http 開頭的連結。",
+    "description": "Under a link of an event's place (a map's, a place online's), when it is not an http or https URL."
+  },
+  "events.form.online": {
+    "defaultMessage": "線上",
+    "description": "The checkbox of an event's place online (a stream, an outside meeting's link), in its form."
+  },
+  "events.form.online_url": {
+    "defaultMessage": "連結",
+    "description": "The label of the URL of an event's place online, in its form."
+  },
+  "events.form.online_url_hint": {
+    "defaultMessage": "以 https 或 http 開頭的連結，例如直播或會議。",
+    "description": "Under the label of the link of an event's place online."
+  },
+  "events.form.places_rule": {
+    "defaultMessage": "請檢查地點：每個都需要名稱，以及以 https 或 http 開頭的連結。",
+    "description": "Under an event's places, when the server refused them without naming one."
+  },
+  "events.form.disclosure": {
+    "defaultMessage": "誰可以看到實體和線上地點",
+    "description": "The heading of the choice of who sees an event's places in person and online, in its form; also the choice's name."
+  },
+  "events.form.disclosure_choice": {
+    "defaultMessage": "{disclosure, select, approved {只有你核准的參加者} other {所有能看到活動的人}}",
+    "description": "An option of who sees an event's places in person and online: disclosure is approved (the attendees the organizers approve) or other (viewers: everyone who sees the event). The voice chat room is shown to everyone who sees the event either way."
+  },
+  "events.form.visibility": {
+    "defaultMessage": "誰可以看到活動",
+    "description": "The heading of the choice of who sees an event, in its form; also the choice's name."
+  },
+  "events.form.visibility_choice": {
+    "defaultMessage": "{visibility, select, public {此伺服器上的所有人} followers {你的追蹤者} following {你追蹤的人} mutuals {你追蹤且也追蹤你的人} other {只有受邀的人}}",
+    "description": "An option of who sees an event: visibility is public, followers, following, mutuals, or other (invited). Those invited and those who answered always see it too."
+  },
+  "events.form.visibility_rule": {
+    "defaultMessage": "請選擇誰可以看到活動。",
+    "description": "Under the choice of who sees an event, when the server refused it."
+  },
+  "events.form.board_writers": {
+    "defaultMessage": "誰可以在留言板上留言",
+    "description": "The heading of the choice of who writes on an event's board, in the form that creates or changes the event, after who sees it; and the choice's name."
+  },
+  "events.form.board_writers_choice": {
+    "defaultMessage": "{writers, select, organizer {只有你} coorganizers {你和共同主辦者} other {所有能閱讀留言板的人}}",
+    "description": "An option of who writes on an event's board, in the form its organizer creates or changes it with (you is the organizer): writers is organizer, coorganizers (the organizer and the co-organizers), or other (readers: everyone who reads the board)."
+  },
+  "events.form.board_writers_hint": {
+    "defaultMessage": "你、共同主辦者，以及回覆參加或可能參加的人可以閱讀留言板。",
+    "description": "Under the choice of who writes on an event's board, in the form its organizer creates or changes it with: who reads the board, as server:errors.event.board_not_reader says it."
+  },
+  "events.form.board_writers_organizer": {
+    "defaultMessage": "{writers, select, organizer {只有主辦者可以在留言板上留言} coorganizers {主辦者和共同主辦者可以在留言板上留言} other {所有能閱讀留言板的人都可以在上面留言}}。只有主辦者 {organizer} 可以變更誰能留言。",
+    "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with: who writes on it now (writers as events.form.board_writers_choice), and that only the organizer, organizer (the organizer's name), changes it."
+  },
+  "events.form.board_writers_organizer.unavailable": {
+    "defaultMessage": "{writers, select, organizer {只有主辦者可以在留言板上留言} coorganizers {主辦者和共同主辦者可以在留言板上留言} other {所有能閱讀留言板的人都可以在上面留言}}。只有主辦者可以變更誰能留言。",
+    "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who writes on it now (writers as events.form.board_writers_choice), and that only the organizer changes it; events.form.board_writers_organizer otherwise."
+  },
+  "events.form.board_writers_rule": {
+    "defaultMessage": "請選擇誰可以在留言板上留言。",
+    "description": "Under the choice of who writes on an event's board, when the server refused it."
+  },
+  "events.form.visibility_organizer": {
+    "defaultMessage": "{visibility, select, public {顯示給此伺服器上的所有人} followers {顯示給 {organizer} 的追蹤者} following {顯示給 {organizer} 追蹤的人} mutuals {顯示給 {organizer} 的互相追蹤對象} other {只顯示給受邀的人}}。只有主辦者 {organizer} 可以變更誰能看到。",
+    "description": "In place of the choice of who sees an event, in the form a co-organizer changes it with: who sees it now (visibility as events.visibility), and that only the organizer, organizer, changes it."
+  },
+  "events.form.visibility_organizer.unavailable": {
+    "defaultMessage": "{visibility, select, public {顯示給此伺服器上的所有人} followers {顯示給主辦者的追蹤者} following {顯示給主辦者追蹤的人} mutuals {顯示給主辦者的互相追蹤對象} other {只顯示給受邀的人}}。只有主辦者可以變更誰能看到。",
+    "description": "In place of the choice of who sees an event, in the form a co-organizer changes it with, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who sees it now (visibility as events.visibility), and that only the organizer changes it; events.form.visibility_organizer otherwise."
+  },
+  "events.form.capacity": {
+    "defaultMessage": "人數上限",
+    "description": "The heading of an event's capacity in its form, and the name of its field."
+  },
+  "events.form.capacity_unit": {
+    "defaultMessage": "{count, plural, other {人}}",
+    "description": "After the field of an event's capacity: count is the number in the field."
+  },
+  "events.form.capacity_hint": {
+    "defaultMessage": "0 表示不限，最多 {max}。額滿後，其他人就不能回覆參加。",
+    "description": "Under the field of an event's capacity: max is the most it takes (10,000)."
+  },
+  "events.form.capacity_rule": {
+    "defaultMessage": "人數上限為 0（不限）到 10,000。",
+    "description": "Under the field of an event's capacity, when the server refused it."
+  },
+  "events.form.not_sent": {
+    "defaultMessage": "請修正標示的部分，然後再試一次。",
+    "description": "Before the button of an event's form, when the form or the server found something wrong with a field."
+  },
+  "events.form.refused": {
+    "defaultMessage": "{kind, select, not_eligible {你無法在此伺服器上建立活動。} voice_unavailable {語音聊天室目前無法作為地點：語音聊天已關閉，或你不能主持聊天室。取消勾選即可繼續。} rate_limited {你目前已建立到數量上限的活動。請稍後再試。} not_organizer {只有活動的主辦者可以變更它。} organizer_only {只有活動的主辦者可以變更誰能看到它。} closed {活動已取消，無法再變更。} not_found {此活動已不存在，或你無法查看。} scheduled {日期在此期間已確定。請重新開啟活動後再變更。} other {無法送出。請檢查網路連線後再試一次。}}",
+    "description": "Before the button of an event's form, when the server refused it as a whole: kind is not_eligible, voice_unavailable (voice chat off or the organizer may not host rooms), rate_limited (10 events an hour), not_organizer, organizer_only (the visibility), closed (cancelled), not_found, scheduled (a date confirmed meanwhile), or other (the server could not be reached or failed)."
+  },
+  "events.manage": {
+    "defaultMessage": "管理活動",
+    "description": "The name of the menu at the top of an event's page, for its organizer and co-organizers: changing it, its invitations, its co-organizers, cancelling it."
+  },
+  "events.invitations": {
+    "defaultMessage": "邀請",
+    "description": "The title of the screen of an event's invitations, the heading and name of their list, and the item of the event's menu that leads to it."
+  },
+  "events.coorganizers": {
+    "defaultMessage": "共同主辦者",
+    "description": "The title of the screen of an event's co-organizers, and the item of the event's menu that leads to it, for its organizer."
+  },
+  "events.cancel_menu": {
+    "defaultMessage": "取消活動…",
+    "description": "An item of an event's menu, for its organizer: cancels the event, asked first."
+  },
+  "events.cancel.title": {
+    "defaultMessage": "要取消活動嗎？",
+    "description": "The question of the dialog before the organizer cancels an event."
+  },
+  "events.cancel.text": {
+    "defaultMessage": "所有已回覆的人都會收到通知，也不能再回覆。活動會保留在此伺服器上，並標示為已取消。此操作無法復原。",
+    "description": "What follows cancelling an event, in its dialog."
+  },
+  "events.cancel.note": {
+    "defaultMessage": "給已回覆者的備註（選填）",
+    "description": "The label of the note shown with an event's cancellation, in the dialog that cancels it."
+  },
+  "events.cancel.note_hint": {
+    "defaultMessage": "最多 {max} 個字元，會顯示在活動頁面上。",
+    "description": "Under the label of the note of an event's cancellation: max is how long it may be (500)."
+  },
+  "events.cancel.note_rule": {
+    "defaultMessage": "備註最多 {max} 個字元。",
+    "description": "Under the note of an event's cancellation, when it is too long: max is how long it may be (500)."
+  },
+  "events.cancel.keep": {
+    "defaultMessage": "保留活動",
+    "description": "The button that closes the dialog of an event's cancellation without cancelling it, and the dialog's close."
+  },
+  "events.cancel.confirm": {
+    "defaultMessage": "取消活動",
+    "description": "The button that confirms cancelling an event."
+  },
+  "events.cancel.failed": {
+    "defaultMessage": "無法取消活動。請重試。",
+    "description": "In the dialog that cancels an event, when the cancellation did not finish."
+  },
+  "events.cancel.done": {
+    "defaultMessage": "你已取消活動。",
+    "description": "Said on an event's page once its organizer cancelled it."
+  },
+  "events.cancel.closed": {
+    "defaultMessage": "活動已經取消。",
+    "description": "Said on an event's page when its organizer pressed Cancel the event and the server said it was cancelled already (from another device, or by a moderator); the page then shows it cancelled."
+  },
+  "events.approval.menu": {
+    "defaultMessage": "{name} 的操作",
+    "description": "The name of the menu an organizer opens on an attendee of an event: name is the attendee's."
+  },
+  "events.approval.op": {
+    "defaultMessage": "{approved, select, yes {核准} other {取消核准}}",
+    "description": "An item of the menu an organizer opens on an attendee going or maybe: approved is yes (approves them) or other (takes the approval back)."
+  },
+  "events.approval.about": {
+    "defaultMessage": "核准後，對方就能看到實體和線上地點。",
+    "description": "Under Approve in an attendee's menu: what the approval changes for them."
+  },
+  "events.approval.approved": {
+    "defaultMessage": "已核准",
+    "description": "Beside an attendee of an event, for its organizers, once an organizer approved them."
+  },
+  "events.approval.done": {
+    "defaultMessage": "{approved, select, yes {你已核准 {name}。} other {{name} 已不再獲得核准。}}",
+    "description": "Said on an event's page once an organizer approved an attendee (approved yes) or took the approval back (other): name is the attendee's."
+  },
+  "events.approval.failed": {
+    "defaultMessage": "{cause, select, not_attending {{name} 已不再回覆參加或可能參加，所以沒有需要核准的項目。} other {{approved, select, yes {核准 {name}} other {取消核准 {name}}}未完成。請重試。}}",
+    "description": "Said on an event's page when an approval was refused or did not finish: cause is not_attending (the attendee changed their answer) or other; approved is yes (approving) or other (removing the approval); name is the attendee's."
+  },
+  "events.approval.waiting": {
+    "defaultMessage": "等待核准",
+    "description": "Beside an attendee going or maybe whom no organizer approved yet, for the event's organizers, before Approve."
+  },
+  "events.approval.approve": {
+    "defaultMessage": "核准 {name}",
+    "description": "The name of the Approve button beside an attendee waiting for approval, for assistive technology: name is the attendee's. It starts with the words the button shows (events.approval.op: Approve)."
+  },
+  "events.poll.actions": {
+    "defaultMessage": "操作",
+    "description": "The head of the column of each date's actions in an event's date poll, for its organizers, for assistive technology."
+  },
+  "events.poll.menu": {
+    "defaultMessage": "{date} 的選項",
+    "description": "The name of the menu at the end of a candidate date's row, for an event's organizers: date is the candidate's date and time."
+  },
+  "events.poll.op": {
+    "defaultMessage": "{op, select, confirm {確定這個日期…} other {撤回這個日期…}}",
+    "description": "An item of a candidate date's menu, for an event's organizers: op is confirm (fixes the event's date to it and closes the poll, asked first) or other (withdraw: takes it out of the poll, asked first)."
+  },
+  "events.poll.last": {
+    "defaultMessage": "投票至少要保留一個日期。",
+    "description": "Under Withdraw this date in a candidate date's menu, when it is the poll's only date."
+  },
+  "events.poll.ask_title": {
+    "defaultMessage": "{op, select, confirm {要確定 {date} 嗎？} other {要撤回 {date} 嗎？}}",
+    "description": "The question of the dialog before an organizer confirms a candidate date (op confirm) or withdraws it (other): date is the candidate's date and time."
+  },
+  "events.poll.ask_text": {
+    "defaultMessage": "{op, select, confirm {投票會結束，所有已回覆或受邀的人都會收到日期通知。此操作無法復原。} other {它的回覆也會一併刪除。此操作無法復原。}}",
+    "description": "What follows confirming a candidate date (op confirm) or withdrawing it (other), in its dialog."
+  },
+  "events.poll.ask_cancel": {
+    "defaultMessage": "{op, select, confirm {繼續投票} other {保留日期}}",
+    "description": "The button that closes the dialog of confirming (op confirm) or withdrawing (other) a candidate date without doing it."
+  },
+  "events.poll.ask_confirm": {
+    "defaultMessage": "{op, select, confirm {確定} other {撤回}}",
+    "description": "The button that confirms a candidate date (op confirm) or withdraws it (other)."
+  },
+  "events.poll.done": {
+    "defaultMessage": "{op, select, confirm {活動日期現在是 {date}。} other {你已撤回 {date}。}}",
+    "description": "Said on an event's page once an organizer confirmed a candidate date (op confirm) or withdrew it (other): date is its date and time."
+  },
+  "events.poll.act_failed": {
+    "defaultMessage": "{cause, select, last {{date} 是投票中唯一的日期，所以會保留。請先新增另一個日期再撤回它。} scheduled {日期在此期間已確定，所以投票已結束。} started {{date} 已經開始，所以無法再確定。請確定較晚的日期，或新增一個。} closed {活動已取消。} other {{op, select, confirm {確定 {date}} other {撤回 {date}}}未完成。請重試。}}",
+    "description": "Said on an event's page when confirming or withdrawing a candidate date was refused or did not finish: cause is last (its only date), scheduled (a date confirmed meanwhile), started (the date is past), closed (cancelled) or other; op is confirm or other (withdraw); date is the candidate's."
+  },
+  "events.poll.add_heading": {
+    "defaultMessage": "新增日期",
+    "description": "The heading of the part under an event's date poll, for its organizers, that adds a candidate date; also its name."
+  },
+  "events.poll.add": {
+    "defaultMessage": "新增",
+    "description": "The button that adds the candidate date its fields hold to an event's poll."
+  },
+  "events.poll.added": {
+    "defaultMessage": "你已新增 {date}。",
+    "description": "Said on an event's page once an organizer added a candidate date: date is its date and time."
+  },
+  "events.poll.add_refused": {
+    "defaultMessage": "{cause, select, invalid {未新增日期：投票最多有 20 個不同的日期，且都須晚於現在。} scheduled {未新增日期：日期已確定，投票已結束。} closed {未新增日期：活動已取消。} other {無法新增日期。請重試。}}",
+    "description": "Under the part that adds a candidate date to an event's poll, when the server refused it: cause is invalid (20 dates already, the same date twice, a date out of the limits), scheduled, closed, or other."
+  },
+  "events.poll.full": {
+    "defaultMessage": "投票最多有 {count} 個日期。請先撤回一個再新增。",
+    "description": "In place of the part that adds a candidate date, when the poll has as many as it can: count is that number (20)."
+  },
+  "events.room_unavailable_organizer": {
+    "defaultMessage": "{reason, select, disabled {無法開啟：此伺服器已關閉語音聊天。活動照常進行。} not_eligible {無法開啟：你不能在此伺服器上主持語音聊天室。活動照常進行。} too_many_rooms {無法開啟：已開啟的聊天室數量達到此伺服器的上限。活動照常進行。} other {無法開啟：你正在主持另一個聊天室。活動照常進行。}}",
+    "description": "Under an event's voice chat room that could not open at the start, why, for its organizer in their own words: reason is disabled, not_eligible, too_many_rooms, or other (hosting_elsewhere)."
+  },
+  "events.people.search": {
+    "defaultMessage": "名稱或帳號",
+    "description": "The label of the field that finds people to invite to an event or to name its co-organizers."
+  },
+  "events.people.search_hint": {
+    "defaultMessage": "只能選擇此伺服器上的人。",
+    "description": "Under the label of the field that finds people to invite to an event or name co-organizers."
+  },
+  "events.people.clear": {
+    "defaultMessage": "清除",
+    "description": "The button that empties the field that finds people for an event."
+  },
+  "events.people.searching": {
+    "defaultMessage": "正在搜尋…",
+    "description": "In place of the people found for an event while the search runs."
+  },
+  "events.people.search_failed": {
+    "defaultMessage": "搜尋未完成。請重試。",
+    "description": "In place of the people found for an event when the search failed."
+  },
+  "events.people.none_found": {
+    "defaultMessage": "此伺服器上沒有符合的人。",
+    "description": "In place of the people found for an event when the search found none."
+  },
+  "events.people.found": {
+    "defaultMessage": "找到的人",
+    "description": "The name of the list of people found to invite to an event or name co-organizers, for assistive technology."
+  },
+  "events.people.organizer": {
+    "defaultMessage": "主辦者",
+    "description": "In place of the button beside an account found that organizes the event."
+  },
+  "events.people.canceled": {
+    "defaultMessage": "此活動已取消，所以無法邀請任何人或指定共同主辦者。",
+    "description": "In place of an event's invitations or co-organizers, when it was cancelled."
+  },
+  "events.people.menu": {
+    "defaultMessage": "{name} 的操作",
+    "description": "The name of the menu of an account on an event's invitations or co-organizers: name is the account's."
+  },
+  "events.invitations.loading": {
+    "defaultMessage": "正在載入邀請…",
+    "description": "In place of the invitations of an event while they load."
+  },
+  "events.invitations.failed": {
+    "defaultMessage": "無法載入邀請。",
+    "description": "In place of the invitations of an event when they could not be loaded, beside a button to try again."
+  },
+  "events.invitations.none": {
+    "defaultMessage": "還沒有邀請任何人。受邀的人一定能看到活動。",
+    "description": "In place of the invitations of an event while there are none."
+  },
+  "events.invitations.revoke": {
+    "defaultMessage": "撤銷邀請…",
+    "description": "The last item of the menu of an invited account on an event's invitations, apart: revokes the invitation, asked first."
+  },
+  "events.invitations.revoked": {
+    "defaultMessage": "你已撤銷對 {name} 的邀請。",
+    "description": "Said on an event's invitations once one was revoked: name is the account's."
+  },
+  "events.invitations.revoke_failed": {
+    "defaultMessage": "無法撤銷對 {name} 的邀請。請重試。",
+    "description": "Said on an event's invitations when a revocation did not finish: name is the account's."
+  },
+  "events.invitations.organizers_only": {
+    "defaultMessage": "只有活動主辦者 {organizer} 和共同主辦者可以邀請人參加。",
+    "description": "In place of an event's invitations, for a reader who neither organizes nor co-organizes it: organizer is the organizer's name."
+  },
+  "events.invitations.organizers_only.unavailable": {
+    "defaultMessage": "只有活動主辦者和共同主辦者可以邀請人參加。",
+    "description": "In place of an event's invitations, for a reader who neither organizes nor co-organizes it, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.invitations.organizers_only otherwise."
+  },
+  "events.invitations.list": {
+    "defaultMessage": "已邀請",
+    "description": "The heading of the list of the people invited to an event, on its invitations' screen, and the list's name."
+  },
+  "events.invitations.revoke_title": {
+    "defaultMessage": "要撤銷對 {name} 的邀請嗎？",
+    "description": "The question of the dialog before an organizer revokes an invitation to an event: name is the account's."
+  },
+  "events.invitations.revoke_text": {
+    "defaultMessage": "每個人對同一個活動只能被邀請一次，所以 {name} 無法再次受邀。此操作無法復原。",
+    "description": "What follows revoking an invitation to an event, in its dialog: name is the account's."
+  },
+  "events.invitations.revoke_confirm": {
+    "defaultMessage": "撤銷",
+    "description": "The button that confirms revoking an invitation to an event."
+  },
+  "events.invitations.revoke_keep": {
+    "defaultMessage": "保留邀請",
+    "description": "The button that closes the dialog of revoking an invitation without revoking it, and the dialog's close."
+  },
+  "events.invite.heading": {
+    "defaultMessage": "邀請某人",
+    "description": "The heading of the part of an event's invitations that finds people and invites them."
+  },
+  "events.invite.invite": {
+    "defaultMessage": "邀請",
+    "description": "The button beside an account found that invites it to the event."
+  },
+  "events.invite.invited": {
+    "defaultMessage": "已邀請",
+    "description": "In place of Invite beside an account found that is invited to the event already."
+  },
+  "events.invite.done": {
+    "defaultMessage": "你已邀請 {name}。",
+    "description": "Said on an event's invitations after an invitation: name is the account's."
+  },
+  "events.invite.refused": {
+    "defaultMessage": "{kind, select, already_invited {{name} 先前已受邀參加此活動。每個人對同一個活動只能被邀請一次。} invalid_invitee {{name} 無法受邀參加此活動。} rate_limited {此活動在過去一小時內已送出 {count} 個邀請，已達上限。請稍後再試。} other {無法邀請 {name}。請重試。}}",
+    "description": "Said on an event's invitations when an invitation was refused: kind is already_invited (once per event, also after a revocation), invalid_invitee (a block between them and an organizer, an organizer, not an active local account), rate_limited (count, 100, an hour), or other; name is the account's."
+  },
+  "events.coorganizers.count": {
+    "defaultMessage": "{count, plural, =0 {共同主辦者} other {共同主辦者（{count} / {max}）}}",
+    "description": "The heading of an event's co-organizers on their screen: count is how many, max the most an event has (3)."
+  },
+  "events.coorganizers.none": {
+    "defaultMessage": "還沒有共同主辦者。他們可以和你一起變更活動、邀請人和核准參加者。",
+    "description": "In place of an event's co-organizers while there are none."
+  },
+  "events.coorganizers.remove": {
+    "defaultMessage": "取消共同主辦者身分…",
+    "description": "The last item of the menu of a co-organizer on an event's co-organizers, apart: removes them as co-organizer, asked first."
+  },
+  "events.coorganizers.removed": {
+    "defaultMessage": "{name} 已不再是共同主辦者。",
+    "description": "Said on an event's co-organizers once one was removed: name is the account's."
+  },
+  "events.coorganizers.remove_failed": {
+    "defaultMessage": "無法移除 {name}。請重試。",
+    "description": "Said on an event's co-organizers when a removal did not finish: name is the account's."
+  },
+  "events.coorganizers.heading": {
+    "defaultMessage": "指定共同主辦者",
+    "description": "The heading of the part of an event's co-organizers that finds people and names them."
+  },
+  "events.coorganizers.name": {
+    "defaultMessage": "指定共同主辦者",
+    "description": "The button beside an account found that names it a co-organizer of the event."
+  },
+  "events.coorganizers.named": {
+    "defaultMessage": "共同主辦者",
+    "description": "In place of the button beside an account found that co-organizes the event already."
+  },
+  "events.coorganizers.full": {
+    "defaultMessage": "每個活動最多有 {count} 位共同主辦者。請先移除一位再指定其他人。",
+    "description": "In place of the search of an event's co-organizers, when it has as many as it can: count is that number (3)."
+  },
+  "events.coorganizers.done": {
+    "defaultMessage": "{name} 現在是活動的共同主辦者。",
+    "description": "Said on an event's co-organizers once one was named: name is the account's."
+  },
+  "events.coorganizers.refused": {
+    "defaultMessage": "{kind, select, invalid_coorganizer {{name} 無法共同主辦此活動。} too_many_coorganizers {每個活動最多有 {count} 位共同主辦者。請先移除一位。} other {無法指定 {name}。請重試。}}",
+    "description": "Said on an event's co-organizers when naming one was refused: kind is invalid_coorganizer (a block between them and an organizer, the organizer, not an active local account), too_many_coorganizers (count, 3), or other; name is the account's."
+  },
+  "events.coorganizers.organizer_only": {
+    "defaultMessage": "只有活動主辦者 {organizer} 可以指定共同主辦者。",
+    "description": "In place of an event's co-organizers, for a reader who is not its organizer: organizer is the organizer's name."
+  },
+  "events.coorganizers.organizer_only.unavailable": {
+    "defaultMessage": "只有活動主辦者可以指定共同主辦者。",
+    "description": "In place of an event's co-organizers, for a reader who is not its organizer, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.coorganizers.organizer_only otherwise."
+  },
+  "events.coorganizers.remove_title": {
+    "defaultMessage": "要取消 {name} 的共同主辦者身分嗎？",
+    "description": "The question of the dialog before the organizer removes a co-organizer of an event: name is theirs."
+  },
+  "events.coorganizers.remove_text": {
+    "defaultMessage": "他們將無法再變更活動、邀請人或核准參加者。你之後可以再次指定。",
+    "description": "What follows removing a co-organizer of an event, in its dialog."
+  },
+  "events.coorganizers.remove_confirm": {
+    "defaultMessage": "移除",
+    "description": "The button that confirms removing a co-organizer of an event."
+  },
+  "events.coorganizers.remove_keep": {
+    "defaultMessage": "保留",
+    "description": "The button that closes the dialog of removing a co-organizer without removing them, and the dialog's close."
+  }
+}

@@ -1,0 +1,878 @@
+{
+  "compose.title.new": {
+    "defaultMessage": "发布新帖子",
+    "description": "The title of the post composer when it writes a new post."
+  },
+  "compose.title.reply": {
+    "defaultMessage": "回复",
+    "description": "The title of the post composer when it writes a reply to a post."
+  },
+  "compose.title.quote": {
+    "defaultMessage": "引用",
+    "description": "The title of the post composer when it writes a post that quotes another."
+  },
+  "compose.title.edit": {
+    "defaultMessage": "编辑帖子",
+    "description": "The title of the post composer when it edits the reader's post."
+  },
+  "compose.edit.fixed": {
+    "defaultMessage": "{visibility} · 编辑无法更改谁能看到",
+    "description": "The one line at the top of the composer while it edits a post, naming what an edit cannot change; visibility is the post's visibility (compose.visibility.*)."
+  },
+  "compose.close": {
+    "defaultMessage": "关闭",
+    "description": "The button at the end of the composer's head that leaves it; a written post is discarded, with Undo."
+  },
+  "compose.load_failed": {
+    "defaultMessage": "无法加载发帖表单。",
+    "description": "In place of the post composer when its code could not be loaded (the network), beside compose.load_retry."
+  },
+  "compose.editor_failed": {
+    "defaultMessage": "无法加载文本框。",
+    "description": "In place of the composer's text or content warning field when its code could not be loaded (the network), beside compose.load_retry."
+  },
+  "compose.load_retry": {
+    "defaultMessage": "重试",
+    "description": "After compose.load_failed or compose.editor_failed: loads the composer or its field again."
+  },
+  "compose.post": {
+    "defaultMessage": "发布",
+    "description": "The composer's primary button, which posts what is written."
+  },
+  "compose.save": {
+    "defaultMessage": "保存",
+    "description": "The composer's primary button while it edits the reader's post: it saves the edit."
+  },
+  "compose.saved": {
+    "defaultMessage": "编辑已保存",
+    "description": "The notice at the bottom of the page after the composer saved an edit of the reader's post and closed; the post shows the edit everywhere."
+  },
+  "compose.save_failed": {
+    "defaultMessage": "保存未完成。请重试。",
+    "description": "The error before Save when an edit of the reader's post got no answer from the server (the network); pressing Save sends it again."
+  },
+  "compose.text.placeholder": {
+    "defaultMessage": "有什么新鲜事？",
+    "description": "The placeholder of the composer's empty text."
+  },
+  "compose.text.label": {
+    "defaultMessage": "正文",
+    "description": "The name of the composer's text field, for assistive technology."
+  },
+  "compose.cw.label": {
+    "defaultMessage": "内容警告",
+    "description": "The name of the content warning field, for assistive technology."
+  },
+  "compose.cw.placeholder": {
+    "defaultMessage": "向读者提示的内容",
+    "description": "The placeholder of the content warning field: the warning readers see before they open the post."
+  },
+  "compose.cw.on": {
+    "defaultMessage": "添加内容警告",
+    "description": "The tool of the composer's row that adds a content warning field."
+  },
+  "compose.cw.off": {
+    "defaultMessage": "移除内容警告",
+    "description": "The same tool while the post has a content warning: it removes it."
+  },
+  "compose.emoji": {
+    "defaultMessage": "添加表情",
+    "description": "The button at the end of the composer's text that opens the emoji picker, which writes the emoji picked at the caret; also the title of the picker's sheet on a phone."
+  },
+  "compose.suggest.list": {
+    "defaultMessage": "{kind, select, account {账号} hashtag {话题标签} other {表情}}",
+    "description": "The name, for assistive technology, of the suggestions that open under the line of the composer's text for the word being typed at the caret: accounts for @, hashtags for #, emoji for :. kind is account, hashtag or emoji."
+  },
+  "compose.suggest.account": {
+    "defaultMessage": "{name}，{handle}",
+    "description": "The name, for assistive technology, of an account among the composer's suggestions, which shows its avatar, name and handle on one row. name is its display name in words (custom emoji as their :shortcode:); handle is @user for a local account, @user@domain for another server's."
+  },
+  "compose.suggest.uses": {
+    "defaultMessage": "{count, plural, other {# 条帖子}}",
+    "description": "At the end of a hashtag's row among the composer's suggestions: how many posts carry the hashtag. count is how many."
+  },
+  "compose.suggest.hashtag": {
+    "defaultMessage": "#{name}，{count, plural, other {# 条帖子}}",
+    "description": "The name, for assistive technology, of a hashtag among the composer's suggestions: the tag with its # sign, and how many posts carry it. name is the tag without #; count is how many."
+  },
+  "compose.suggest.loading": {
+    "defaultMessage": "正在加载建议…",
+    "description": "The one line in place of the composer's suggestions while they are asked for, after a moment; also announced."
+  },
+  "compose.suggest.none": {
+    "defaultMessage": "{kind, select, account {没有匹配的账号} hashtag {没有匹配的话题标签} other {没有匹配的表情}}",
+    "description": "The one line in place of the composer's suggestions when none match the word being typed at the caret; also announced. The word can still be posted as typed. kind is account, hashtag or emoji."
+  },
+  "compose.suggest.count": {
+    "defaultMessage": "{count, plural, other {# 条建议}}",
+    "description": "Announced to assistive technology when the composer's suggestions open or change: how many there are (the text field cannot say it is expanded). count is how many, at least 1."
+  },
+  "compose.attach": {
+    "defaultMessage": "添加图片",
+    "description": "The tool of the composer's row that opens the file picker to attach images (or a video or an audio file)."
+  },
+  "compose.poll.on": {
+    "defaultMessage": "添加投票",
+    "description": "The tool of the composer's row that adds a poll to the post."
+  },
+  "compose.poll.off": {
+    "defaultMessage": "移除投票",
+    "description": "The same tool while the post has a poll, and the remove of the poll's card."
+  },
+  "compose.poll.option": {
+    "defaultMessage": "选项 {n}",
+    "description": "The placeholder and the name of a poll's option. n is its place, from 1."
+  },
+  "compose.poll.remove_option": {
+    "defaultMessage": "移除选项 {n}",
+    "description": "The button at the end of a poll's option that takes it out. n is its place, from 1."
+  },
+  "compose.poll.add": {
+    "defaultMessage": "添加选项",
+    "description": "The last line of a poll's options, which adds one."
+  },
+  "compose.poll.duration": {
+    "defaultMessage": "结束于",
+    "description": "The name of the poll's duration choices."
+  },
+  "compose.poll.ends_in": {
+    "defaultMessage": "{duration}后结束",
+    "description": "The poll's duration control, as it reads. duration is one of the choices (5 minutes, 1 day)."
+  },
+  "compose.poll.minutes": {
+    "defaultMessage": "{count, plural, other {# 分钟}}",
+    "description": "A choice of the poll's duration, in minutes; also what the duration control reads."
+  },
+  "compose.poll.hours": {
+    "defaultMessage": "{count, plural, other {# 小时}}",
+    "description": "A choice of the poll's duration, in hours."
+  },
+  "compose.poll.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "A choice of the poll's duration, in days."
+  },
+  "compose.poll.multiple": {
+    "defaultMessage": "允许多选",
+    "description": "The checkbox of the poll that lets a vote choose several options."
+  },
+  "compose.poll.hide_totals": {
+    "defaultMessage": "结束前隐藏票数",
+    "description": "The checkbox of the poll that hides how many voted for each option until it ends."
+  },
+  "compose.poll.invalid": {
+    "defaultMessage": "投票需要 {min} 到 {max} 个不同的选项，每个最多 {length} 个字符，持续时间为 5 分钟到 30 天。",
+    "description": "The error before Post when the poll has a blank option or two the same; the server's own words (errors.status.poll_invalid)."
+  },
+  "compose.audience": {
+    "defaultMessage": "谁能看到",
+    "description": "The caption of the visibility choices in the audience menu, and the name of the menu's tool."
+  },
+  "compose.audience.tool": {
+    "defaultMessage": "{visibility, select, public {可见范围：公开} local {可见范围：邻居} unlisted {可见范围：悄悄公开} private {可见范围：仅关注者} other {可见范围：私信}}{limited, select, yes {，回复、转发或引用受限} other {}}",
+    "description": "The name of the audience tool for assistive technology: the post's visibility, and whether who may interact is limited. The visibilities are the post's (Public, Neighbors, Quiet public, Followers only, Direct)."
+  },
+  "compose.audience.everyone": {
+    "defaultMessage": "任何人",
+    "description": "A choice of the permissions submenu: anyone who may see the post. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
+  },
+  "compose.audience.followers": {
+    "defaultMessage": "关注者",
+    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
+  },
+  "compose.audience.mentioned": {
+    "defaultMessage": "你提及的人",
+    "description": "A choice of the permissions submenu: the accounts the post mentions. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
+  },
+  "compose.audience.nobody": {
+    "defaultMessage": "仅你自己",
+    "description": "A choice of the permissions submenu: the author alone. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
+  },
+  "compose.approval": {
+    "defaultMessage": "经你批准后允许其他人",
+    "description": "A checkbox under the audiences of reply, boost or quote in the permissions submenu: people outside the chosen audience may still do it, once the author approves."
+  },
+  "compose.permission.now": {
+    "defaultMessage": "{audience}{approval, select, yes {，其他人需经你批准} other {}}",
+    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval). Also each option of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote): every audience alone, and every audience but Anyone with approval yes."
+  },
+  "compose.visibility.public": {
+    "defaultMessage": "公开",
+    "description": "A visibility in the audience menu; the same word as a post's visibility glyph. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
+  },
+  "compose.visibility.local": {
+    "defaultMessage": "邻居",
+    "description": "A visibility in the audience menu: people on this server, and the author's followers on other servers. It names whom the author speaks to. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
+  },
+  "compose.visibility.unlisted": {
+    "defaultMessage": "悄悄公开",
+    "description": "A visibility in the audience menu: anyone with the link or the author's profile, kept off the timelines and hashtags. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
+  },
+  "compose.visibility.private": {
+    "defaultMessage": "仅关注者",
+    "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
+  },
+  "compose.visibility.direct": {
+    "defaultMessage": "私信",
+    "description": "A visibility in the audience menu: the accounts the post mentions alone. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), only while it is the visibility the account's new posts start with."
+  },
+  "compose.visibility.public.about": {
+    "defaultMessage": "任何服务器上的任何人，也会出现在时间线和话题标签中",
+    "description": "The line under Public in the audience menu: who sees the post. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
+  },
+  "compose.visibility.local.about": {
+    "defaultMessage": "{server} 上的用户，以及你在其他服务器上的关注者",
+    "description": "The line under Neighbors in the audience menu. server is this server's domain. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
+  },
+  "compose.visibility.unlisted.about": {
+    "defaultMessage": "任何拥有链接或访问你个人资料的人，不会出现在时间线和话题标签中",
+    "description": "The line under Quiet public in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
+  },
+  "compose.visibility.private.about": {
+    "defaultMessage": "你的关注者和你提及的人",
+    "description": "The line under Followers only in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
+  },
+  "compose.visibility.direct.about": {
+    "defaultMessage": "只有你提及的人",
+    "description": "The line under Direct in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
+  },
+  "compose.interactions": {
+    "defaultMessage": "谁能回复、转发和引用",
+    "description": "The name of the audience menu's second group, apart from the visibilities, for assistive technology: who may reply to, boost and quote the post."
+  },
+  "compose.permissions": {
+    "defaultMessage": "谁能回复、转发和引用",
+    "description": "The row of the audience menu that opens the submenu of who may reply to, boost and quote the post, and the submenu's title beside its back button."
+  },
+  "compose.interaction.reply": {
+    "defaultMessage": "谁能回复",
+    "description": "A row of the permissions submenu, beside who may reply to the post now, and the title of the panel it opens (its audiences), beside its back button."
+  },
+  "compose.interaction.announce": {
+    "defaultMessage": "谁能转发",
+    "description": "A row of the permissions submenu, beside who may boost the post now, and the title of the panel it opens (its audiences), beside its back button."
+  },
+  "compose.interaction.quote": {
+    "defaultMessage": "谁能引用",
+    "description": "A row of the permissions submenu, beside who may quote the post now, and the title of the panel it opens (its audiences), beside its back button."
+  },
+  "compose.language": {
+    "defaultMessage": "语言",
+    "description": "The caption of the language menu of the composer, and the start of its tool's name for assistive technology."
+  },
+  "compose.language.tool": {
+    "defaultMessage": "语言：{language}",
+    "description": "The name of the composer's language tool for assistive technology. language is the post's language, by its name in its own words."
+  },
+  "compose.remaining": {
+    "defaultMessage": "{count, plural, other {还剩 # 个字符}}",
+    "description": "What the composer's count says to assistive technology while the post is within its limit."
+  },
+  "compose.over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "What the composer's count says to assistive technology once the post is past its limit."
+  },
+  "compose.too_long": {
+    "defaultMessage": "{max, plural, other {正文和内容警告最多只能有 # 个字符。}}",
+    "description": "The error under the composer's text once it is past the limit; the server's own words (errors.status.text_too_long)."
+  },
+  "compose.quote_remote": {
+    "defaultMessage": "要引用其他服务器的帖子，请把这条帖子设为“公开”或“悄悄公开”。",
+    "description": "The note under the visibilities when the post quotes a post from another server, whose other visibilities are disabled: which ones to choose."
+  },
+  "compose.replying_to": {
+    "defaultMessage": "回复 {handle}",
+    "description": "What the post replied to says to assistive technology, above the composer's text. handle is its author's, as @user@domain."
+  },
+  "compose.on_board": {
+    "defaultMessage": "在 {title} 的留言板上",
+    "description": "Over the composer's text when it writes a post on an event's board, as a reply's context line (compose.replying_to): title is the event's title, as its organizers wrote it, or the words of notifications.untitled_event when it has none."
+  },
+  "compose.reply_waits": {
+    "defaultMessage": "{handle} 批准后，其他人才能看到你的回复",
+    "description": "A line over the send row while writing a reply to a post whose author approves replies by hand: until that author approves it, only the writer sees the reply. handle is the author's, as @user@domain."
+  },
+  "compose.quote.remove": {
+    "defaultMessage": "移除引用",
+    "description": "The button on the quoted post in the composer that takes it out of the post."
+  },
+  "compose.description": {
+    "defaultMessage": "描述",
+    "description": "The label of an image's description (alternative text) beside it in the composer."
+  },
+  "compose.description.hint": {
+    "defaultMessage": "图片显示的内容，供看不到图片的人阅读",
+    "description": "The placeholder of an image's description in the composer."
+  },
+  "compose.description.missing": {
+    "defaultMessage": "还没有描述",
+    "description": "The caution under an image's empty description in the composer."
+  },
+  "compose.description.required": {
+    "defaultMessage": "此服务器要求为每张图片添加描述（替代文字）。发布前请为每张图片添加描述。",
+    "description": "The error under an image's empty description when the server asks for one, after Post was pressed; the server's own words (errors.status.missing_media_description)."
+  },
+  "compose.description.required.own": {
+    "defaultMessage": "你的设置要求为每张图片添加描述（替代文字）。发布前请为每张图片添加描述。",
+    "description": "The error under an image's empty description, after Post was pressed, when the server does not ask for descriptions and the reader's own setting does (Require media descriptions on the Display and posting page of the settings, settings.display.media_description); compose.description.required with the reader's settings in the server's place."
+  },
+  "compose.uploading": {
+    "defaultMessage": "正在上传…",
+    "description": "Beside an image while its file uploads."
+  },
+  "compose.processing": {
+    "defaultMessage": "正在处理…",
+    "description": "Beside an image while the server processes the uploaded file."
+  },
+  "compose.upload_failed": {
+    "defaultMessage": "上传未完成。",
+    "description": "Beside an image whose upload failed, before its retry button."
+  },
+  "compose.media_failed": {
+    "defaultMessage": "无法加载图片。",
+    "description": "Beside an image of a draft opened from the server whose file could not be loaded, before the button that loads it again (compose.retry); the draft still keeps it."
+  },
+  "compose.retry": {
+    "defaultMessage": "重试",
+    "description": "The button that uploads a failed image again, or loads again a draft's image that could not be loaded."
+  },
+  "compose.remove": {
+    "defaultMessage": "移除",
+    "description": "The button at the end of an image's row that takes it out of the post."
+  },
+  "compose.wait_uploads": {
+    "defaultMessage": "请等待所有图片上传完成，或移除上传失败的图片。",
+    "description": "The error before Post when it is pressed while an image uploads or failed to."
+  },
+  "compose.poll": {
+    "defaultMessage": "投票",
+    "description": "The caption of the poll's card in the composer."
+  },
+  "compose.failed": {
+    "defaultMessage": "发布未完成。请重试。",
+    "description": "The error before Post when the post got no answer from the server (the network); pressing Post sends it again, once."
+  },
+  "compose.discarded": {
+    "defaultMessage": "帖子已丢弃",
+    "description": "The notice at the bottom of the page after the composer was closed with a written post, beside Undo."
+  },
+  "compose.undo": {
+    "defaultMessage": "撤销",
+    "description": "The action of the discarded post's notice: it opens the composer again with the post."
+  },
+  "compose.later": {
+    "defaultMessage": "草稿",
+    "description": "The name of the menu in the composer's head: keep this post as a draft, or open the drafts and scheduled posts."
+  },
+  "compose.schedule": {
+    "defaultMessage": "定时发布",
+    "description": "The caption of the form that sets the time a post goes out."
+  },
+  "compose.schedule.field": {
+    "defaultMessage": "日期和时间",
+    "description": "The name, for assistive technology, of the field of the date and the time a post goes out."
+  },
+  "compose.schedule.limits": {
+    "defaultMessage": "从现在起 {minutes, plural, other {# 分钟}}到 {days, plural, other {# 天}}之内",
+    "description": "Under the schedule's field: the nearest and the farthest time the server takes."
+  },
+  "compose.schedule.invalid": {
+    "defaultMessage": "请选择日期和时间。",
+    "description": "Under the schedule's field when it holds no whole date and time."
+  },
+  "compose.schedule.too_soon": {
+    "defaultMessage": "{minutes, plural, other {请把发布时间定在至少 # 分钟之后。}}",
+    "description": "Under the schedule's field when the time is nearer than the server takes."
+  },
+  "compose.schedule.too_far": {
+    "defaultMessage": "{days, plural, other {请把发布时间定在最多 # 天之内。}}",
+    "description": "Under the schedule's field when the time is farther than the server takes."
+  },
+  "compose.schedule.set": {
+    "defaultMessage": "设定时间",
+    "description": "The button of the schedule's form that sets the time the post goes out."
+  },
+  "compose.schedule.clear": {
+    "defaultMessage": "不定时发布",
+    "description": "The neutral button of the schedule's form, while a time is set, that takes the time away, so that Post posts at once."
+  },
+  "compose.schedule.item": {
+    "defaultMessage": "定时发布…",
+    "description": "A menu item that opens the form of the time a post goes out."
+  },
+  "compose.schedule.change_item": {
+    "defaultMessage": "更改时间…",
+    "description": "A menu item that opens the form of the time of a post already scheduled."
+  },
+  "compose.schedule.tool": {
+    "defaultMessage": "定时发布",
+    "description": "The name of the composer's tool that opens the form of the time a post goes out."
+  },
+  "compose.schedule.tool_set": {
+    "defaultMessage": "更改定时发布的时间",
+    "description": "The name of the composer's schedule tool while the post has a time: it opens the form to change the time."
+  },
+  "compose.schedule.at": {
+    "defaultMessage": "定于 {time} 发布",
+    "description": "The line above the composer's Post while the post is scheduled and the form of its time is open, the form stating the zone; time is the weekday, date and time."
+  },
+  "compose.schedule.at_zone": {
+    "defaultMessage": "定于 {time}（{zone}）发布",
+    "description": "The line above the composer's Post while the post is scheduled, the one place the zone is stated; time is the weekday, date and time, zone the reader's time zone (Asia/Tokyo · GMT+9). Change time stands at the line's end."
+  },
+  "compose.schedule.change": {
+    "defaultMessage": "更改时间",
+    "description": "The action at the end of the line of a scheduled post's time, which opens its form."
+  },
+  "compose.schedule.post": {
+    "defaultMessage": "定时发布",
+    "description": "The composer's primary button while the post has a time: it schedules the post."
+  },
+  "compose.schedule.failed": {
+    "defaultMessage": "定于 {time} 发布，但未发布：{reason}",
+    "description": "A draft whose scheduled post failed: time is when it was to go out, reason one of compose.schedule.failed.*."
+  },
+  "compose.schedule.failed.restricted": {
+    "defaultMessage": "你的账号目前无法发帖",
+    "description": "Why a scheduled post failed: the account may not post (a moderation action or a suspension)."
+  },
+  "compose.schedule.failed.reply_unavailable": {
+    "defaultMessage": "它回复的帖子已不可用",
+    "description": "Why a scheduled post failed: the post it replies to is gone, hidden, or takes no reply."
+  },
+  "compose.schedule.failed.quote_unavailable": {
+    "defaultMessage": "它引用的帖子已不可用",
+    "description": "Why a scheduled post failed: the post it quotes is gone, hidden, or may not be quoted."
+  },
+  "compose.schedule.failed.media_unavailable": {
+    "defaultMessage": "某个附件已不可用",
+    "description": "Why a scheduled post failed: an attached file is gone or failed processing."
+  },
+  "compose.schedule.failed.invalid": {
+    "defaultMessage": "它不符合帖子的要求",
+    "description": "Why a scheduled post failed: it does not pass the checks of a post, such as its length."
+  },
+  "compose.schedule.failed.rejected": {
+    "defaultMessage": "服务器的自动审核未予通过",
+    "description": "Why a scheduled post failed: the server's automated review did not accept it."
+  },
+  "compose.schedule.failed.next": {
+    "defaultMessage": "{failure}。请按需编辑，然后发布或重新定时发布。",
+    "description": "The composer's alert on a draft whose scheduled post failed: failure is compose.schedule.failed (when and why), followed by what the reader may do now."
+  },
+  "compose.conflict": {
+    "defaultMessage": "此草稿已在另一台设备上更新保存，因此你在这里的更改没有保存。",
+    "description": "The composer's error when a save of a draft is refused for a newer one saved elsewhere."
+  },
+  "compose.conflict.open": {
+    "defaultMessage": "打开较新的版本",
+    "description": "The action after compose.conflict, which opens the newer draft in place of this one."
+  },
+  "compose.gone": {
+    "defaultMessage": "服务器上已没有此草稿。它可能已发布，请查看你的个人资料。",
+    "description": "The composer's error when the draft it posts or schedules is no longer on the server (deleted elsewhere, or posted already by its schedule or by a post whose answer was lost); what was written stays in the composer, and its Post button reads compose.gone.post."
+  },
+  "compose.gone.post": {
+    "defaultMessage": "作为新帖子发布",
+    "description": "The composer's Post button after compose.gone: lets the draft that is no longer on the server go, and posts what is written now as a new post."
+  },
+  "compose.drafts": {
+    "defaultMessage": "草稿和定时帖子",
+    "description": "The title of the composer's list of the reader's drafts and scheduled posts."
+  },
+  "compose.drafts.save": {
+    "defaultMessage": "保存为草稿",
+    "description": "A menu item that keeps what is written as a draft and closes the composer."
+  },
+  "compose.drafts.open": {
+    "defaultMessage": "草稿和定时帖子",
+    "description": "A menu item that opens the list of the reader's drafts and scheduled posts."
+  },
+  "compose.drafts.back": {
+    "defaultMessage": "返回帖子",
+    "description": "At the top of the list of drafts: back to the post being written."
+  },
+  "compose.drafts.blank": {
+    "defaultMessage": "无文字",
+    "description": "A draft's row in place of its text, when it has only media or a poll."
+  },
+  "compose.drafts.saved": {
+    "defaultMessage": "保存于 {time}",
+    "description": "When a draft was last saved, on its row: time is how long ago, as the list's relative times read it (Saved 2h ago, 3時間前に保存), or the date after a week."
+  },
+  "compose.drafts.open_one": {
+    "defaultMessage": "打开此草稿",
+    "description": "The name of a draft's row, which opens it in the composer."
+  },
+  "compose.drafts.more": {
+    "defaultMessage": "更多",
+    "description": "The name of the menu at the end of a draft's row."
+  },
+  "compose.drafts.open_item": {
+    "defaultMessage": "打开",
+    "description": "A draft's menu item that opens it in the composer."
+  },
+  "compose.drafts.unschedule": {
+    "defaultMessage": "移回草稿",
+    "description": "A scheduled post's menu item that takes its time away: it becomes a draft."
+  },
+  "compose.drafts.delete": {
+    "defaultMessage": "删除…",
+    "description": "A draft's menu item that deletes it, after asking."
+  },
+  "compose.drafts.delete.title": {
+    "defaultMessage": "删除此草稿？",
+    "description": "The question before a draft is deleted."
+  },
+  "compose.drafts.delete.text": {
+    "defaultMessage": "它会从所有设备上删除。此操作无法撤销。",
+    "description": "What follows deleting a draft."
+  },
+  "compose.drafts.delete.scheduled": {
+    "defaultMessage": "它不会被发布，并会从所有设备上删除。此操作无法撤销。",
+    "description": "What follows deleting a scheduled post."
+  },
+  "compose.drafts.delete.cancel": {
+    "defaultMessage": "取消",
+    "description": "The refusal of deleting a draft."
+  },
+  "compose.drafts.delete.confirm": {
+    "defaultMessage": "删除",
+    "description": "The confirmation of deleting a draft."
+  },
+  "compose.drafts.mark.reply": {
+    "defaultMessage": "回复",
+    "description": "A mark on a draft's row: it replies to a post."
+  },
+  "compose.drafts.mark.quote": {
+    "defaultMessage": "引用",
+    "description": "A mark on a draft's row: it quotes a post."
+  },
+  "compose.drafts.mark.media": {
+    "defaultMessage": "{count, plural, other {# 个文件}}",
+    "description": "A mark on a draft's row: how many files it attaches."
+  },
+  "compose.drafts.mark.poll": {
+    "defaultMessage": "投票",
+    "description": "A mark on a draft's row: it carries a poll."
+  },
+  "compose.drafts.mark.article": {
+    "defaultMessage": "文章",
+    "description": "A mark on a draft's row: it is the draft of an article."
+  },
+  "compose.drafts.zone": {
+    "defaultMessage": "时间为 {zone}",
+    "description": "Over the scheduled posts: the reader's time zone, in which their times read."
+  },
+  "compose.drafts.empty.drafts": {
+    "defaultMessage": "还没有草稿。",
+    "description": "The drafts' section of the list when it has none, while there are scheduled posts."
+  },
+  "compose.drafts.empty": {
+    "defaultMessage": "还没有草稿或定时帖子。",
+    "description": "The list of drafts and scheduled posts when it has neither."
+  },
+  "compose.drafts.loading": {
+    "defaultMessage": "正在加载草稿…",
+    "description": "The list of drafts while it loads."
+  },
+  "compose.drafts.failed": {
+    "defaultMessage": "无法加载草稿。",
+    "description": "The list of drafts when it failed to load."
+  },
+  "compose.drafts.retry": {
+    "defaultMessage": "重试",
+    "description": "After compose.drafts.failed: loads the list again."
+  },
+  "compose.drafts.tab.drafts": {
+    "defaultMessage": "草稿 {count}",
+    "description": "The tab, or the heading, of the drafts, with how many."
+  },
+  "compose.drafts.tab.scheduled": {
+    "defaultMessage": "定时 {count}",
+    "description": "The tab, or the heading, of the scheduled posts, with how many."
+  },
+  "compose.drafts.list.drafts": {
+    "defaultMessage": "草稿",
+    "description": "The name of the list of drafts, for assistive technology."
+  },
+  "compose.drafts.list.scheduled": {
+    "defaultMessage": "定时帖子",
+    "description": "The name of the list of scheduled posts, for assistive technology."
+  },
+  "compose.article.title.new": {
+    "defaultMessage": "新建文章",
+    "description": "The title of the article editor, a screen of its own, while it writes a new article."
+  },
+  "compose.article.title.edit": {
+    "defaultMessage": "编辑文章",
+    "description": "The title of the article editor while it edits the reader's published article."
+  },
+  "compose.article.mode": {
+    "defaultMessage": "编写或预览",
+    "description": "The name of the switch, on a narrow screen, between writing the article and its preview."
+  },
+  "compose.article.mode.write": {
+    "defaultMessage": "编写",
+    "description": "The choice of the switch that shows what is written of the article."
+  },
+  "compose.article.mode.preview": {
+    "defaultMessage": "预览",
+    "description": "The choice of the switch that shows the article as it will be published."
+  },
+  "compose.article.preview.caption": {
+    "defaultMessage": "发布后的样子",
+    "description": "The caption over the preview of the article, beside what is written on a wide screen."
+  },
+  "compose.article.preview.failed": {
+    "defaultMessage": "无法显示预览。",
+    "description": "In the preview's place when the server did not render the body; followed by Try again."
+  },
+  "compose.article.preview.empty": {
+    "defaultMessage": "还没有写任何内容。",
+    "description": "In the preview's place while the body is empty."
+  },
+  "compose.article.field.title": {
+    "defaultMessage": "标题",
+    "description": "The name of the article's title field, and its placeholder."
+  },
+  "compose.article.field.title.over": {
+    "defaultMessage": "标题最多只能有 {max, number} 个字符。",
+    "description": "Under the title when it is longer than the limit."
+  },
+  "compose.article.field.title.missing": {
+    "defaultMessage": "请给文章加上标题。",
+    "description": "Under the title when Publish was pressed without one."
+  },
+  "compose.article.field.left": {
+    "defaultMessage": "{count, plural, other {还剩 # 个字符}}",
+    "description": "What a count near a field's limit says to a screen reader: how many characters are left."
+  },
+  "compose.article.field.over": {
+    "defaultMessage": "{count, plural, other {超出 # 个字符}}",
+    "description": "What a count past a field's limit says to a screen reader: by how many characters it is over."
+  },
+  "compose.article.body": {
+    "defaultMessage": "正文",
+    "description": "The name of the article's body, written in Markdown."
+  },
+  "compose.article.body.placeholder": {
+    "defaultMessage": "用 Markdown 书写…",
+    "description": "The placeholder of the article's body."
+  },
+  "compose.article.body.missing": {
+    "defaultMessage": "请写下文章的正文。",
+    "description": "Under the body when Publish was pressed with no body."
+  },
+  "compose.article.details": {
+    "defaultMessage": "关于文章",
+    "description": "The heading of the article's summary, cover and hashtags, after its body."
+  },
+  "compose.article.summary": {
+    "defaultMessage": "摘要",
+    "description": "The name of the article's summary field."
+  },
+  "compose.article.summary.hint": {
+    "defaultMessage": "留空时会使用正文的开头。",
+    "description": "Under the summary's label: what an empty summary becomes."
+  },
+  "compose.article.summary.placeholder": {
+    "defaultMessage": "用一两句话说明文章讲什么",
+    "description": "The placeholder of the summary field."
+  },
+  "compose.article.summary.over": {
+    "defaultMessage": "摘要最多只能有 {max, number} 个字符。",
+    "description": "Under the summary when it is longer than the limit."
+  },
+  "compose.article.cover": {
+    "defaultMessage": "封面图片",
+    "description": "The name of the article's cover image."
+  },
+  "compose.article.cover.add": {
+    "defaultMessage": "添加封面图片",
+    "description": "The button that picks the article's cover image."
+  },
+  "compose.article.cover.remove": {
+    "defaultMessage": "移除封面图片",
+    "description": "The button that takes the cover image off the article."
+  },
+  "compose.article.cover.description": {
+    "defaultMessage": "描述",
+    "description": "The label of the cover image's description, for those who cannot see it."
+  },
+  "compose.article.cover.description.hint": {
+    "defaultMessage": "图片显示的内容，供看不到图片的人阅读",
+    "description": "The placeholder of the cover image's description."
+  },
+  "compose.article.cover.waiting": {
+    "defaultMessage": "请等待封面图片上传完成，或在上传失败时移除它。",
+    "description": "Before Publish when Publish was pressed while the cover uploads or failed to."
+  },
+  "compose.article.tags": {
+    "defaultMessage": "话题标签",
+    "description": "The name of the article's hashtags."
+  },
+  "compose.article.tags.placeholder": {
+    "defaultMessage": "添加话题标签",
+    "description": "The placeholder of the field that adds a hashtag."
+  },
+  "compose.article.tags.full": {
+    "defaultMessage": "不能再添加话题标签",
+    "description": "The placeholder of the hashtags' field once the article has as many as it can."
+  },
+  "compose.article.tags.remove": {
+    "defaultMessage": "移除 #{tag}",
+    "description": "The button on a hashtag that takes it off the article."
+  },
+  "compose.article.tags.left": {
+    "defaultMessage": "{count, plural, other {还可添加 # 个话题标签}}",
+    "description": "Beside the hashtags' label once near their limit: how many more can be added."
+  },
+  "compose.article.limit.bytes": {
+    "defaultMessage": "长度：已达上限的 {ratio, number, percent}",
+    "description": "How much of the length limit of the article's body is used, as a percentage; past 100% the article is too long to publish."
+  },
+  "compose.article.limit.images": {
+    "defaultMessage": "{used, number} / {max, number} 张图片",
+    "description": "How many images the article's body has, of the most it may have."
+  },
+  "compose.article.attach": {
+    "defaultMessage": "向正文添加图片",
+    "description": "The tool that uploads an image and puts it in the body."
+  },
+  "compose.article.attach.uploading": {
+    "defaultMessage": "{count, plural, other {正在上传 # 张图片…}}",
+    "description": "Under the body while images for it upload."
+  },
+  "compose.article.attach.failed": {
+    "defaultMessage": "有图片无法上传。请重新添加。",
+    "description": "Under the body when an image for it could not be uploaded."
+  },
+  "compose.article.sensitive.on": {
+    "defaultMessage": "标记为敏感",
+    "description": "The tool that folds the article's body and cover behind its title and summary."
+  },
+  "compose.article.sensitive.off": {
+    "defaultMessage": "取消敏感标记",
+    "description": "The same tool while the article is marked sensitive."
+  },
+  "compose.article.publish": {
+    "defaultMessage": "发布",
+    "description": "The button that publishes the article now."
+  },
+  "compose.article.gone.publish": {
+    "defaultMessage": "作为新文章发布",
+    "description": "The button that publishes what is written as a new article, once its draft is gone from the server."
+  },
+  "compose.article.over": {
+    "defaultMessage": "文章的某一部分超出了上限。请缩短内容或移除图片后再发布。",
+    "description": "Before Publish when the article is over a limit."
+  },
+  "compose.article.missing": {
+    "defaultMessage": "请给文章加上标题和正文后再发布。",
+    "description": "Before Publish when Publish was pressed without a title or a body."
+  },
+  "compose.article.failed": {
+    "defaultMessage": "发布未完成。请重试。",
+    "description": "Before Publish when publishing failed with no word from the server."
+  },
+  "compose.article.not_allowed": {
+    "defaultMessage": "你的账号无法在此服务器上撰写新文章。你仍然可以编辑以前写的文章。",
+    "description": "In place of the editor when the reader may not write new articles."
+  },
+  "compose.article.loading": {
+    "defaultMessage": "正在加载文章…",
+    "description": "In place of the editor while the article or its draft is read from the server."
+  },
+  "compose.article.load_failed": {
+    "defaultMessage": "无法加载文章。",
+    "description": "In place of the editor when the article or its draft could not be read; followed by Try again."
+  },
+  "compose.in_place.to": {
+    "defaultMessage": "发给 {names}",
+    "description": "Over the reply in place at the end of a conversation of direct messages: whom it goes to. names lists the conversation's other people."
+  },
+  "compose.in_place.form": {
+    "defaultMessage": "你发给 {names} 的消息",
+    "description": "The name of the reply in place at the end of a conversation of direct messages, a form, for assistive technology. names lists the conversation's other people."
+  },
+  "compose.in_place.label": {
+    "defaultMessage": "消息",
+    "description": "The name of the text field of the reply in place at the end of a conversation of direct messages, for assistive technology."
+  },
+  "compose.in_place.placeholder": {
+    "defaultMessage": "写一条消息",
+    "description": "The placeholder of the empty reply in place at the end of a conversation of direct messages."
+  },
+  "compose.in_place.send": {
+    "defaultMessage": "发送",
+    "description": "The button that sends the reply in place at the end of a conversation of direct messages."
+  },
+  "compose.in_place.send_to": {
+    "defaultMessage": "发送给 {names}",
+    "description": "The name of the button that sends the reply in place, for assistive technology, apart from every post's Reply; it starts with, or holds, the button's visible word (compose.in_place.send). names lists the conversation's other people."
+  },
+  "compose.audience_menu": {
+    "defaultMessage": "谁能看到并回复",
+    "description": "The name of the audience menu of the composer and of the article editor, over its two items: who can see the post or the article, and who can reply to, boost and quote it. Reply stands for the three; the item says them all."
+  },
+  "compose.refused.appeal": {
+    "defaultMessage": "申诉",
+    "description": "The action after the error of a post or an article that this server's automated review refused, in the composer and in the article editor (the server's sentence ends with: If you think this is a mistake, you can appeal). It opens the confirmation compose.refused.appeal.title."
+  },
+  "compose.refused.reviewed": {
+    "defaultMessage": "这条帖子未发布：此服务器的自动审核未予通过。",
+    "description": "The error of a post that this server's automated review refused, in the composer, where the app offers the appeal: the action Appeal follows it on the same line (compose.refused.appeal), so the sentence does not say that the reader can appeal. It stands for the server's own sentence (server:errors.status.rejected.detail), which says so for an app with no such action."
+  },
+  "compose.refused.appeal.title": {
+    "defaultMessage": "对此次拒绝提出申诉？",
+    "description": "The question of the confirmation before the reader appeals the refusal of their post or article by this server's automated review, in the composer and in the article editor."
+  },
+  "compose.refused.appeal.text": {
+    "defaultMessage": "你的帖子文字会发送给此服务器的管理员审核。每次拒绝只能申诉一次。此操作无法撤销。",
+    "description": "The text of the confirmation compose.refused.appeal.title for a post, in the composer: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone. The optional field compose.refused.appeal.comment follows it, whose label says that what is written there goes to the moderators too."
+  },
+  "compose.refused.appeal.confirm": {
+    "defaultMessage": "提交申诉",
+    "description": "The button of the confirmation compose.refused.appeal.title that sends the appeal of the refused post. In ja it is short enough to stand beside Cancel in the dialog on a narrow phone."
+  },
+  "compose.refused.appeal.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button of the confirmation compose.refused.appeal.title that closes it without appealing."
+  },
+  "compose.refused.appeal.comment": {
+    "defaultMessage": "你希望管理员了解的情况（可选）",
+    "description": "The label of the field in the confirmation compose.refused.appeal.title where the reader may write what the moderators should know about the refused post or article (why it should be let through). It may stay empty; what is written is sent with the appeal."
+  },
+  "compose.refused.appeal.comment.hint": {
+    "defaultMessage": "最多 {max, number} 个字符。",
+    "description": "The hint under the label compose.refused.appeal.comment. max is the most characters the server takes (2000)."
+  },
+  "compose.refused.appeal.comment.over": {
+    "defaultMessage": "请把内容缩短到 {max, number} 个字符以内。",
+    "description": "The error under the field compose.refused.appeal.comment when what the reader wrote is longer than the server takes, as they press Send appeal: nothing is sent. max is the most characters (2000)."
+  },
+  "compose.refused.appeal.state": {
+    "defaultMessage": "{state, select, pending {这条帖子未发布。你的申诉已提交，结果会通知你。如果管理员撤销了拒绝，请重新发布。在此之前如需保留，请存为草稿。} upheld {这条帖子未发布。管理员已审核你的申诉，维持了拒绝。请修改帖子后重试。} overturned {管理员已审核你的申诉，并撤销了拒绝。请重新发布。} other {这条帖子未发布。你已对拒绝提出申诉。}}",
+    "description": "In place of the error of a post that this server's automated review refused, in the composer, once the reader appealed the refusal: where the appeal stands. state is pending (sent, waiting for the moderators: Post is disabled until the post is changed; the server keeps no refused post, so the reader posts it again once the refusal is lifted, and keeps it meanwhile with Save as draft, compose.drafts.save), upheld (the refusal stays; Post is disabled until the post is changed), or overturned (the moderators cancelled the refusal: Post, right after this sentence, posts it again)."
+  },
+  "compose.refused.appeal.failed": {
+    "defaultMessage": "{reason, select, appealed {你已经对此次拒绝提出过申诉，每次拒绝只能申诉一次。请等待结果通知。} closed {对此次拒绝提出申诉的期限已过。请修改帖子后重试。} not_appealable {此次拒绝已无法再申诉。请修改帖子后重试。} text {这条帖子没有可发送给管理员的文字，因此无法申诉。请修改帖子后重试。} other {无法提交申诉。请检查网络连接后重试。}}",
+    "description": "In place of the error of a post that this server's automated review refused, in the composer, when the appeal the reader sent was not taken. reason is appealed (appealed already), closed (the last moment to appeal has passed), not_appealable (the refusal cannot be appealed, or is not kept any more), text (the post has no text, which an appeal must carry), or other (the server could not be reached)."
+  },
+  "compose.article.refused.reviewed": {
+    "defaultMessage": "这篇文章未发布：此服务器的自动审核未予通过。",
+    "description": "The error of an article that this server's automated review refused, in the article editor, where the app offers the appeal: the action Appeal follows it on the same line (compose.refused.appeal), so the sentence does not say that the reader can appeal. The article's counterpart of compose.refused.reviewed."
+  },
+  "compose.article.refused.appeal.text": {
+    "defaultMessage": "你的文章正文会发送给此服务器的管理员审核。每次拒绝只能申诉一次。此操作无法撤销。",
+    "description": "The text of the confirmation compose.refused.appeal.title for an article, in the article editor: what appealing sends (the article's body, not its title or summary) and to whom, that a refusal is appealed once, and that it cannot be undone. The article's counterpart of compose.refused.appeal.text."
+  },
+  "compose.article.refused.appeal.state": {
+    "defaultMessage": "{state, select, pending {这篇文章未发布。你的申诉已提交，结果会通知你。如果管理员撤销了拒绝，请重新发布。在此之前如需保留，请存为草稿。} upheld {这篇文章未发布。管理员已审核你的申诉，维持了拒绝。请修改文章后重试。} overturned {管理员已审核你的申诉，并撤销了拒绝。请重新发布。} other {这篇文章未发布。你已对拒绝提出申诉。}}",
+    "description": "In place of the error of an article that this server's automated review refused, in the article editor, once the reader appealed the refusal: where the appeal stands. state is pending (sent, waiting for the moderators: Publish is disabled until the article is changed; the server keeps no refused article, so the reader publishes it again once the refusal is lifted, and keeps it meanwhile with Save as draft, compose.drafts.save), upheld (the refusal stays; Publish is disabled until the article is changed), or overturned (the moderators cancelled the refusal: Publish, right after this sentence, publishes it again). The article's counterpart of compose.refused.appeal.state."
+  },
+  "compose.article.refused.appeal.failed": {
+    "defaultMessage": "{reason, select, appealed {你已经对此次拒绝提出过申诉，每次拒绝只能申诉一次。请等待结果通知。} closed {对此次拒绝提出申诉的期限已过。请修改文章后重试。} not_appealable {此次拒绝已无法再申诉。请修改文章后重试。} text {这篇文章没有可发送给管理员的正文，因此无法申诉。请修改文章后重试。} other {无法提交申诉。请检查网络连接后重试。}}",
+    "description": "In place of the error of an article that this server's automated review refused, in the article editor, when the appeal the reader sent was not taken. reason is appealed (appealed already), closed (the last moment to appeal has passed), not_appealable (the refusal cannot be appealed, or is not kept any more), text (the article has no body, which an appeal must carry), or other (the server could not be reached). The article's counterpart of compose.refused.appeal.failed."
+  }
+}

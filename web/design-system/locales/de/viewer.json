@@ -1,0 +1,38 @@
+{
+  "viewer.label": {
+    "defaultMessage": "Medien",
+    "description": "The screen reader's name of the media viewer, a dialog over the page that shows a post's pictures and videos whole, one at a time."
+  },
+  "viewer.position": {
+    "defaultMessage": "{index} von {count}",
+    "description": "Which of a post's media the viewer shows, such as 2 of 4, at the start of its bar; a screen reader announces it each time the reader moves to another. Not shown for a single picture."
+  },
+  "viewer.shown": {
+    "defaultMessage": "{index} von {count}, {description}",
+    "description": "What a screen reader announces when the reader moves to another of a post's media in the media viewer: where it is among them (viewer.position) and the start of its description (alternative text), in any language, cut short with … when long."
+  },
+  "viewer.shown_kind": {
+    "defaultMessage": "{index} von {count}, {kind, select, gifv {GIF} video {Video} other {Bild}}",
+    "description": "What a screen reader announces when the reader moves to another of a post's media in the media viewer and it has no description: where it is among them (viewer.position) and its kind; gifv is a short silent loop."
+  },
+  "viewer.close": {
+    "defaultMessage": "Schließen",
+    "description": "The button that closes the media viewer."
+  },
+  "viewer.previous": {
+    "defaultMessage": "Zurück",
+    "description": "The button of the media viewer that shows the post's previous picture or video."
+  },
+  "viewer.next": {
+    "defaultMessage": "Weiter",
+    "description": "The button of the media viewer that shows the post's next picture or video."
+  },
+  "viewer.zoom_in": {
+    "defaultMessage": "Vergrößern",
+    "description": "The button of the media viewer that zooms into the picture."
+  },
+  "viewer.zoom_out": {
+    "defaultMessage": "Verkleinern",
+    "description": "The button of the media viewer, while zoomed into a picture, that shows the whole picture again."
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "report.title_account": {
+    "defaultMessage": "举报 {handle}",
+    "description": "The title of the panel that reports an account to the moderators. {handle} is the account's handle (@name@server)."
+  },
+  "report.title_room": {
+    "defaultMessage": "举报房间“{name}”",
+    "description": "The title of the panel that reports a voice chat room to the moderators. {name} is the room's name as its host wrote it."
+  },
+  "report.title_event": {
+    "defaultMessage": "举报活动“{name}”",
+    "description": "The title of the panel that reports an event to the moderators. {name} is the event's title as its organizer wrote it."
+  },
+  "report.close": {
+    "defaultMessage": "关闭",
+    "description": "The name of the button that closes the report panel without sending it."
+  },
+  "report.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button of the report panel that closes it without sending the report."
+  },
+  "report.intro": {
+    "defaultMessage": "{kind, select, room {{instance} 的管理员会阅读你的举报。举报不会公开，房间主持人 {handle} 也不会知道是谁发送的。} event {{instance} 的管理员会阅读你的举报。举报不会公开，活动组织者 {handle} 也不会知道是谁发送的。} other {{instance} 的管理员会阅读你的举报。举报不会公开，{handle} 也不会知道是谁发送的。}}",
+    "description": "The first sentences of the report panel: who reads the report, and that the reported account never learns who sent it. {kind} is room (a voice chat room, reported with its host), event (an event, reported with its organizer) or account. {instance} is the server's display name, or its domain name. {handle} is the account's handle."
+  },
+  "report.intro.unavailable": {
+    "defaultMessage": "{instance} 的管理员会阅读你的举报。举报不会公开，活动组织者也不会知道是谁发送的。",
+    "description": "The first sentences of the panel that reports an event whose organizer the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who reads the report, and that the organizer never learns who sent it; report.intro otherwise. {instance} is the server's display name, or its domain name."
+  },
+  "report.category": {
+    "defaultMessage": "你为什么要举报？",
+    "description": "The heading of the choice of why the reader reports the account, the room or the event."
+  },
+  "report.category_name": {
+    "defaultMessage": "{category, select, spam {垃圾信息} legal {违法内容} violation {违反服务器规则} other {其他原因}}",
+    "description": "The name of a reason for a report, one choice of the report panel. {category} is spam, legal (content that breaks the law), violation (breaks the server's rules, which the reader then chooses) or other."
+  },
+  "report.spam_hint": {
+    "defaultMessage": "不想要的广告、反复发布的相同帖子，或误导性链接",
+    "description": "What the reason Spam covers, under its name in the report panel; the other reasons have none."
+  },
+  "report.category_missing": {
+    "defaultMessage": "请选择举报原因。",
+    "description": "The error under the reasons of the report panel, when the reader sends it without choosing one."
+  },
+  "report.rules": {
+    "defaultMessage": "违反了哪些规则？",
+    "description": "The heading of the choice of the server's rules that the reported account breaks, shown once the reader chose that reason."
+  },
+  "report.rules_missing": {
+    "defaultMessage": "请至少选择一条违反的规则。",
+    "description": "The error under the server's rules in the report panel, when the reader sends it without choosing any."
+  },
+  "report.posts": {
+    "defaultMessage": "要附上的帖子",
+    "description": "The heading of the choice of the account's posts that the report points the moderators at."
+  },
+  "report.posts_hint": {
+    "defaultMessage": "{count, plural, =0 {最多可选择 {max} 条帖子，目前尚未选择。} other {最多可选择 {max} 条帖子，已选择 # 条。}}",
+    "description": "Under the heading of the posts to include in a report: how many may be chosen ({max}, 20) and how many are ({count})."
+  },
+  "report.posts_loading": {
+    "defaultMessage": "正在加载帖子…",
+    "description": "Said in the place of the account's posts in the report panel while they load."
+  },
+  "report.posts_none": {
+    "defaultMessage": "没有可附上的帖子。你仍然可以发送举报。",
+    "description": "Said in the place of the account's posts in the report panel when the reader sees none of them."
+  },
+  "report.posts_failed": {
+    "defaultMessage": "无法加载帖子。请检查网络连接，然后重试。",
+    "description": "Said in the place of the account's posts in the report panel when they could not be read; Try again follows it."
+  },
+  "report.retry": {
+    "defaultMessage": "重试",
+    "description": "The button that reads the account's posts again in the report panel."
+  },
+  "report.post_warning": {
+    "defaultMessage": "内容警告：{warning}",
+    "description": "A post behind a content warning, among the posts to include in a report: its warning in place of its text. {warning} is the warning its author wrote."
+  },
+  "report.post_no_text": {
+    "defaultMessage": "没有文字的帖子",
+    "description": "A post that has no text (its images alone), among the posts to include in a report."
+  },
+  "report.comment": {
+    "defaultMessage": "给管理员的留言",
+    "description": "The label of the field of the report panel where the reader writes to the moderators."
+  },
+  "report.comment_hint": {
+    "defaultMessage": "可选。最多 {max, number} 个字符。",
+    "description": "The hint under the comment of a report. {max} is 1000."
+  },
+  "report.comment_rule": {
+    "defaultMessage": "请把留言缩短到 {max, number} 个字符以内。",
+    "description": "The error under the comment of a report when it is too long. {max} is 1000."
+  },
+  "report.forward": {
+    "defaultMessage": "同时把举报发送给 {domain} 的管理员",
+    "description": "The checkbox of the report panel, for an account of another server: send the report to that server's moderators too. {domain} is that server's domain name."
+  },
+  "report.forward_hint": {
+    "defaultMessage": "不会附带你的名称。",
+    "description": "Under the checkbox that sends a report to another server's moderators: the report goes without naming the reader."
+  },
+  "report.send": {
+    "defaultMessage": "发送举报",
+    "description": "The button that sends the report to the moderators."
+  },
+  "report.sent_title": {
+    "defaultMessage": "举报已发送",
+    "description": "The title of the report panel once the report was sent."
+  },
+  "report.also": {
+    "defaultMessage": "你还可以对 {handle} 做什么",
+    "description": "The heading over muting and blocking the reported account, once the report was sent. {handle} is the account's handle."
+  },
+  "report.mute": {
+    "defaultMessage": "静音 {handle}",
+    "description": "The name for assistive technology of the button Mute once the report was sent: it mutes the reported account. {handle} is the account's handle."
+  },
+  "report.mute_short": {
+    "defaultMessage": "静音",
+    "description": "The button that mutes the reported account once the report was sent; the heading over it names the account."
+  },
+  "report.block": {
+    "defaultMessage": "屏蔽 {handle}…",
+    "description": "The name for assistive technology of the button Block… once the report was sent: it blocks the reported account, after a confirmation. {handle} is the account's handle."
+  },
+  "report.block_short": {
+    "defaultMessage": "屏蔽…",
+    "description": "The button that blocks the reported account once the report was sent, after a confirmation; the heading over it names the account."
+  },
+  "report.muted": {
+    "defaultMessage": "你已将 {handle} 静音。",
+    "description": "Said in the place of the mute button once the reported account was muted."
+  },
+  "report.blocked": {
+    "defaultMessage": "你已屏蔽 {handle}。",
+    "description": "Said in the place of the block button once the reported account was blocked."
+  },
+  "report.mute_failed": {
+    "defaultMessage": "无法将 {handle} 静音。请检查网络连接，然后重试。",
+    "description": "Said over the mute button when muting the reported account failed."
+  },
+  "report.block_failed": {
+    "defaultMessage": "无法屏蔽 {handle}。请检查网络连接，然后重试。",
+    "description": "Said over the block button when blocking the reported account failed."
+  },
+  "report.done": {
+    "defaultMessage": "完成",
+    "description": "The button that closes the report panel once the report was sent."
+  }
+}

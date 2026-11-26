@@ -1,0 +1,34 @@
+{
+  "people.title": {
+    "defaultMessage": "发现用户",
+    "description": "The title of the screen of the accounts the server suggests to follow, and of the place that opens it."
+  },
+  "people.suggested": {
+    "defaultMessage": "为你推荐",
+    "description": "The title of the accounts the server suggests to follow, where they show on another screen (the search before anything is written)."
+  },
+  "people.home": {
+    "defaultMessage": "你还没有关注任何人。关注他人后，就能在主页时间线中阅读他们的帖子。",
+    "description": "Over the accounts the server suggests to follow, on the home timeline while the reader follows no one (a new account)."
+  },
+  "people.loading": {
+    "defaultMessage": "正在加载推荐…",
+    "description": "While the suggested accounts load."
+  },
+  "people.failed": {
+    "defaultMessage": "无法加载推荐。",
+    "description": "When the suggested accounts failed to load; Try again follows it."
+  },
+  "people.empty": {
+    "defaultMessage": "目前没有可推荐的人。你可以改为按名称搜索。",
+    "description": "In place of the suggested accounts when there are none."
+  },
+  "people.more": {
+    "defaultMessage": "发现更多用户",
+    "description": "The link under a few suggested accounts that opens the screen of all of them."
+  },
+  "people.retry": {
+    "defaultMessage": "重试",
+    "description": "The action that reads the suggestions again after they failed."
+  }
+}

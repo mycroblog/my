@@ -1,0 +1,30 @@
+{
+  "emoji_picker.search": {
+    "defaultMessage": "搜尋表情符號",
+    "description": "The search field of the emoji picker, its name and placeholder: it finds emoji by name, keyword, shortcode or alias."
+  },
+  "emoji_picker.categories": {
+    "defaultMessage": "表情符號分類",
+    "description": "The name, for assistive technology, of the emoji picker's row of buttons that each scroll to a section of emoji."
+  },
+  "emoji_picker.results": {
+    "defaultMessage": "搜尋結果",
+    "description": "The heading of the emoji picker's grid while a search is typed, over the emoji that match."
+  },
+  "emoji_picker.grid": {
+    "defaultMessage": "表情符號",
+    "description": "The name, for assistive technology, of the emoji picker's grid of emoji, under its search field and row of categories."
+  },
+  "emoji_picker.count": {
+    "defaultMessage": "{count, plural, =0 {找不到表情符號} other {找到 # 個表情符號}}",
+    "description": "Announced to assistive technology when a search in the emoji picker settles: how many emoji match. count is how many."
+  },
+  "emoji_picker.current": {
+    "defaultMessage": "{name}，你的回應",
+    "description": "The accessible name of the emoji picker's cell of the emoji the reader already reacted with, drawn knocked out; picking it takes the reaction back. name is the emoji's short name, or :shortcode: for a custom emoji."
+  },
+  "emoji_picker.empty": {
+    "defaultMessage": "沒有符合「{query}」的表情符號。請試試其他字詞。",
+    "description": "The line in the emoji picker's grid when no emoji matches the search: the fact, then the next step. query is what the reader typed."
+  }
+}

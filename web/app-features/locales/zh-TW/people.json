@@ -1,0 +1,34 @@
+{
+  "people.title": {
+    "defaultMessage": "尋找使用者",
+    "description": "The title of the screen of the accounts the server suggests to follow, and of the place that opens it."
+  },
+  "people.suggested": {
+    "defaultMessage": "為你推薦",
+    "description": "The title of the accounts the server suggests to follow, where they show on another screen (the search before anything is written)."
+  },
+  "people.home": {
+    "defaultMessage": "你還沒有追蹤任何人。追蹤其他人，就能在首頁時間軸看到他們的貼文。",
+    "description": "Over the accounts the server suggests to follow, on the home timeline while the reader follows no one (a new account)."
+  },
+  "people.loading": {
+    "defaultMessage": "正在載入建議…",
+    "description": "While the suggested accounts load."
+  },
+  "people.failed": {
+    "defaultMessage": "無法載入推薦。",
+    "description": "When the suggested accounts failed to load; Try again follows it."
+  },
+  "people.empty": {
+    "defaultMessage": "目前沒有可推薦的人。請改用名稱搜尋。",
+    "description": "In place of the suggested accounts when there are none."
+  },
+  "people.more": {
+    "defaultMessage": "尋找更多使用者",
+    "description": "The link under a few suggested accounts that opens the screen of all of them."
+  },
+  "people.retry": {
+    "defaultMessage": "重試",
+    "description": "The action that reads the suggestions again after they failed."
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "emoji.frequent": {
+    "defaultMessage": "Usados com frequência",
+    "description": "The heading and category button of the emoji picker's section of the emoji the reader uses most on this device."
+  },
+  "emoji.custom": {
+    "defaultMessage": "Emojis personalizados",
+    "description": "The heading and category button of the emoji picker's section of this server's own custom emoji (the only custom emoji a reaction can use)."
+  },
+  "emoji.group_smileys": {
+    "defaultMessage": "Carinhas e emoções",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.group_people": {
+    "defaultMessage": "Pessoas e corpo",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.group_nature": {
+    "defaultMessage": "Animais e natureza",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.group_food": {
+    "defaultMessage": "Comida e bebida",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.group_travel": {
+    "defaultMessage": "Viagens e lugares",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.group_activities": {
+    "defaultMessage": "Atividades",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.group_objects": {
+    "defaultMessage": "Objetos",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.group_symbols": {
+    "defaultMessage": "Símbolos",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.group_flags": {
+    "defaultMessage": "Bandeiras",
+    "description": "The heading and category button of a group of Unicode emoji in the emoji picker (one of Unicode's nine groups)."
+  },
+  "emoji.tone": {
+    "defaultMessage": "Tom de pele",
+    "description": "The emoji picker's button and menu that choose the skin tone of the emoji that have one; the five tones are named from Unicode's data."
+  },
+  "emoji.tone_default": {
+    "defaultMessage": "Padrão",
+    "description": "The first choice of the emoji picker's skin tone menu: no tone, the default yellow."
+  },
+  "emoji.react": {
+    "defaultMessage": "Reagir",
+    "description": "The title of the sheet a post's react action opens on a phone, over the emoji picker; the same words as the react action that opens it."
+  },
+  "emoji.close": {
+    "defaultMessage": "Fechar",
+    "description": "The button at the end of the emoji picker sheet's head that closes it without reacting."
+  }
+}

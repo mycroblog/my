@@ -1,0 +1,182 @@
+{
+  "supporters.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "The button that reads again what the supporters' page could not read."
+  },
+  "supporters.list.about": {
+    "defaultMessage": "Les personnes qui soutiennent ce serveur et ont choisi d’être listées, par formule.",
+    "description": "Under the heading of the supporters list."
+  },
+  "supporters.list.signed_in": {
+    "defaultMessage": "Seules les personnes connectées à ce serveur peuvent voir la liste des soutiens.",
+    "description": "In the supporters list's place for a visitor, where the server shows it to signed-in readers; Sign in follows."
+  },
+  "supporters.list.loading": {
+    "defaultMessage": "Chargement des soutiens…",
+    "description": "In the supporters list's place while it is read."
+  },
+  "supporters.list.failed": {
+    "defaultMessage": "Les soutiens n’ont pas pu être chargés.",
+    "description": "In the supporters list's place when it could not be read; Try again follows."
+  },
+  "supporters.list.empty": {
+    "defaultMessage": "Personne n’a encore choisi d’être listé.",
+    "description": "In the supporters list's place while nobody is on it."
+  },
+  "supporters.period": {
+    "defaultMessage": "{interval, select, month {Mensuel} other {Annuel}}",
+    "description": "A choice of the billing period over the plans ({interval}: month or year)."
+  },
+  "supporters.period.label": {
+    "defaultMessage": "Période de facturation",
+    "description": "The name of the choice of the billing period (monthly or yearly) over the plans, for assistive technology."
+  },
+  "supporters.save": {
+    "defaultMessage": "{upTo, select, yes {Économisez jusqu’à {percent} %} other {Économisez {percent} %}}",
+    "description": "Under Yearly in the choice of the billing period: what paying yearly saves against twelve monthly payments, in whole percent; upTo is yes where the plans save different shares and this is the most."
+  },
+  "supporters.plans": {
+    "defaultMessage": "Formules",
+    "description": "The heading of the supporter plans on the supporters' page, and the name of their list."
+  },
+  "supporters.yours": {
+    "defaultMessage": "Votre formule",
+    "description": "On the card of the plan the reader pays for, at the period chosen, in the place of its button."
+  },
+  "supporters.per": {
+    "defaultMessage": "{interval, select, month {/ mois} other {/ an}}",
+    "description": "After a plan's price, the period it is paid for ({interval}: month or year)."
+  },
+  "supporters.price_note.month": {
+    "defaultMessage": "Ou {year} par an",
+    "description": "Under a plan's monthly price: its yearly price ({year}, an amount such as ¥5,000)."
+  },
+  "supporters.includes": {
+    "defaultMessage": "Inclut tout ce qui est dans {plan}",
+    "description": "On the card of a plan above the lowest: it holds the perks of the plan under it ({plan}, that plan's name, the operator's)."
+  },
+  "supporters.refused": {
+    "defaultMessage": "{kind, select, ineligible {Votre compte ne peut pas s’abonner pour le moment. Rechargez la page pour en voir la raison.} subscribed {Vous soutenez déjà ce serveur. Rechargez la page pour voir votre formule.} plan_unavailable {Cette formule n’accepte plus de nouveaux abonnements. Choisissez-en une autre.} closing {Ce serveur ferme : il n’accepte donc plus de nouveaux abonnements.} unavailable {Les abonnements ne peuvent pas être lancés pour le moment. Réessayez plus tard.} state {Votre abonnement ne peut pas changer pour le moment. Rechargez la page pour voir où il en est.} payment_failed {Le paiement a échoué. Rien n’a été débité, et votre formule reste inchangée. Changez la carte dans « Paiements et factures » sous « Soutien » dans les paramètres, puis réessayez.} payment_processing {Le paiement est en cours de traitement. Votre formule change une fois qu’il aboutit.} other {L’opération n’a pas pu être effectuée. Réessayez.}}",
+    "description": "In the question before subscribing or changing the plan, in its text's place, when the server refused it ({kind}: why)."
+  },
+  "supporters.commerce": {
+    "defaultMessage": "Mentions légales de vente",
+    "description": "The link to the server's commerce disclosure, after what subscribing or changing the plan does, in the question before it."
+  },
+  "supporters.failed": {
+    "defaultMessage": "La page des soutiens n’a pas pu être chargée.",
+    "description": "In the supporters' page's place when what it shows could not be read; Try again follows."
+  },
+  "supporters.loading": {
+    "defaultMessage": "Chargement de la page des soutiens…",
+    "description": "In the supporters' page's place while what it shows is read."
+  },
+  "supporters.none": {
+    "defaultMessage": "Ce serveur n’accepte pas de soutien ici.",
+    "description": "The supporters' page of a server whose plans, tips and supporters list are all off, or of the native app, which shows no purchase, where the list is off."
+  },
+  "supporters.plans.failed": {
+    "defaultMessage": "Les formules n’ont pas pu être chargées.",
+    "description": "In the plans' place on the supporters' page when they could not be read; Try again follows."
+  },
+  "supporters.plans.loading": {
+    "defaultMessage": "Chargement des formules…",
+    "description": "In the plans' place on the supporters' page while they are read."
+  },
+  "supporters.plans.none": {
+    "defaultMessage": "Aucune formule à laquelle s’abonner pour le moment.",
+    "description": "In the plans' place on the supporters' page while the server offers none."
+  },
+  "supporters.subscribe": {
+    "defaultMessage": "Choisir",
+    "description": "The button on a plan's card that asks before leaving for the payment provider's checkout of that plan, at the period chosen; the card names it by its plan for assistive technology (Choose Supporter)."
+  },
+  "supporters.switch": {
+    "defaultMessage": "Changer",
+    "description": "The button on a plan's card, for a reader subscribed to another plan or period, that asks before changing to it."
+  },
+  "supporters.checkout.confirm": {
+    "defaultMessage": "Passer au paiement",
+    "description": "The button of the question before subscribing that leaves for the payment provider's checkout."
+  },
+  "supporters.checkout.cancel": {
+    "defaultMessage": "Pas maintenant",
+    "description": "The button of the question before subscribing that closes it with nothing done."
+  },
+  "supporters.checkout.text": {
+    "defaultMessage": "Vous payez {price} maintenant, puis {price} chaque {interval, select, month {mois} other {année}} jusqu’à ce que vous résiliiez. Vos avantages commencent une fois le paiement abouti. Vous pouvez résilier à tout moment sous « Formules de soutien et pourboires » dans les paramètres, et vos avantages restent jusqu’à la fin de la période payée.",
+    "description": "What subscribing does, in the question before the payment provider's checkout ({price}: the plan's price at the period; {interval}: month or year)."
+  },
+  "supporters.checkout.title": {
+    "defaultMessage": "S’abonner à {plan}, {interval, select, month {mensuellement} other {annuellement}} ?",
+    "description": "The question before leaving for the payment provider's checkout ({plan}: the plan's name, the operator's; {interval}: month or year)."
+  },
+  "supporters.change.confirm": {
+    "defaultMessage": "{when, select, now {Changer maintenant} other {Programmer le changement}}",
+    "description": "The button of the question before changing the plan ({when}: now, or at the end of the period)."
+  },
+  "supporters.change.keep": {
+    "defaultMessage": "Garder ma formule",
+    "description": "A button that keeps the reader's plan as it is: in the question before a change, and beside a change scheduled for the period's end, which it cancels."
+  },
+  "supporters.change.text": {
+    "defaultMessage": "{when, select, now {La différence pour le reste de cette période est débitée maintenant, et la formule change une fois le paiement abouti. Ensuite, vous payez {price} chaque {interval, select, month {mois} other {année}}.} other {Rien n’est débité maintenant. Vous gardez {plan} jusqu’au {date}, puis la formule change et vous payez {price} chaque {interval, select, month {mois} other {année}}.}}",
+    "description": "What a change of the plan does, in the question before it ({when}: now or at the period's end on {date}; {plan}: the reader's plan now; {price}: the new price at {interval})."
+  },
+  "supporters.change.price_kept": {
+    "defaultMessage": "Vous payez actuellement {kept}, un ancien tarif conservé pour vous. Après le changement, vous paierez le tarif actuel de la formule, même si vous revenez à {plan}.",
+    "description": "In the question before changing the plan, when the reader renews at an earlier price than the plan's price now ({kept}: what they pay; {plan}: their plan's name)."
+  },
+  "supporters.change.title": {
+    "defaultMessage": "{when, select, now {Passer à {plan}, {interval, select, month {mensuellement} other {annuellement}}, maintenant ?} other {Passer à {plan}, {interval, select, month {mensuellement} other {annuellement}}, le {date} ?}}",
+    "description": "The question before changing the plan or the period ({when}: now, the difference charged at once, or at the end of the period, on {date}; {plan}: the new plan's name)."
+  },
+  "supporters.subscription": {
+    "defaultMessage": "Votre abonnement",
+    "description": "The heading of the reader's subscription in the Supporter screen, and the link to it from the plans after the sentence that says they support the server."
+  },
+  "supporters.yours.plan": {
+    "defaultMessage": "Vous soutenez ce serveur avec {plan}.",
+    "description": "Over the plans, for a reader who supports the server ({plan}: their plan's name, the operator's)."
+  },
+  "supporters.yours.lapsed": {
+    "defaultMessage": "Votre paiement pour {plan} a échoué, et ses avantages ont pris fin. Mettez à jour votre moyen de paiement dans votre abonnement.",
+    "description": "Over the plans, for a reader whose subscription's payment failed and whose 7 days of grace ended ({plan}: its plan's name); the link to their subscription follows."
+  },
+  "supporters.sign_in": {
+    "defaultMessage": "Se connecter",
+    "description": "The link to the sign-in after a sentence of the supporters' page that asks for an account; it comes back to the page."
+  },
+  "supporters.bar.subscribe": {
+    "defaultMessage": "{reason, select, signed_out {S’abonner demande un compte sur ce serveur.} email_unverified {Confirmez votre adresse e-mail pour vous abonner.} not_local {Seules les personnes ayant un compte sur ce serveur peuvent s’abonner.} restricted {Votre compte ne peut pas s’abonner tant qu’il est restreint.} subscribed {Vous soutenez déjà ce serveur.} other {Vous ne pouvez pas vous abonner pour le moment.}}",
+    "description": "Why the reader is not offered to subscribe to a plan ({reason})."
+  },
+  "supporters.bar.tip": {
+    "defaultMessage": "{reason, select, signed_out {Donner un pourboire demande un compte sur ce serveur.} email_unverified {Confirmez votre adresse e-mail pour donner un pourboire.} not_local {Seules les personnes ayant un compte sur ce serveur peuvent faire un don.} restricted {Votre compte ne peut pas faire de don tant qu’il est restreint.} other {Vous ne pouvez pas faire de don pour le moment.}}",
+    "description": "Why the reader is not offered to tip the server ({reason})."
+  },
+  "supporters.tip": {
+    "defaultMessage": "Donner un pourboire au serveur",
+    "description": "The heading of the tip on the supporters' page, the screen of the tip in the settings, and the row of the settings that leads there."
+  },
+  "supporters.tip.about": {
+    "defaultMessage": "Un pourboire est un remerciement ponctuel aux personnes qui font fonctionner {server} pour son service. Il n’ouvre droit à aucune contrepartie.",
+    "description": "What a tip is, beside the way to tip and the choice of its amount ({server}: the server's name). It is no purchase and brings nothing in return."
+  },
+  "supporters.tip.go": {
+    "defaultMessage": "Donner un pourboire",
+    "description": "The link of the supporters' page to the screen that pays a tip."
+  },
+  "supporters.list": {
+    "defaultMessage": "Soutiens",
+    "description": "The heading of the supporters list on the supporters' page."
+  },
+  "supporters.changed": {
+    "defaultMessage": "{when, select, now {Votre formule est désormais {plan}, {interval, select, month {mensuelle} other {annuelle}}.} other {Votre formule passe à {plan}, {interval, select, month {mensuelle} other {annuelle}}, le {date}.}}",
+    "description": "Under the plans, once a change of the plan was made ({when}: now, or scheduled for {date})."
+  },
+  "supporters.same_plan": {
+    "defaultMessage": "{plan}, {interval, select, month {mensuelle} other {annuelle}}, est déjà votre formule.",
+    "description": "Under the plans, when a change the reader asked for again was already made (its first answer did not reach them): the plan is theirs ({plan}: its name)."
+  }
+}

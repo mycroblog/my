@@ -1,4 +1,12 @@
 {
+  "payments.checkout.title": {
+    "defaultMessage": "S’abonner à la formule de soutien « {plan} »",
+    "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
+  },
+  "payments.error.declined": {
+    "defaultMessage": "La carte a été refusée, et rien n’a été débité. Essayez une autre carte.",
+    "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
+  },
   "payments.error.form": {
     "defaultMessage": "Vérifiez l’adresse e-mail, le nom sur la carte et la carte.",
     "description": "Error of the PAY.JP checkout and card pages when a field is missing or invalid."
@@ -7,9 +15,17 @@
     "defaultMessage": "Cette page a expiré. Recommencez depuis l’écran d’où vous venez.",
     "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
   },
+  "payments.error.three_d_secure": {
+    "defaultMessage": "La carte n’a pas pu être vérifiée (3-D Secure), et rien n’a été débité. Réessayez ou utilisez une autre carte.",
+    "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
+  },
   "payments.error.title": {
     "defaultMessage": "Paiement",
     "description": "Title of the error page of the PAY.JP checkout and card pages."
+  },
+  "payments.error.unavailable": {
+    "defaultMessage": "PAY.JP ne répond pas. Réessayez dans un moment. Si un montant a été débité, l’abonnement apparaît sur l’écran d’où vous venez.",
+    "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
   "payments.fake.failed": {
     "defaultMessage": "Le paiement a échoué, comme demandé. Payez ou annulez.",
@@ -22,6 +38,10 @@
   "payments.portal.changed": {
     "defaultMessage": "La carte a été changée.",
     "description": "Notice of the PAY.JP card page after a card change."
+  },
+  "payments.portal.resume_failed": {
+    "defaultMessage": "La carte a été changée, mais le paiement qui reprend l’abonnement a échoué : il reste donc suspendu. Essayez une autre carte.",
+    "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
   },
   "payments.portal.resumed": {
     "defaultMessage": "La carte a été changée et la souscription a repris.",

@@ -1,0 +1,62 @@
+{
+  "post_actions.failed": {
+    "defaultMessage": "{action, select, favourite {No se pudo completar el favorito} boost {No se pudo completar el impulso} bookmark {No se pudo completar el marcador} mute {No se pudo completar el silenciado del hilo} vote {No se pudo completar el voto} other {No se pudo completar la reacción}}.",
+    "description": "The notice at the bottom of the page when the reader's favourite, boost, bookmark, emoji reaction or mute of a thread on a post (set or taken back), or their vote in a post's poll, got no answer from the server (the network), beside Try again. The post shows again what it showed before. action is which of them."
+  },
+  "post_actions.retry": {
+    "defaultMessage": "Reintentar",
+    "description": "The action of a post's failed notice (a favourite, boost, bookmark, emoji reaction or vote, deleting, loading the edit history or the post to edit): it does the same again."
+  },
+  "post_actions.deleted": {
+    "defaultMessage": "Publicación eliminada",
+    "description": "The notice at the bottom of the page after the reader's post was deleted (Delete…); it is gone from every list and view."
+  },
+  "post_actions.delete_failed": {
+    "defaultMessage": "No se pudo eliminar la publicación.",
+    "description": "The notice at the bottom of the page when deleting the reader's post (Delete… or Delete and redraft…) got no answer from the server (the network), beside Try again. The post stays, and a redraft's composer does not open."
+  },
+  "post_actions.link_copied": {
+    "defaultMessage": "Enlace copiado",
+    "description": "The notice at the bottom of the page after Copy link, or after Share on a device that cannot share, copied the link to the post."
+  },
+  "post_actions.copy_failed": {
+    "defaultMessage": "No se pudo copiar el enlace.",
+    "description": "The notice at the bottom of the page when the browser refused to copy the link to the post (Copy link, or Share on a device that cannot share); it offers no Try again, since a refused clipboard refuses again."
+  },
+  "post_actions.bookmarked": {
+    "defaultMessage": "Publicación guardada en marcadores",
+    "description": "The notice at the bottom of the page after Bookmark in a post's more menu bookmarked it; the post is in Bookmarks."
+  },
+  "post_actions.unbookmarked": {
+    "defaultMessage": "Marcador quitado",
+    "description": "The notice at the bottom of the page after Remove bookmark in a post's more menu took the reader's bookmark of the post back; the post is no longer in Bookmarks."
+  },
+  "post_actions.thread_muted": {
+    "defaultMessage": "Hilo silenciado",
+    "description": "The notice at the bottom of the page after Mute thread in a post's more menu muted the thread the post is in; its notifications stop, and its posts still show in timelines."
+  },
+  "post_actions.thread_unmuted": {
+    "defaultMessage": "Hilo con sonido de nuevo",
+    "description": "The notice at the bottom of the page after Unmute thread in a post's more menu let the notifications of the thread the post is in come again."
+  },
+  "post_actions.history_failed": {
+    "defaultMessage": "No se pudo cargar el historial de ediciones.",
+    "description": "The notice at the bottom of the page when an edited post's edit history did not load from the server, beside Try again, which loads it again."
+  },
+  "post_actions.source_failed": {
+    "defaultMessage": "No se pudo cargar la publicación para editarla.",
+    "description": "The notice at the bottom of the page when the reader's post did not load from the server to edit it (Edit), beside Try again; the composer does not open."
+  },
+  "post_actions.approval_pending": {
+    "defaultMessage": "En espera de aprobación",
+    "description": "The line over the reader's own reply that waits for the approval of the author of the post it replies to; only the reader sees the reply."
+  },
+  "post_actions.approval_rejected": {
+    "defaultMessage": "No aprobada",
+    "description": "The line over the reader's own reply that the author of the post it replies to declined; only the reader sees it."
+  },
+  "post_actions.boost_waits": {
+    "defaultMessage": "Impulso en espera de aprobación",
+    "description": "The line over a post the reader boosted whose author approves boosts by hand, until the author does."
+  }
+}

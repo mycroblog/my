@@ -16,11 +16,11 @@
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_appeal.body": {
-    "defaultMessage": "Um usuário de {instance} contestou uma ação de moderação, e o recurso aguarda os moderadores.",
+    "defaultMessage": "Um usuário de {instance} contestou uma ação de moderação, e a contestação aguarda os moderadores.",
     "description": "Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_appeal.subject": {
-    "defaultMessage": "Um novo recurso aguarda os moderadores de {instance}",
+    "defaultMessage": "Uma nova contestação aguarda os moderadores de {instance}",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a moderation action on their account. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_custom_emoji_request.body": {
@@ -75,6 +75,10 @@
     "defaultMessage": "Um webhook de {instance} foi desativado",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.password_changed.body": {
+    "defaultMessage": "A senha da sua conta em {instance} foi alterada, e você saiu da conta nos seus outros dispositivos e apps.",
+    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.password_changed.detail": {
     "defaultMessage": "Se não foi você, outra pessoa pode saber a sua senha. Defina uma nova imediatamente.",
     "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
@@ -82,6 +86,10 @@
   "mail.password_changed.subject": {
     "defaultMessage": "A sua senha de {instance} foi alterada",
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.body": {
+    "defaultMessage": "A senha da sua conta em {instance} foi removida, e você saiu da conta nos seus outros dispositivos e apps. A partir de agora, você entra com suas passkeys.",
+    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.detail": {
     "defaultMessage": "Se não foi você, outra pessoa pode estar conectada à sua conta. Defina uma nova senha imediatamente.",
@@ -191,6 +199,10 @@
     "defaultMessage": "Os administradores de {instance} cancelaram o encerramento anunciado. O servidor continua como antes, e você não precisa fazer nada.",
     "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.service_closure_withdrawn.subject": {
+    "defaultMessage": "O encerramento de {instance} foi cancelado",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.signature.contact": {
     "defaultMessage": "Contato: {email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
@@ -219,6 +231,10 @@
     "defaultMessage": "Os administradores de {instance} retiraram o plano de apoio “{plan}” que você assina.",
     "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
   },
+  "mail.supporter_plan_retired.detail": {
+    "defaultMessage": "Sua assinatura foi cancelada e não será renovada. Você mantém os benefícios do plano até o fim do período pago, a menos que haja um pagamento em atraso.",
+    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
+  },
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "Seu plano de apoio em {instance} foi retirado",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
@@ -230,6 +246,14 @@
   "mail.supporter_service_closure.detail": {
     "defaultMessage": "Sua assinatura não será renovada. Você mantém os benefícios do plano até o fim do período que pagou, a menos que haja um pagamento em atraso.",
     "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
+  },
+  "mail.supporter_service_closure.subject": {
+    "defaultMessage": "Sua assinatura de apoiador em {instance} foi cancelada porque o servidor será encerrado",
+    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_subscription_ended.body": {
+    "defaultMessage": "Seu plano de apoio “{plan}” em {instance} terminou, e os benefícios dele também. {reason, select, lapsed {Nenhum pagamento foi concluído em 7 dias após uma falha de pagamento, ou a assinatura foi pausada.} reversed {Um pagamento foi totalmente reembolsado ou estornado pela operadora do cartão após uma contestação.} plan_retired {Os administradores descontinuaram o plano.} account_suspended {Sua conta foi suspensa.} staff {Um administrador cancelou a assinatura.} other {A assinatura foi cancelada.}}",
+    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
     "defaultMessage": "Seu plano de apoio em {instance} terminou",
@@ -336,7 +360,7 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_appeal": {
-    "defaultMessage": "Novos recursos",
+    "defaultMessage": "Novas contestações",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_webhook_disabled": {
@@ -344,11 +368,11 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_custom_emoji_request": {
-    "defaultMessage": "Pedidos de emoji personalizado",
+    "defaultMessage": "Pedidos de emojis personalizados",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_account_moved": {
-    "defaultMessage": "Migração de contas limitadas",
+    "defaultMessage": "Mudança de contas limitadas",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_service_closure_due": {
@@ -387,6 +411,10 @@
     "defaultMessage": "Para reativá-la, entre. Não enviaremos outro e-mail sobre isso antes da exclusão. Se não foi você, entre, reative a conta e altere a sua senha.",
     "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
   },
+  "mail.admin_hook_failing.body": {
+    "defaultMessage": "Uma revisão externa de {instance} continua falhando. Até que volte a funcionar, o que ela revisa segue o comportamento de falha configurado: por padrão, passa sem revisão.",
+    "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_hook_failing.detail": {
     "defaultMessage": "Abra suas notificações e veja as análises automáticas para saber o que falhou.",
     "description": "Second paragraph of the email to a moderator about an external review that keeps failing, before the link to the notifications."
@@ -408,19 +436,19 @@
     "description": "Subject of the email to a moderator who gets moderator notifications by email: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_appeal.body": {
-    "defaultMessage": "Um usuário de {instance} contestou uma publicação que a análise automática recusou, e o recurso aguarda os moderadores.",
+    "defaultMessage": "Um usuário de {instance} contestou uma publicação que a análise automática recusou, e a contestação aguarda os moderadores.",
     "description": "Paragraph of the email to a moderator about a new appeal of a post that the automated review refused. It never names the user or the post. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_appeal.subject": {
-    "defaultMessage": "Um recurso de publicação recusada aguarda os moderadores de {instance}",
+    "defaultMessage": "Uma contestação de publicação recusada aguarda os moderadores de {instance}",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.group.admin_hook_failing": {
-    "defaultMessage": "Análises externas com falha",
+    "defaultMessage": "Revisões externas com falha",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_hook_appeal": {
-    "defaultMessage": "Recursos de publicações recusadas",
+    "defaultMessage": "Contestações de publicações recusadas",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_domain_list_failing": {

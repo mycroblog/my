@@ -3,6 +3,10 @@
     "defaultMessage": "{name} 已搬遷到另一個帳號",
     "description": "Web Push notification. {name} is the display name, or the @handle, of an account that the user followed, which moved to another account."
   },
+  "push.admin_account_moved": {
+    "defaultMessage": "在 {instance} 上被限制的帳號已搬到另一個帳號",
+    "description": "Web Push notification to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.admin_appeal": {
     "defaultMessage": "有一則新的申訴等待 {instance} 的版主處理",
     "description": "Web Push notification to a moderator: a user appealed a moderation action. It never names the user. {instance} is the server's display name, or its domain name when it has none."
@@ -30,6 +34,14 @@
   "push.auto_delete_limit": {
     "defaultMessage": "{instance}：{daysLeft, plural, =0 {從現在起，} other {# 天後，}}超過 {days, plural, other {# 天}}的貼文會自動刪除",
     "description": "Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.scheduled_status_failed": {
+    "defaultMessage": "{instance}：你的排程貼文無法發布{reason, select, restricted {，因為你的帳號目前無法發布貼文} reply_unavailable {，因為它回覆的貼文已不存在} quote_unavailable {，因為它引用的貼文已不存在} media_unavailable {，因為附加的檔案已不存在} invalid {，因為它不符合貼文的要求} rejected {，因為伺服器的自動審查未接受它} other {}}；它仍保留在你的草稿中",
+    "description": "Web Push notification telling a local user that a post they scheduled could not be published at its time; the draft stays and can be fixed and scheduled again. {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.appeal_decided": {
+    "defaultMessage": "{instance} 的版主已審查你的申訴",
+    "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.custom_emoji_request_decided": {
     "defaultMessage": "{instance} 的管理員已審核你的自訂表情符號申請",
@@ -84,7 +96,7 @@
     "description": "Web Push notification. {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji."
   },
   "push.relationships_severed": {
-    "defaultMessage": "{instance} 版主的停權處置解除了你的部分追蹤關係",
+    "defaultMessage": "{instance} 結束了你與其他伺服器上部分帳號的追蹤關係",
     "description": "Web Push notification: the moderators suspended a server or an account, which ended follows between it and the user. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.report_resolved": {
@@ -115,6 +127,10 @@
     "defaultMessage": "{instance} 的關閉日期已變更",
     "description": "Web Push notification to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.service_closure_withdrawn": {
+    "defaultMessage": "{instance} 的關閉計畫已撤回",
+    "description": "Web Push notification to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.admin_service_closure_due": {
     "defaultMessage": "{instance} 的關閉日期已過：請關閉伺服器",
     "description": "Web Push notification to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none."
@@ -139,9 +155,17 @@
     "defaultMessage": "{instance} 的封鎖清單訂閱持續失敗",
     "description": "Web Push notification to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.admin_hook_appeal": {
+    "defaultMessage": "有被拒絕貼文的申訴等待 {instance} 的版主處理",
+    "description": "Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.hook_appeal_decided": {
     "defaultMessage": "{instance} 的版主已審查你對被拒絕貼文的申訴",
     "description": "Web Push notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.supporter_service_closure": {
+    "defaultMessage": "由於伺服器即將關閉，你在 {instance} 的支持者訂閱已取消",
+    "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.voice_room_started": {
     "defaultMessage": "{name} 開啟了語音聊天室",
@@ -162,6 +186,14 @@
   "push.quote_request": {
     "defaultMessage": "{name} 要求引用你的貼文",
     "description": "Web Push notification. {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval."
+  },
+  "push.interaction_accepted": {
+    "defaultMessage": "{name} 核准了你的回覆、轉發或引用",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it."
+  },
+  "push.interaction_rejected": {
+    "defaultMessage": "{name} 拒絕了你的回覆、轉發或引用",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it."
   },
   "push.event_invited": {
     "defaultMessage": "{name} 邀請你參加 {title}",
@@ -190,6 +222,10 @@
   "push.event_room_unavailable": {
     "defaultMessage": "{title} 的語音聊天室無法開啟",
     "description": "Web Push notification, and the subject of its email, telling the organizer of an event that its voice chat room cannot open, or could not, for example because the voice chat is off. The event itself stays. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_board_posted": {
+    "defaultMessage": "{name} 在「{title}」的留言板上留言",
+    "description": "Web Push notification, and the subject of its email, telling a local user who reads the board of an event and answered going or maybe that someone wrote a new post on that board. {name} is the display name, or the @handle when there is none, of the writer. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. The post itself is not in it."
   },
   "push.event_untitled": {
     "defaultMessage": "一個活動",

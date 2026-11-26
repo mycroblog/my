@@ -1,0 +1,266 @@
+{
+  "staff_theme.section.text": {
+    "defaultMessage": "Texto y enlaces",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the text colors. Read by administrators."
+  },
+  "staff_theme.section.accent": {
+    "defaultMessage": "Acento",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the accent color, the fill of the primary button and the text on it. Read by administrators."
+  },
+  "staff_theme.section.surfaces": {
+    "defaultMessage": "Fondos",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the background colors (the page, sections, controls, hovered and pressed). Read by administrators."
+  },
+  "staff_theme.section.fonts": {
+    "defaultMessage": "Fuentes",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the fonts. Read by administrators."
+  },
+  "staff_theme.section.sizes": {
+    "defaultMessage": "Tamaños de texto",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the sizes of the type scale. Read by administrators."
+  },
+  "staff_theme.section.line_heights": {
+    "defaultMessage": "Interlineado",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the line heights of the type scale; each field is named by its size (Body). Read by administrators."
+  },
+  "staff_theme.section.shape": {
+    "defaultMessage": "Esquinas y movimiento",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the corners' radii and the spinner's turn. Read by administrators."
+  },
+  "staff_theme.token.color_text": {
+    "defaultMessage": "Texto",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of most text. Read by administrators."
+  },
+  "staff_theme.token.color_muted_text": {
+    "defaultMessage": "Texto atenuado",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of secondary text. Read by administrators."
+  },
+  "staff_theme.token.color_accent_text": {
+    "defaultMessage": "Texto de acento",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of links and the focus ring. Read by administrators."
+  },
+  "staff_theme.token.color_quote_bar": {
+    "defaultMessage": "Barra de cita",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the bar at the start of a quote. Read by administrators."
+  },
+  "staff_theme.token.color_accent": {
+    "defaultMessage": "Acento",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the accent fill color. Read by administrators."
+  },
+  "staff_theme.token.color_on_accent": {
+    "defaultMessage": "Texto sobre el acento",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the text on the accent fill. Read by administrators."
+  },
+  "staff_theme.token.color_surface": {
+    "defaultMessage": "Fondo de la página",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the page's background color. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised": {
+    "defaultMessage": "Campos y botones",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of sections, buttons and fields. Read by administrators."
+  },
+  "staff_theme.token.font_sans_override": {
+    "defaultMessage": "Fuente del texto",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the font families of text. Read by administrators."
+  },
+  "staff_theme.token.font_sans_override.about": {
+    "defaultMessage": "Nombres de familias, separados por comas. Las fuentes propias de la aplicación dibujan lo que falte en las tuyas.",
+    "description": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the text font's name. Read by administrators."
+  },
+  "staff_theme.token.font_mono_override": {
+    "defaultMessage": "Fuente del código",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the font families of code. Read by administrators."
+  },
+  "staff_theme.token.font_mono_override.about": {
+    "defaultMessage": "Nombres de familias, separados por comas.",
+    "description": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the code font's name. Read by administrators."
+  },
+  "staff_theme.token.text_tagline": {
+    "defaultMessage": "Eslogan",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the largest step of the type scale (the landing page's line); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_heading": {
+    "defaultMessage": "Encabezado",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a section's heading); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_title": {
+    "defaultMessage": "Título",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a screen's title); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_reading": {
+    "defaultMessage": "Lectura",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (an article's text); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_body": {
+    "defaultMessage": "Cuerpo",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (most text); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_caption": {
+    "defaultMessage": "Pie de texto",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the smallest step of the type scale; also names its line height. Read by administrators."
+  },
+  "staff_theme.token.radius_control": {
+    "defaultMessage": "Esquinas de los controles",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the radius of buttons and fields. Read by administrators."
+  },
+  "staff_theme.token.radius_overlay": {
+    "defaultMessage": "Esquinas de menús y diálogos",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the radius of menus, dialogs and notices. Read by administrators."
+  },
+  "staff_theme.token.duration_spin": {
+    "defaultMessage": "Giro del indicador de carga",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the time one turn of the loading spinner takes. Read by administrators."
+  },
+  "staff_theme.token.unknown": {
+    "defaultMessage": "Un color",
+    "description": "On the theme editor of the administration (/admin/theme/draft), in a refusal, the name of a token the app does not know (one a newer server added). Read by administrators."
+  },
+  "staff_theme.token.color_surface_hover": {
+    "defaultMessage": "Fondo de la página, al pasar el cursor",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a control without a surface under the pointer. Read by administrators."
+  },
+  "staff_theme.token.color_surface_pressed": {
+    "defaultMessage": "Fondo de la página, al pulsar",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a control without a surface while pressed. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised_hover": {
+    "defaultMessage": "Campos y botones, al pasar el cursor",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a button or a field under the pointer. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised_pressed": {
+    "defaultMessage": "Botones, al pulsar",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a button while pressed. Read by administrators."
+  },
+  "staff_theme.token.text_headline": {
+    "defaultMessage": "Titular",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a page's headline); also names its line height. Read by administrators."
+  },
+  "staff_theme.pair": {
+    "defaultMessage": "{role, select, text {Sobre {name}} other {Bajo {name}}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), a pair the color makes with another one, beside its contrast ratio: the color as text on {name}, or as the background under {name} ({name}, the other color's name). Read by administrators."
+  },
+  "staff_theme.error.range": {
+    "defaultMessage": "{kind, select, length {Escribe un valor de {min}rem a {max}rem.} duration {Escribe un valor de {min}ms a {max}ms.} other {Escribe un valor de {min} a {max}.}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), under a field whose value the server refused as out of its bounds ({min}, {max}). Read by administrators."
+  },
+  "staff_theme.error.contrast": {
+    "defaultMessage": "No se guardó nada. {token} sobre {background} es {ratio}:1 en {scheme, select, light {claro} other {oscuro}} y necesita {minimum}:1. Cambia uno de los dos colores.",
+    "description": "On the theme editor of the administration (/admin/theme/draft), beside Save when the server refused the draft for a pair under its minimum contrast ({token} and {background}, the colors' names; {ratio} and {minimum}, numbers). Read by administrators."
+  },
+  "staff_theme.error.invalid": {
+    "defaultMessage": "{kind, select, length {Escribe 0 o un número con rem o px (0.875rem).} number {Escribe un número (1.5).} duration {Escribe un número con ms o s (800ms).} other {Escribe nombres de familias, separados por comas.}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), under a field whose value the server refused as no value of its kind, how to write one. Read by administrators."
+  },
+  "staff_theme.draft.title": {
+    "defaultMessage": "Borrador del tema",
+    "description": "The title of the theme editor of the administration (/admin/theme/draft). Read by administrators."
+  },
+  "staff_theme.draft.none": {
+    "defaultMessage": "No hay ningún borrador guardado. Empieza uno a partir del tema en vigor.",
+    "description": "On the theme's screen of the administration (/admin/theme), in the draft's section while no draft was saved. Read by administrators."
+  },
+  "staff_theme.draft.same": {
+    "defaultMessage": "Igual que el tema publicado",
+    "description": "On the theme's screen of the administration (/admin/theme), the draft's state: it overrides what the published theme does. Read by administrators."
+  },
+  "staff_theme.draft.differs": {
+    "defaultMessage": "Aún sin publicar",
+    "description": "On the theme's screen of the administration (/admin/theme), the draft's state: it differs from the published theme. Read by administrators."
+  },
+  "staff_theme.loading": {
+    "defaultMessage": "Cargando el tema…",
+    "description": "In place of the theme's screens while the theme is read. Read by administrators."
+  },
+  "staff_theme.failed": {
+    "defaultMessage": "No se pudo cargar el tema.",
+    "description": "In place of the theme's screens when the theme could not be read, before Try again. Read by administrators."
+  },
+  "staff_theme.draft": {
+    "defaultMessage": "Borrador",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the section of the draft, which is published from there. Read by administrators."
+  },
+  "staff_theme.fact.saved": {
+    "defaultMessage": "Guardado",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of when the draft was saved, beside the date. Read by administrators."
+  },
+  "staff_theme.fact.published": {
+    "defaultMessage": "Publicado",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of when the theme in effect was published, beside the date. Read by administrators."
+  },
+  "staff_theme.fact.changes": {
+    "defaultMessage": "Cambios",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of how many tokens the set changes from the default. Read by administrators."
+  },
+  "staff_theme.fact.state": {
+    "defaultMessage": "Estado",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of whether the draft is published. Read by administrators."
+  },
+  "staff_theme.fact.stale": {
+    "defaultMessage": "Ya no se aplica",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of the overrides an upgrade of the server left without effect. Read by administrators."
+  },
+  "staff_theme.stale": {
+    "defaultMessage": "{count, plural, one {# cambio: {tokens}. El próximo guardado lo descarta.} other {# cambios: {tokens}. El próximo guardado los descarta.}}",
+    "description": "On the theme's screen of the administration (/admin/theme), the overrides an upgrade renamed, retired or put out of bounds ({tokens}: their names as this screen says them, in a list of the reader's language; the code name, such as color-link, for a token the app no longer knows). Read by administrators."
+  },
+  "staff_theme.publish": {
+    "defaultMessage": "Publicar",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that publishes the draft to every visitor. Read by administrators."
+  },
+  "staff_theme.preview": {
+    "defaultMessage": "Vista previa",
+    "description": "On the theme's screen of the administration (/admin/theme), the toggle that lays the draft over every screen of this tab, pressed while it does. Read by administrators."
+  },
+  "staff_theme.preview.on": {
+    "defaultMessage": "Todas las pantallas de esta pestaña muestran el borrador hasta que pulses Vista previa de nuevo.",
+    "description": "On the theme's screen of the administration (/admin/theme), while the draft is previewed: where and until when. Read by administrators."
+  },
+  "staff_theme.edit": {
+    "defaultMessage": "Editar el borrador",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that opens the theme editor on the draft. Read by administrators."
+  },
+  "staff_theme.start": {
+    "defaultMessage": "Empezar un borrador",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that opens the theme editor while no draft is saved. Read by administrators."
+  },
+  "staff_theme.published": {
+    "defaultMessage": "En vigor",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the section of the published theme. Read by administrators."
+  },
+  "staff_theme.published.none": {
+    "defaultMessage": "El tema predeterminado.",
+    "description": "On the theme's screen of the administration (/admin/theme), in the section of the published theme while none was published. Read by administrators."
+  },
+  "staff_theme.restore": {
+    "defaultMessage": "Restaurar el tema anterior",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that publishes again the theme in effect before the current one. Read by administrators."
+  },
+  "staff_theme.done": {
+    "defaultMessage": "{what, select, publish {Publicado.} other {Restaurado.}} Los visitantes lo ven en unos minutos, y las páginas ya abiertas cuando se recarguen.",
+    "description": "On the theme's screen of the administration (/admin/theme), after the draft was published or the previous theme restored. Read by administrators."
+  },
+  "staff_theme.restore.none": {
+    "defaultMessage": "No se publicó ningún tema anterior.",
+    "description": "On the theme's screen of the administration (/admin/theme), when restoring found no theme published before the current one. Read by administrators."
+  },
+  "staff_theme.publish.none": {
+    "defaultMessage": "No hay ningún borrador guardado. Guarda uno y luego publícalo.",
+    "description": "On the theme's screen of the administration (/admin/theme), when publishing found no draft saved. Read by administrators."
+  },
+  "staff_theme.brand": {
+    "defaultMessage": "En una página de Configuración del servidor",
+    "description": "On the theme's screen of the administration (/admin/theme), under Icon and logo, the door to that page: where it is."
+  },
+  "staff_theme.changes": {
+    "defaultMessage": "{count, plural, =0 {Ninguno: el tema predeterminado} one {# respecto al predeterminado} other {# respecto al predeterminado}}",
+    "description": "On the theme's screen of the administration (/admin/theme), how many tokens the set changes from the default. Read by administrators."
+  },
+  "staff_theme.elsewhere": {
+    "defaultMessage": "En otros lugares",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the last section, which leads to the icon and logo page of Server settings. Read by administrators."
+  },
+  "staff_theme.invalid": {
+    "defaultMessage": "{what, select, publish {No se publicó el borrador: una actualización del servidor cambió las reglas del tema y el borrador ya no las cumple. Corrige lo que marca el borrador, guárdalo y luego publícalo.} other {No se restauró el tema anterior: una actualización del servidor cambió las reglas del tema y ese tema ya no las cumple. Crea en el borrador el tema que quieras y luego publícalo.}}",
+    "description": "On the theme's screen of the administration (/admin/theme), when the server refused to publish the draft or restore the previous theme because the set no longer meets a rule (an upgrade changed the defaults its pairs are checked with); in both cases a link to the draft's form follows (staff_theme.edit). Read by administrators."
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "thread.back": {
+    "defaultMessage": "Voltar",
+    "description": "The button at the top of a post's screen that goes back to where the reader came from."
+  },
+  "thread.label": {
+    "defaultMessage": "Conversa",
+    "description": "The name of the feed of a post with what it replies to and its replies, for assistive technology."
+  },
+  "thread.earlier": {
+    "defaultMessage": "{count, plural, one {Mostrar # publicação anterior} many {Mostrar # de publicações anteriores} other {Mostrar # publicações anteriores}}",
+    "description": "The fold, in a thread, of the posts between its first post and the two the focused post replies to closest; pressing it shows them. count is how many."
+  },
+  "thread.replies": {
+    "defaultMessage": "Respostas",
+    "description": "The heading of the replies under the focused post of a thread."
+  },
+  "thread.more_replies": {
+    "defaultMessage": "{count, plural, one {Mostrar # resposta a mais} many {Mostrar # de respostas a mais} other {Mostrar # respostas a mais}}",
+    "description": "The fold at the end of a thread's replies; pressing it shows more of them. count is how many."
+  },
+  "thread.no_replies": {
+    "defaultMessage": "Ainda não há respostas.",
+    "description": "What a post's screen says under a post that has no replies."
+  },
+  "thread.loading": {
+    "defaultMessage": "Carregando a publicação…",
+    "description": "What a post's screen says while the post and its thread load."
+  },
+  "thread.failed": {
+    "defaultMessage": "Não foi possível carregar a publicação.",
+    "description": "What a post's screen, and the list of who reacted to a post, say when the post could not be loaded (the server did not answer, or failed), beside a button to try again."
+  },
+  "thread.not_found": {
+    "defaultMessage": "Esta publicação não foi encontrada. Ela pode ter sido excluída ou o link pode estar errado. Verifique o link ou volte.",
+    "description": "In place of a post's screen, or of the list of who reacted to it, when the server answers that the post is not there: it never was, was deleted, or the reader may not see it (never say which), under a button back."
+  },
+  "thread.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "The button that loads the post again after it failed."
+  },
+  "thread.reactors_loading": {
+    "defaultMessage": "Carregando reações…",
+    "description": "What the list of who reacted to a post with one emoji says while the first of them load."
+  },
+  "thread.reactors_failed": {
+    "defaultMessage": "Não foi possível carregar as reações.",
+    "description": "What the list of who reacted to a post with one emoji says when the first of them could not be loaded, beside a button to try again."
+  },
+  "thread.reactors_empty": {
+    "defaultMessage": "Ninguém reagiu com este emoji ainda.",
+    "description": "What the list of who reacted to a post with one emoji says when it is empty (the reactions were taken back)."
+  },
+  "thread.reactors_back": {
+    "defaultMessage": "Voltar à publicação",
+    "description": "The button at the top of the list of who reacted to a post that goes back to the post's own page."
+  }
+}

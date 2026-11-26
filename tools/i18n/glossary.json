@@ -470,7 +470,7 @@
     },
     {
       "use": "Unterstützer",
-      "avoid": ["(?<![\\p{L}/_-])[Ss]upporter", "(?<![\\p{L}/_-])[Ss]ponsor", "(?<![\\p{L}/_-])[Gg]önner"],
+      "avoid": ["(?<![\\p{L}/_:-])[Ss]upporter", "(?<![\\p{L}/_-])[Ss]ponsor", "(?<![\\p{L}/_-])[Gg]önner"],
       "note": "A supporter who pays for the instance; a supporter plan is an Unterstützungsplan."
     },
     {
@@ -552,7 +552,7 @@
     },
     {
       "use": "soutien",
-      "avoid": ["(?<![\\p{L}/_-])[Ss]upporters?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]ponsors?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Mm]écènes?(?![\\p{L}_])"],
+      "avoid": ["(?<![\\p{L}/_:-])[Ss]upporters?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Ss]ponsors?(?![\\p{L}_])", "(?<![\\p{L}/_-])[Mm]écènes?(?![\\p{L}_])"],
       "note": "A supporter who pays for the instance; a supporter plan is a formule de soutien (never abonnement, which is following)."
     },
     {

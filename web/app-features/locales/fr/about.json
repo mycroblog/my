@@ -1,0 +1,410 @@
+{
+  "about.loading": {
+    "defaultMessage": "Chargement des informations du serveur…",
+    "description": "In place of the server's about page while it loads."
+  },
+  "about.failed": {
+    "defaultMessage": "Les informations du serveur n’ont pas pu être chargées.",
+    "description": "In place of the about page when the server's information could not be loaded, before Try again."
+  },
+  "about.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "The button after a sentence of the about page or a document's page that says something could not be loaded."
+  },
+  "about.sign_in": {
+    "defaultMessage": "Se connecter",
+    "description": "The link after the line that says the moderated servers are shown to signed-in people. Read by visitors."
+  },
+  "about.contact": {
+    "defaultMessage": "Contact",
+    "description": "The heading of the section of the about page that names the account and the email address that reach the server's operators."
+  },
+  "about.rules": {
+    "defaultMessage": "Règles",
+    "description": "The heading of the server's rules on the about page."
+  },
+  "about.rules.number": {
+    "defaultMessage": "{n}.",
+    "description": "The number before a rule in the list of the server's rules on the about page."
+  },
+  "about.documents": {
+    "defaultMessage": "Conditions et politiques",
+    "description": "The heading of the section of the about page that leads to the terms of service and the privacy policy."
+  },
+  "about.terms": {
+    "defaultMessage": "Conditions d’utilisation",
+    "description": "The row of the about page that opens the terms of service."
+  },
+  "about.privacy": {
+    "defaultMessage": "Politique de confidentialité",
+    "description": "The row of the about page that opens the privacy policy."
+  },
+  "about.commerce": {
+    "defaultMessage": "Mentions légales de vente",
+    "description": "The row of the about page that opens the commerce disclosure of the supporter plans (in Japan, the disclosure under the Act on Specified Commercial Transactions)."
+  },
+  "about.domains": {
+    "defaultMessage": "Serveurs modérés",
+    "description": "The heading of the list of the other servers this server limits or suspends, on the about page."
+  },
+  "about.domains.signed_in": {
+    "defaultMessage": "Seules les personnes connectées à ce serveur peuvent voir quels serveurs il modère.",
+    "description": "In place of the list of moderated servers for a visitor, when the server shows it to signed-in people alone; Sign in follows it."
+  },
+  "about.domains.loading": {
+    "defaultMessage": "Chargement des serveurs…",
+    "description": "In place of the list of moderated servers while it loads."
+  },
+  "about.domains.failed": {
+    "defaultMessage": "Les serveurs n’ont pas pu être chargés.",
+    "description": "In place of the list of moderated servers when it could not be loaded, before Try again."
+  },
+  "about.domains.none": {
+    "defaultMessage": "Aucun serveur n’est modéré.",
+    "description": "In place of the list of moderated servers when it is empty."
+  },
+  "about.domains.kind": {
+    "defaultMessage": "{kind, select, suspend {Suspendu} limit {Limité} other {Autre mesure}}",
+    "description": "What this server did to another server, after its domain in the list of moderated servers: suspended (no federation at all) or limited (its posts kept off the public timelines)."
+  },
+  "about.reviews": {
+    "defaultMessage": "Examen externe",
+    "description": "The heading of the section of the about page that says what the server sends to an outside service to review before it accepts it."
+  },
+  "about.reviews.lead": {
+    "defaultMessage": "Avant de les accepter, ce serveur envoie ces éléments à un service externe pour examen :",
+    "description": "The sentence over the list of what the server sends to an external review, on the about page."
+  },
+  "about.reviews.hook": {
+    "defaultMessage": "{hook, select, inbound_status {Publications d’autres serveurs} inbound_follow {Abonnements depuis d’autres serveurs} signup_check {Inscriptions} media_check {Médias téléversés} local_status {Publications sur ce serveur} inbound_actor {Profils d’autres serveurs} local_profile {Profils sur ce serveur} other {Autres contenus}}",
+    "description": "An item of the list of what the server sends to an external review, on the about page."
+  },
+  "about.reviews.new_accounts": {
+    "defaultMessage": "{what} de comptes datant de {days, plural, one {# jour} other {# jours}} au plus",
+    "description": "An item of the list of what the server sends to an external review, when only the content of new accounts is sent; {what} is the item's name (Posts on this server)."
+  },
+  "about.reviews.unfollowed_direct": {
+    "defaultMessage": "{what}, y compris les messages directs de personnes que personne ici ne suit",
+    "description": "An item of the list of what the server sends to an external review: posts from other servers, including their direct messages from people no account of this server follows; {what} is the item's name."
+  },
+  "about.auto_delete": {
+    "defaultMessage": "Suppression automatique",
+    "description": "The heading of the section of the about page that says how long the server keeps posts."
+  },
+  "about.auto_delete.max": {
+    "defaultMessage": "Les publications sont supprimées {days, plural, one {# jour} other {# jours}} après leur parution.",
+    "description": "The most days the server keeps a post, on the about page."
+  },
+  "about.auto_delete.keep": {
+    "defaultMessage": "Vous pouvez choisir de conserver {kinds}.",
+    "description": "What people may keep past the most days, on the about page; {kinds} is a list of the kinds (pinned posts, posts you bookmarked), joined as the language joins a list."
+  },
+  "about.auto_delete.pinned": {
+    "defaultMessage": "les publications épinglées",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.pins": {
+    "defaultMessage": "{n, plural, one {votre publication épinglée le plus récemment} other {vos # publications épinglées le plus récemment}}",
+    "description": "A kind of post people may keep from the automatic deletion when only the latest pins keep posts, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.bookmarked": {
+    "defaultMessage": "les publications que vous avez ajoutées aux marque-pages",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.favourited": {
+    "defaultMessage": "les publications que vous avez ajoutées aux favoris",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.media": {
+    "defaultMessage": "les publications avec médias",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.polls": {
+    "defaultMessage": "les publications avec sondage",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.articles": {
+    "defaultMessage": "les articles",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.visibilities": {
+    "defaultMessage": "les publications des visibilités que vous choisissez",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.thresholds": {
+    "defaultMessage": "les publications avec assez de boosts ou de favoris",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.crawlers": {
+    "defaultMessage": "Moteurs de recherche et IA",
+    "description": "The heading of the section of the about page on what the server states to search engines and AI crawlers."
+  },
+  "about.crawlers.search": {
+    "defaultMessage": "{value, select, allow {Les moteurs de recherche peuvent indexer les publications publiques et les profils des personnes qui l’autorisent.} other {Il est demandé aux moteurs de recherche de ne pas indexer ce serveur.}}",
+    "description": "What the server states to search engines, on the about page."
+  },
+  "about.crawlers.ai": {
+    "defaultMessage": "{value, select, allow {Aucune demande n’est faite aux robots d’IA.} deny_training {Il est demandé aux robots d’IA de ne pas s’entraîner sur ses pages.} other {Il est demandé aux robots d’IA de ne pas s’entraîner sur ses pages ni de les utiliser.}}",
+    "description": "What the server states to AI crawlers, on the about page, after about.crawlers.search."
+  },
+  "about.crawlers.how": {
+    "defaultMessage": "Cette déclaration figure dans le robots.txt de ce serveur, dans les balises et les en-têtes de ses pages, et dans son fichier TDMRep. Elle ne couvre que les pages de ce serveur : les autres serveurs font la leur, et les fichiers multimédias ne portent que celle du serveur.",
+    "description": "How the server makes its statement to search engines and AI crawlers and how far it reaches, in the section of the about page on them, after what it states."
+  },
+  "about.crawlers.legal": {
+    "defaultMessage": "La portée juridique d’une telle déclaration dépend du pays, et de nombreux opérateurs la respectent volontairement. Ce texte ne constitue pas un avis juridique.",
+    "description": "The legal note at the end of the section of the about page on what the server states to search engines and AI crawlers. It names no country's law."
+  },
+  "about.crawler": {
+    "defaultMessage": "Robot des aperçus de liens",
+    "description": "The title of the page for the operators of websites on this server's link card crawler, which the row of the about page opens."
+  },
+  "about.crawlers.link_cards": {
+    "defaultMessage": "Sous le nom de robot my-linkcard, ce serveur récupère aussi les pages vers lesquelles pointent les publications, pour en afficher des aperçus.",
+    "description": "After what the server states to search engines and AI crawlers, in the section of the about page on them: that the server fetches linked pages for cards, as its own crawler."
+  },
+  "about.crawlers.crawler": {
+    "defaultMessage": "Ce que fait ce robot, et comment un site web peut le refuser",
+    "description": "The row of the about page that opens the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.intro": {
+    "defaultMessage": "Lorsqu’une publication de ce serveur contient un lien vers une page web, le serveur récupère cette page pour afficher un aperçu avec son titre, sa description et son image. Cette page s’adresse aux personnes qui gèrent ces sites web : ce que sont ces requêtes et comment les refuser.",
+    "description": "Opening paragraph of the page about the link card crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.obeys": {
+    "defaultMessage": "Sur ce serveur, le robot est activé et respecte robots.txt.",
+    "description": "What the crawler does on this server, in its usual settings: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.ignores": {
+    "defaultMessage": "Sur ce serveur, le robot est activé et, par choix de ses administrateurs, ne lit pas robots.txt. Un site web ne peut donc pas le refuser ici avec robots.txt. Les directives d’une page s’appliquent toujours, et les administrateurs peuvent arrêter la récupération depuis un domaine.",
+    "description": "What the crawler does on a server whose setting link_cards_ignore_robots_txt is on: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.off": {
+    "defaultMessage": "Sur ce serveur, les aperçus de liens sont désactivés : le robot ne récupère donc rien pour le moment. Le reste de cette page décrit ce qu’il fait lorsqu’ils sont activés.",
+    "description": "What the crawler does on a server whose setting link_cards is off: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.title": {
+    "defaultMessage": "Comment le reconnaître",
+    "description": "Heading of the section with the User-Agent of the link card crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.user_agent": {
+    "defaultMessage": "Ses requêtes portent ce User-Agent :",
+    "description": "Sentence before the User-Agent of the crawler, shown as code. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.token": {
+    "defaultMessage": "L’adresse qu’il contient est celle de ce serveur. Dans robots.txt et dans les directives d’une page, le robot s’appelle my-linkcard.",
+    "description": "Explains the User-Agent of the crawler and the name it goes by. my-linkcard is a literal name: do not translate it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.others": {
+    "defaultMessage": "Ce serveur fait ses autres requêtes, comme celles de la fédération, sous le nom my/, et cette page ne les couvre pas. Deux d’entre elles peuvent suivre un aperçu : il peut récupérer de nouveau l’image de l’aperçu sous le nom my/ pour la montrer aux lecteurs, et il recherche le compte qu’une page indique dans fediverse:creator.",
+    "description": "Other requests of the server that a site operator can see, under the server's general User-Agent. my/ and fediverse:creator are literal: do not translate them. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.title": {
+    "defaultMessage": "Ce qui déclenche une récupération",
+    "description": "Heading of the section that says what makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.post": {
+    "defaultMessage": "Une publication qui contient un lien vers l’URL. Le serveur crée un aperçu à partir du premier lien du corps d’une publication, quelle que soit sa visibilité, et récupère la page s’il n’en a pas d’aperçu récent.",
+    "description": "What makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.remote": {
+    "defaultMessage": "Cela inclut les publications venues d’autres serveurs, pas seulement celles écrites ici : une requête ne signifie donc pas que quelqu’un d’ici a lu votre page.",
+    "description": "That posts federated from other servers cause fetches too. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.title": {
+    "defaultMessage": "Ce qu’il récupère",
+    "description": "Heading of the section that lists what the crawler requests from a website. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.page": {
+    "defaultMessage": "La page. Il ne lit que l’en-tête de la page, suit jusqu’à 5 redirections et n’exécute rien de ce qu’elle contient.",
+    "description": "What the crawler fetches: the linked page. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.image": {
+    "defaultMessage": "Une image, celle que l’en-tête de la page indique.",
+    "description": "What the crawler fetches: the page's image. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.robots": {
+    "defaultMessage": "Le robots.txt de l’origine de la page, de chaque adresse vers laquelle elle redirige et de l’image, avant de les requérir.",
+    "description": "What the crawler fetches: robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.nothing_else": {
+    "defaultMessage": "Il ne suit aucun lien et n’explore donc pas le reste de votre site.",
+    "description": "That the crawler does not crawl a whole website. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.title": {
+    "defaultMessage": "Ce qu’il envoie",
+    "description": "Heading of the section that says what the crawler's requests carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.headers": {
+    "defaultMessage": "Le User-Agent ci-dessus, les types de contenu qu’il accepte et, pour une page, la langue par défaut de ce serveur dans Accept-Language.",
+    "description": "What the crawler's requests carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.not": {
+    "defaultMessage": "Il n’envoie ni cookies ni Referer, et rien n’indique quel compte ou quelle publication a lié la page.",
+    "description": "What the crawler's requests do not carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.title": {
+    "defaultMessage": "À quelle fréquence",
+    "description": "Heading of the section that says how often the crawler requests a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.once": {
+    "defaultMessage": "Chaque URL est récupérée une fois, et les publications qui y renvoient partagent son aperçu. Une publication ne la récupère de nouveau que si la dernière récupération date de 14 jours ou plus ; le serveur ne revisite pas ses aperçus de lui-même.",
+    "description": "How often the crawler requests a page. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.failure": {
+    "defaultMessage": "Une URL en échec n’est pas requise de nouveau pendant 24 heures.",
+    "description": "That the crawler remembers failures. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.host": {
+    "defaultMessage": "Il fait une requête à la fois vers un hôte, avec au moins une seconde entre elles. Seules les redirections d’une requête et le robots.txt nécessaire s’y ajoutent.",
+    "description": "The limit of the crawler per host. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.throttled": {
+    "defaultMessage": "Lorsqu’un hôte répond 429 ou 503, le robot ne lui demande rien pendant la durée de Retry-After, une heure au plus, ou pendant une minute sans cet en-tête. Après 5 réponses de ce type pour une URL en 24 heures, il la considère comme en échec.",
+    "description": "That the crawler stops for a host that asks it to. 429, 503 and Retry-After are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.robots": {
+    "defaultMessage": "robots.txt est lu environ une fois par jour pour chaque origine (schéma, hôte et port). Lorsqu’il est illisible (429, 5xx ou panne réseau), le robot ne récupère rien de l’origine et réessaie une heure plus tard.",
+    "description": "How often the crawler reads robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.title": {
+    "defaultMessage": "Comment refuser",
+    "description": "Heading of the section that says how a website refuses the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.title": {
+    "defaultMessage": "Refuser les récupérations : robots.txt",
+    "description": "Heading (h3) of the part about refusing the crawler in robots.txt. robots.txt is literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.intro": {
+    "defaultMessage": "Pour refuser toute récupération depuis votre site, ajoutez ceci à robots.txt :",
+    "description": "Sentence before the robots.txt example that refuses the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.star": {
+    "defaultMessage": "Sans groupe de ce nom, le robot suit le groupe pour *. Allow, Disallow, * et $ sont lus, comme le précise la RFC 9309 : vous pouvez donc aussi ne refuser que certains chemins.",
+    "description": "How the crawler reads robots.txt. Allow, Disallow, *, $ and RFC 9309 are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.timing": {
+    "defaultMessage": "Le robot respecte une nouvelle règle en moins d’un jour. Un aperçu qu’il a déjà disparaît lorsqu’une publication récupère de nouveau son URL, ou plus tôt si vous le demandez aux administrateurs.",
+    "description": "When a change of robots.txt takes effect. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.ignored": {
+    "defaultMessage": "Ce serveur ne lit pas robots.txt : cette règle n’a donc aucun effet ici. Elle s’applique sur les serveurs qui le respectent.",
+    "description": "Under the robots.txt part, on a server whose setting link_cards_ignore_robots_txt is on. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.title": {
+    "defaultMessage": "Limiter l’aperçu : directives d’une page",
+    "description": "Heading (h3) of the part about the page directives that change a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.intro": {
+    "defaultMessage": "Une page peut exclure sa description ou son image de l’aperçu. Le robot requiert tout de même la page, puisqu’il y découvre les directives. Elles s’appliquent que ce serveur lise robots.txt ou non :",
+    "description": "Sentence before the table of page directives. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.caption": {
+    "defaultMessage": "Ce que chaque directive change dans un aperçu",
+    "description": "The name, for assistive technology, of the table of what each directive of a page changes in a card, on the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.directive": {
+    "defaultMessage": "Directive",
+    "description": "Column header: a page directive. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.effect": {
+    "defaultMessage": "Aperçu",
+    "description": "Column header: what the directive does to the card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.nosnippet": {
+    "defaultMessage": "Pas de description.",
+    "description": "What the directives nosnippet and max-snippet:0 do to a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noimageindex": {
+    "defaultMessage": "Pas d’image, et l’image n’est pas requise.",
+    "description": "What the directives noimageindex and max-image-preview:none do to a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noindex": {
+    "defaultMessage": "Aucun changement. Elles demandent à rester hors des résultats de recherche, et un aperçu n’est pas un résultat de recherche : il n’apparaît que parce que quelqu’un a publié le lien, et beaucoup de pages hors des recherches sont faites pour être partagées. Pour refuser, utilisez robots.txt.",
+    "description": "What the directives noindex and none do to a card, with the reason in plain words. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noindex_ignored": {
+    "defaultMessage": "Aucun changement. Elles demandent à rester hors des résultats de recherche, et un aperçu n’est pas un résultat de recherche : il n’apparaît que parce que quelqu’un a publié le lien, et beaucoup de pages hors des recherches sont faites pour être partagées. Pour refuser sur ce serveur, demandez à ses administrateurs.",
+    "description": "What the directives noindex and none do to a card, on a server that does not read robots.txt. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.rest": {
+    "defaultMessage": "Le titre, le nom du site et l’auteur restent sous toutes les directives.",
+    "description": "What no page directive removes from a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.where": {
+    "defaultMessage": "Écrivez-les dans une balise meta nommée robots ou my-linkcard dans l’en-tête de la page, ou dans un en-tête X-Robots-Tag :",
+    "description": "Sentence before the examples of where a directive goes. robots, my-linkcard and X-Robots-Tag are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.title": {
+    "defaultMessage": "Contacter les administrateurs de ce serveur",
+    "description": "Heading of the section with how to reach the operators of the server that runs the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.intro": {
+    "defaultMessage": "Les administrateurs peuvent arrêter le robot sur un domaine et ses sous-domaines, ou arrêter seulement ses images. Cela prend effet immédiatement, y compris sur les aperçus que le serveur possède déjà : demandez-leur si vous avez besoin qu’une récupération s’arrête ou qu’un aperçu disparaisse.",
+    "description": "That the operators of the server can stop the crawler per domain, and that a site operator can ask them. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.none": {
+    "defaultMessage": "Ce serveur ne publie aucun contact.",
+    "description": "In place of the contact details when the server has none. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.funding": {
+    "defaultMessage": "Coûts et financement",
+    "description": "The heading of the section of the about page with this month's funding meter and the way to the server's costs and income."
+  },
+  "about.funding.page": {
+    "defaultMessage": "Coûts et revenus",
+    "description": "The row of the about page that opens the page of the server's published costs and income."
+  },
+  "about.support": {
+    "defaultMessage": "Soutien",
+    "description": "The heading of the section of the about page that leads to the supporter plans, the tips and the commerce disclosure."
+  },
+  "about.support.page": {
+    "defaultMessage": "{offer, select, both {Formules de soutien et pourboires} plans {Formules de soutien} other {Donner un pourboire au serveur}}",
+    "description": "The row of the about page that opens the supporters' page: its plans and tips, its plans, or its tips alone."
+  },
+  "about.support.list": {
+    "defaultMessage": "Avec la liste des soutiens",
+    "description": "The line under the row that opens the supporters' page, where the page lists the supporters too."
+  },
+  "about.server": {
+    "defaultMessage": "Serveur",
+    "description": "The heading of the section of the about page with the server's status page, source code and version, and the name of its list of facts."
+  },
+  "about.server.status": {
+    "defaultMessage": "Page d’état",
+    "description": "A term of the server's facts on the about page: the address of its status page, on a service apart from the server."
+  },
+  "about.server.source": {
+    "defaultMessage": "Code source",
+    "description": "A term of the server's facts on the about page: where to get the source code of the software it runs."
+  },
+  "about.server.version": {
+    "defaultMessage": "Version",
+    "description": "A term of the server's facts on the about page: the version of the software it runs."
+  },
+  "about.document.title": {
+    "defaultMessage": "{kind, select, terms {Conditions d’utilisation} privacy_policy {Politique de confidentialité} other {Mentions légales de vente}}",
+    "description": "The title of the page of a document of the server, and the document's title."
+  },
+  "about.document.revised": {
+    "defaultMessage": "Dernière révision le {date}",
+    "description": "Under the title of a document of the server: the day of its last revision, as the reader's language writes a date."
+  },
+  "about.document.loading": {
+    "defaultMessage": "Chargement du document…",
+    "description": "In place of a document of the server while it loads."
+  },
+  "about.document.failed": {
+    "defaultMessage": "Le document n’a pas pu être chargé.",
+    "description": "In place of a document of the server when it could not be loaded, before Try again."
+  },
+  "about.document.unpublished": {
+    "defaultMessage": "{kind, select, terms {Ce serveur n’a pas publié de conditions d’utilisation.} privacy_policy {Ce serveur n’a pas publié de politique de confidentialité.} other {Ce serveur n’a pas publié de mentions légales de vente.}}",
+    "description": "The page of a document the server has not published; a link to the about page follows."
+  },
+  "about.back": {
+    "defaultMessage": "À propos de ce serveur",
+    "description": "The way back to the server's about page: the button at the start of a document's page and of the page on search engines and AI, and the link after the sentence that says the server has not published a document."
+  }
+}

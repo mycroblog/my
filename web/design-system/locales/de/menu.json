@@ -1,0 +1,10 @@
+{
+  "menu.back": {
+    "defaultMessage": "Zurück",
+    "description": "The control at the start of a submenu's head that goes back to the menu it opened from."
+  },
+  "menu.close": {
+    "defaultMessage": "Schließen",
+    "description": "The control at the end of a menu's head on a phone, where the menu is a sheet from the bottom edge, that closes it."
+  }
+}

@@ -1,0 +1,710 @@
+{
+  "staff_supporters.entry": {
+    "defaultMessage": "Apoiadores",
+    "description": "Name of the administration screen of the supporter plans, tips and subscriptions, at /admin/supporters, and its title."
+  },
+  "staff_supporters.back.program": {
+    "defaultMessage": "Apoiadores",
+    "description": "The way back, over a screen under Supporters, to the first page of Supporters in the administration."
+  },
+  "staff_supporters.back.plans": {
+    "defaultMessage": "Planos",
+    "description": "The way back, over a plan's screen or the new plan's form, to the list of the supporter plans in the administration."
+  },
+  "staff_supporters.back.subscriptions": {
+    "defaultMessage": "Assinaturas",
+    "description": "The way back, over a subscription's screen, to the list of subscriptions in the administration."
+  },
+  "staff_supporters.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "The button that closes a confirmation on a screen of Supporters in the administration without doing anything."
+  },
+  "staff_supporters.write_failed": {
+    "defaultMessage": "Não foi possível fazer isso. Recarregue a página e tente novamente.",
+    "description": "On a screen of Supporters in the administration, when a change failed for a reason the server did not name."
+  },
+  "staff_supporters.forbidden": {
+    "defaultMessage": "Sua conta não tem mais permissão para gerenciar apoiadores, então esta tela não está disponível para você.",
+    "description": "In the place of a screen of Supporters when the server refuses the reader the permission manage_supporters."
+  },
+  "staff_supporters.doors": {
+    "defaultMessage": "Planos e assinaturas",
+    "description": "Heading, and name for assistive technology, of the two links to the plans and to the subscriptions on the first page of Supporters."
+  },
+  "staff_supporters.plans": {
+    "defaultMessage": "Planos",
+    "description": "Name of the list of supporter plans in the administration, the link to it, and its screen's title."
+  },
+  "staff_supporters.plans.loading": {
+    "defaultMessage": "Carregando os planos…",
+    "description": "While the supporter plans are read."
+  },
+  "staff_supporters.plans.failed": {
+    "defaultMessage": "Não foi possível carregar os planos. Verifique sua conexão e tente novamente.",
+    "description": "When the supporter plans could not be read; Try again follows."
+  },
+  "staff_supporters.plans.create": {
+    "defaultMessage": "Criar um plano",
+    "description": "Button that opens the form of a new supporter plan, and that form's title."
+  },
+  "staff_supporters.plans.empty": {
+    "defaultMessage": "Nenhum plano ainda. Crie um para aceitar assinaturas.",
+    "description": "In the place of the list of plans while there is none."
+  },
+  "staff_supporters.plans.column.plan": {
+    "defaultMessage": "Plano",
+    "description": "Header of the column of the plans' names."
+  },
+  "staff_supporters.plans.column.price": {
+    "defaultMessage": "Preço",
+    "description": "Header of the column of the plans' monthly prices."
+  },
+  "staff_supporters.plans.column.members": {
+    "defaultMessage": "Membros",
+    "description": "Header of the column of the plans' member counts."
+  },
+  "staff_supporters.plans.column.standing": {
+    "defaultMessage": "Estado",
+    "description": "Header of the column of where each plan stands."
+  },
+  "staff_supporters.plans.monthly": {
+    "defaultMessage": "{price} por mês",
+    "description": "A plan's monthly price."
+  },
+  "staff_supporters.plans.members": {
+    "defaultMessage": "{count, plural, one {# membro} other {# membros}}",
+    "description": "How many subscriptions hold a plan's role."
+  },
+  "staff_supporters.subscriptions": {
+    "defaultMessage": "Assinaturas",
+    "description": "Name of the list of subscriptions to the supporter plans in the administration, the link to it, and its screen's title."
+  },
+  "staff_supporters.subscriptions.loading": {
+    "defaultMessage": "Carregando as assinaturas…",
+    "description": "While the subscriptions are read."
+  },
+  "staff_supporters.subscriptions.failed": {
+    "defaultMessage": "Não foi possível carregar as assinaturas. Verifique sua conexão e tente novamente.",
+    "description": "When the subscriptions could not be read; Try again follows."
+  },
+  "staff_supporters.subscriptions.filters": {
+    "defaultMessage": "Filtros",
+    "description": "Name of the filters over the subscriptions."
+  },
+  "staff_supporters.subscriptions.plan": {
+    "defaultMessage": "Plano",
+    "description": "Name of the filter of the subscriptions by plan."
+  },
+  "staff_supporters.subscriptions.plan.any": {
+    "defaultMessage": "Todos os planos",
+    "description": "The option of the plan filter that shows every plan."
+  },
+  "staff_supporters.subscriptions.state": {
+    "defaultMessage": "Estado",
+    "description": "Name of the filter of the subscriptions by state."
+  },
+  "staff_supporters.subscriptions.state.any": {
+    "defaultMessage": "Todos os estados",
+    "description": "The option of the state filter that shows every state."
+  },
+  "staff_supporters.subscriptions.empty": {
+    "defaultMessage": "Nenhuma assinatura ainda.",
+    "description": "In the place of the subscriptions while there is none."
+  },
+  "staff_supporters.subscriptions.empty.filtered": {
+    "defaultMessage": "Nenhuma assinatura corresponde a estes filtros.",
+    "description": "In the place of the subscriptions when the filters match none; Clear filters is above."
+  },
+  "staff_supporters.subscriptions.column.subscriber": {
+    "defaultMessage": "Assinante",
+    "description": "Header of the column of the subscribers' handles."
+  },
+  "staff_supporters.subscriptions.column.plan": {
+    "defaultMessage": "Plano",
+    "description": "Header of the column of each subscription's plan and period."
+  },
+  "staff_supporters.subscriptions.column.ends": {
+    "defaultMessage": "Período",
+    "description": "Header of the column of when each subscription's period ends."
+  },
+  "staff_supporters.subscriptions.column.state": {
+    "defaultMessage": "Estado",
+    "description": "Header of the column of each subscription's state."
+  },
+  "staff_supporters.program": {
+    "defaultMessage": "Programa de apoio",
+    "description": "Heading of the section of the first page of Supporters that says whether the supporter program is on, and turns it on or off."
+  },
+  "staff_supporters.program.loading": {
+    "defaultMessage": "Carregando o programa de apoio…",
+    "description": "On the first page of Supporters while the program is read."
+  },
+  "staff_supporters.program.failed": {
+    "defaultMessage": "Não foi possível carregar o programa de apoio. Verifique sua conexão e tente novamente.",
+    "description": "On the first page of Supporters when the program could not be read; Try again follows."
+  },
+  "staff_supporters.program.state": {
+    "defaultMessage": "Estado",
+    "description": "Term of the fact that says whether the supporter program is on."
+  },
+  "staff_supporters.program.on": {
+    "defaultMessage": "Ativado",
+    "description": "The supporter program is on."
+  },
+  "staff_supporters.program.off": {
+    "defaultMessage": "Desativado",
+    "description": "The supporter program is off."
+  },
+  "staff_supporters.program.on_since": {
+    "defaultMessage": "Ativado desde {at}",
+    "description": "The supporter program is on, and since when ({at}: a date and time)."
+  },
+  "staff_supporters.program.off_since": {
+    "defaultMessage": "Desativado desde {at}",
+    "description": "The supporter program is off, and since when ({at}: a date and time)."
+  },
+  "staff_supporters.program.configured": {
+    "defaultMessage": "Provedor de pagamento na configuração",
+    "description": "Term of the fact that names the payment provider of the deployment's configuration, which only the configuration changes."
+  },
+  "staff_supporters.program.no_provider": {
+    "defaultMessage": "Nenhum",
+    "description": "The deployment's configuration names no payment provider."
+  },
+  "staff_supporters.program.enabled_with": {
+    "defaultMessage": "Ativado com",
+    "description": "Term of the fact that names the payment provider the supporter program was turned on with."
+  },
+  "staff_supporters.program.email": {
+    "defaultMessage": "E-mail",
+    "description": "Term of the fact that says whether the server sends email, which the supporter program needs."
+  },
+  "staff_supporters.program.email.yes": {
+    "defaultMessage": "O servidor envia e-mails",
+    "description": "The server sends email."
+  },
+  "staff_supporters.program.email.no": {
+    "defaultMessage": "O servidor não envia e-mails",
+    "description": "The server sends no email, so the supporter program cannot be turned on."
+  },
+  "staff_supporters.program.live": {
+    "defaultMessage": "Assinaturas em andamento",
+    "description": "Term of the fact that counts the subscriptions that go on."
+  },
+  "staff_supporters.program.live.count": {
+    "defaultMessage": "{count, plural, one {# assinatura} other {# assinaturas}}",
+    "description": "How many subscriptions go on."
+  },
+  "staff_supporters.program.warning": {
+    "defaultMessage": "{warning, select, no_provider {Nenhum provedor de pagamento está definido na configuração. Defina a chave payments para ativar o programa.} no_email {O servidor não envia e-mails. Configure o e-mail para ativar o programa.} provider_mismatch {A configuração indica um provedor de pagamento diferente daquele com que o programa foi ativado. Novas assinaturas e mudanças são recusadas até você desativar e ativar o programa de novo.} no_commerce_disclosure {A divulgação comercial está vazia. Escreva-a antes de aceitar pagamentos.} other {Veja as configurações do programa.}}",
+    "description": "A warning about the supporter program, by what the server reports, with what to do."
+  },
+  "staff_supporters.program.turn_on": {
+    "defaultMessage": "Ativar o programa",
+    "description": "Button that turns the supporter program on."
+  },
+  "staff_supporters.program.turn_off": {
+    "defaultMessage": "Desativar o programa",
+    "description": "Button that turns the supporter program off, shown while no subscription goes on."
+  },
+  "staff_supporters.program.cannot_on": {
+    "defaultMessage": "O programa não pode ser ativado até que os avisos acima sejam resolvidos.",
+    "description": "In the place of Turn the program on, while the server says the program cannot be turned on."
+  },
+  "staff_supporters.program.cannot_off": {
+    "defaultMessage": "O programa não pode ser desativado enquanto há assinaturas em andamento. Aposente todos os planos e desative-o quando as assinaturas tiverem terminado.",
+    "description": "In the place of Turn the program off, while subscriptions go on."
+  },
+  "staff_supporters.program.done.on": {
+    "defaultMessage": "O programa de apoio está ativado.",
+    "description": "Said once the supporter program was turned on."
+  },
+  "staff_supporters.program.done.off": {
+    "defaultMessage": "O programa de apoio está desativado.",
+    "description": "Said once the supporter program was turned off."
+  },
+  "staff_supporters.program.refused.unavailable": {
+    "defaultMessage": "O programa não pode ser ativado: o servidor não tem provedor de pagamento ou e-mail.",
+    "description": "Said when the server refused to turn the program on because the deployment lacks what it needs."
+  },
+  "staff_supporters.program.refused.live": {
+    "defaultMessage": "O programa não pode ser desativado enquanto há assinaturas em andamento.",
+    "description": "Said when the server refused to turn the program off because subscriptions go on."
+  },
+  "staff_supporters.disclosure": {
+    "defaultMessage": "Informações comerciais",
+    "description": "Heading of the section of the first page of Supporters about the commerce disclosure (the notice of the Act on Specified Commercial Transactions)."
+  },
+  "staff_supporters.disclosure.published": {
+    "defaultMessage": "A divulgação comercial está publicada.",
+    "description": "The commerce disclosure has text and is published at /about/commerce."
+  },
+  "staff_supporters.disclosure.none": {
+    "defaultMessage": "A divulgação comercial está vazia, então nada é publicado.",
+    "description": "The commerce disclosure has no text."
+  },
+  "staff_supporters.disclosure.read": {
+    "defaultMessage": "Ler",
+    "description": "Link to the published commerce disclosure, after the sentence that says it is published."
+  },
+  "staff_supporters.disclosure.edit": {
+    "defaultMessage": "Editar a divulgação comercial",
+    "description": "Link to the screen where the commerce disclosure is written, for a reader who may change the server's texts."
+  },
+  "staff_supporters.list": {
+    "defaultMessage": "Lista de apoiadores",
+    "description": "Heading of the section of the first page of Supporters about who may read the list of supporters."
+  },
+  "staff_supporters.list.loading": {
+    "defaultMessage": "Carregando quem pode ler a lista…",
+    "description": "While the setting of who may read the supporter list is read."
+  },
+  "staff_supporters.list.failed": {
+    "defaultMessage": "Não foi possível carregar quem pode ler a lista. Verifique sua conexão e tente novamente.",
+    "description": "When the setting of who may read the supporter list could not be read; Try again follows."
+  },
+  "staff_supporters.list.now": {
+    "defaultMessage": "{audience, select, off {Ninguém pode ler a lista de apoiadores.} signed_in {Só quem entrou neste servidor pode ler a lista de apoiadores.} other {Todos podem ler a lista de apoiadores.}} Administradores com permissão para alterar as configurações do servidor mudam isso.",
+    "description": "For a reader who may not change the server's settings: who may read the supporter list now, and who changes it."
+  },
+  "staff_supporters.list.field": {
+    "defaultMessage": "Quem pode ler a lista",
+    "description": "Label of the choice of who may read the supporter list."
+  },
+  "staff_supporters.list.audience": {
+    "defaultMessage": "{audience, select, off {Ninguém} signed_in {Quem entrou neste servidor} other {Todos}}",
+    "description": "An option of who may read the supporter list."
+  },
+  "staff_supporters.list.save": {
+    "defaultMessage": "Salvar",
+    "description": "Button that saves who may read the supporter list."
+  },
+  "staff_supporters.list.done": {
+    "defaultMessage": "{audience, select, off {Ninguém pode ler a lista de apoiadores agora.} signed_in {Só quem entrou pode ler a lista de apoiadores agora.} other {Todos podem ler a lista de apoiadores agora.}}",
+    "description": "Said once who may read the supporter list was saved."
+  },
+  "staff_supporters.tips": {
+    "defaultMessage": "Gorjetas",
+    "description": "Heading of the section of the first page of Supporters about tips, one-time payments to the server with nothing in return."
+  },
+  "staff_supporters.tips.loading": {
+    "defaultMessage": "Carregando as gorjetas…",
+    "description": "While the state of the tips is read."
+  },
+  "staff_supporters.tips.failed": {
+    "defaultMessage": "Não foi possível carregar as gorjetas. Verifique sua conexão e tente novamente.",
+    "description": "When the state of the tips could not be read; Try again follows."
+  },
+  "staff_supporters.tips.state": {
+    "defaultMessage": "Estado",
+    "description": "Term of the fact that says whether users can tip now."
+  },
+  "staff_supporters.tips.accepting": {
+    "defaultMessage": "Os usuários podem dar gorjetas agora",
+    "description": "The tips are on and users can tip."
+  },
+  "staff_supporters.tips.not_accepting": {
+    "defaultMessage": "Ativadas, mas os usuários não podem dar gorjetas agora",
+    "description": "The tips are on, but the server takes none now (the program is off, or the provider takes no one-time payments)."
+  },
+  "staff_supporters.tips.off": {
+    "defaultMessage": "Desativadas",
+    "description": "The tips are off."
+  },
+  "staff_supporters.tips.limits": {
+    "defaultMessage": "Valores permitidos em {currency}",
+    "description": "Term of the fact that gives the smallest and largest amount of a tip the provider allows in a currency ({currency}: a code such as JPY)."
+  },
+  "staff_supporters.tips.range": {
+    "defaultMessage": "{min} a {max}",
+    "description": "The smallest and largest amount of a tip allowed."
+  },
+  "staff_supporters.tips.no_one_time": {
+    "defaultMessage": "O provedor de pagamento não aceita pagamentos únicos, então os usuários não podem dar gorjetas.",
+    "description": "Warning when the configured provider takes no one-time payments."
+  },
+  "staff_supporters.tips.limit_reached": {
+    "defaultMessage": "Os usuários iniciaram tantas gorjetas quanto o servidor permite em uma hora. Eles poderão dar gorjetas de novo com o passar da hora.",
+    "description": "Warning when the server-wide rate limit of tips was reached in the last hour."
+  },
+  "staff_supporters.tips.take": {
+    "defaultMessage": "Aceitar gorjetas",
+    "description": "Checkbox that turns the tips on."
+  },
+  "staff_supporters.tips.currency": {
+    "defaultMessage": "Moeda",
+    "description": "Label of the choice of the tips' currency."
+  },
+  "staff_supporters.tips.amounts": {
+    "defaultMessage": "Valores",
+    "description": "Label of the field of the tips' amounts."
+  },
+  "staff_supporters.tips.amounts.hint": {
+    "defaultMessage": "De 1 a 6 valores, um por linha",
+    "description": "Under the field of the tips' amounts. Read by administrators."
+  },
+  "staff_supporters.tips.amounts.invalid": {
+    "defaultMessage": "Escreva de 1 a 6 valores em {currency}, um por linha, em dígitos.",
+    "description": "Under the field of the tips' amounts when it holds none, more than six, or one that is not an amount of the currency. Read by administrators."
+  },
+  "staff_supporters.tips.unavailable": {
+    "defaultMessage": "As gorjetas não podem ser ativadas: o programa de apoio precisa estar ativado, com um provedor de pagamento que aceite pagamentos únicos.",
+    "description": "Beside Save the tips when the server refused to turn the tips on."
+  },
+  "staff_supporters.tips.save": {
+    "defaultMessage": "Salvar as gorjetas",
+    "description": "Button that saves the tips."
+  },
+  "staff_supporters.tips.done.on": {
+    "defaultMessage": "As gorjetas foram salvas.",
+    "description": "Said once the tips were turned on or their amounts changed."
+  },
+  "staff_supporters.tips.done.off": {
+    "defaultMessage": "As gorjetas estão desativadas.",
+    "description": "Said once the tips were turned off."
+  },
+  "staff_supporters.tips.refused": {
+    "defaultMessage": "{reason, select, count {Escolha de 1 a 6 valores diferentes.} currency {Escreva todos os valores em uma só moeda, iene ou dólar americano.} other {Cada valor deve ficar entre ¥100 e ¥100.000 ou entre US$1 e US$1.000, e ser pelo menos a menor cobrança única do provedor.}}",
+    "description": "Under the field of the tips' amounts when the server refused them, by the rule they break."
+  },
+  "staff_supporters.payments": {
+    "defaultMessage": "Provedor de pagamento",
+    "description": "Heading of the section of the first page of Supporters about the state of the payment provider of the configuration."
+  },
+  "staff_supporters.payments.loading": {
+    "defaultMessage": "Carregando o estado do provedor de pagamento…",
+    "description": "While the payment provider's state is read."
+  },
+  "staff_supporters.payments.failed": {
+    "defaultMessage": "Não foi possível carregar o estado do provedor de pagamento. Verifique sua conexão e tente novamente.",
+    "description": "When the payment provider's state could not be read; Try again follows."
+  },
+  "staff_supporters.payments.none": {
+    "defaultMessage": "Nenhum provedor de pagamento está definido na configuração.",
+    "description": "In the payment provider's section when the deployment configures none."
+  },
+  "staff_supporters.payments.mode": {
+    "defaultMessage": "Modo",
+    "description": "Term of the fact that says whether the provider's keys are test or live keys."
+  },
+  "staff_supporters.payments.zone": {
+    "defaultMessage": "Fuso horário dos relatórios dele",
+    "description": "Term of the fact that names the time zone in which the provider's reports date the income."
+  },
+  "staff_supporters.payments.webhook": {
+    "defaultMessage": "Última entrega de webhook",
+    "description": "Term of the fact that says when the provider's last webhook delivery was received."
+  },
+  "staff_supporters.payments.webhook.none": {
+    "defaultMessage": "Nenhuma registrada",
+    "description": "No webhook delivery is recorded (they are kept 45 days)."
+  },
+  "staff_supporters.payments.reconciliation": {
+    "defaultMessage": "Última conciliação",
+    "description": "Term of the fact about the last reconciliation with the payment provider."
+  },
+  "staff_supporters.payments.reconciliation.none": {
+    "defaultMessage": "Nenhuma ainda",
+    "description": "No reconciliation has run yet."
+  },
+  "staff_supporters.payments.reconciliation.run": {
+    "defaultMessage": "{outcome, select, succeeded {Concluída} partial {Parcialmente feita, continuando} other {Falhou}}, {at}: {checked} verificadas, {corrected} corrigidas",
+    "description": "The last reconciliation: how it ended, when, and how many subscriptions it read again and corrected."
+  },
+  "staff_supporters.payments.warning": {
+    "defaultMessage": "{warning, select, no_webhook {Nenhuma entrega de webhook foi registrada. Verifique o endpoint do webhook no provedor.} reconciliation_corrected {A última conciliação corrigiu assinaturas que os webhooks deveriam ter corrigido. Verifique o webhook no provedor.} duplicate_charge {Uma assinatura duplicada ainda não foi cancelada e reembolsada. Cada conciliação tenta de novo; escolha Conciliar agora para tentar de imediato.} other {Veja as configurações do provedor de pagamento.}}",
+    "description": "A warning about the payment provider, by what the server reports, with what to do."
+  },
+  "staff_supporters.payments.reconcile": {
+    "defaultMessage": "Conciliar agora",
+    "description": "Button that asks for a reconciliation with the payment provider now."
+  },
+  "staff_supporters.payments.done": {
+    "defaultMessage": "Uma conciliação foi colocada na fila.",
+    "description": "Said once a reconciliation was queued."
+  },
+  "staff_supporters.payments.too_soon": {
+    "defaultMessage": "Uma conciliação já rodou nesta hora. Tente novamente na próxima hora.",
+    "description": "Said when the server refused a reconciliation because one ran in the last hour."
+  },
+  "staff_supporters.payments.mode.value": {
+    "defaultMessage": "{mode, select, test {Teste: nada é cobrado} other {Produção}}",
+    "description": "Whether the payment provider's keys are test keys, with which nothing is charged, or live keys."
+  },
+  "staff_supporters.payments.error": {
+    "defaultMessage": "{kind, select, request_cap {Ele usou seu limite de requisições. Espere a continuação ou escolha Conciliar agora na próxima hora.} permission {A chave secreta está errada ou não tem permissões. Verifique a chave na configuração.} not_found {O provedor não encontrou o que foi pedido. Verifique a conta do provedor na configuração.} invalid_request {O provedor recusou a requisição. Verifique as configurações do provedor e escolha Conciliar agora.} throttled {O provedor estava ocupado. Espere a próxima conciliação ou escolha Conciliar agora na próxima hora.} unavailable {O provedor estava fora do ar. Espere a próxima conciliação ou escolha Conciliar agora na próxima hora.} invalid_signature {Uma assinatura não correspondeu. Verifique o segredo do webhook.} stale_signature {Uma assinatura era antiga demais. Verifique o relógio do servidor.} mode_mismatch {O modo da chave é diferente do da conta. Use chaves de um só modo.} other {O provedor respondeu algo que o servidor não conseguiu ler. Escolha Conciliar agora na próxima hora.}}",
+    "description": "Why the last reconciliation stopped, with what to do."
+  },
+  "staff_supporters.permission": {
+    "defaultMessage": "{permission, select, view_finance {Ler as finanças do servidor} create_custom_emojis {Pedir emojis personalizados} start_voice_rooms {Abrir salas de chat de voz} create_invites {Convidar pessoas} keep_posts_longer {Manter publicações além do prazo máximo de exclusão} create_articles {Escrever artigos} create_events {Criar eventos} other {Outra permissão}}",
+    "description": "A permission a supporter plan's role may give, by its name."
+  },
+  "staff_supporters.plan.standing": {
+    "defaultMessage": "{standing, select, retired {Aposentado} preparing {Em preparação} hidden {Oculto} other {Aceitando assinaturas}}",
+    "description": "Where a plan stands: retired; preparing its prices at the provider; hidden from new subscriptions; or taking them."
+  },
+  "staff_supporters.plan.standing_term": {
+    "defaultMessage": "Estado",
+    "description": "Term of the fact of where a plan stands."
+  },
+  "staff_supporters.plan.loading": {
+    "defaultMessage": "Carregando o plano…",
+    "description": "While a plan is read."
+  },
+  "staff_supporters.plan.failed": {
+    "defaultMessage": "Não foi possível carregar o plano. Verifique sua conexão e tente novamente.",
+    "description": "When a plan could not be read; Try again follows."
+  },
+  "staff_supporters.plan.missing": {
+    "defaultMessage": "Este plano não existe. O endereço pode estar errado.",
+    "description": "At the address of a plan the server does not have; the link to the plans follows."
+  },
+  "staff_supporters.plan.prices": {
+    "defaultMessage": "Preços",
+    "description": "Term of the fact of a plan's monthly and yearly prices."
+  },
+  "staff_supporters.plan.members_term": {
+    "defaultMessage": "Membros",
+    "description": "Term of the fact of how many subscriptions hold a plan's role."
+  },
+  "staff_supporters.plan.name": {
+    "defaultMessage": "Nome",
+    "description": "Label of a plan's name."
+  },
+  "staff_supporters.plan.name.blank": {
+    "defaultMessage": "Escreva o nome do plano.",
+    "description": "Under the name's field when it is empty."
+  },
+  "staff_supporters.plan.description": {
+    "defaultMessage": "Descrição",
+    "description": "Label of a plan's description."
+  },
+  "staff_supporters.plan.price": {
+    "defaultMessage": "Preço mensal",
+    "description": "Label of a plan's monthly price."
+  },
+  "staff_supporters.plan.price.invalid": {
+    "defaultMessage": "Escreva o preço em {currency}, só dígitos.",
+    "description": "Under the monthly price when it is no amount of the currency."
+  },
+  "staff_supporters.plan.currency": {
+    "defaultMessage": "Moeda",
+    "description": "Label of the choice of a plan's currency."
+  },
+  "staff_supporters.plan.emoji": {
+    "defaultMessage": "Emojis personalizados por mês",
+    "description": "Label of how many custom emoji a plan's members may create each month."
+  },
+  "staff_supporters.plan.rank": {
+    "defaultMessage": "Ordem",
+    "description": "Label of a plan's order: a higher one is a higher plan."
+  },
+  "staff_supporters.plan.number.blank": {
+    "defaultMessage": "Escreva um número.",
+    "description": "Under a number field of a plan's form when it is empty."
+  },
+  "staff_supporters.plan.visibility": {
+    "defaultMessage": "Visibilidade",
+    "description": "Label of whether a plan takes new subscriptions."
+  },
+  "staff_supporters.plan.permissions": {
+    "defaultMessage": "Permissões",
+    "description": "Label of the permissions of a plan's role, and its fact."
+  },
+  "staff_supporters.plan.permissions.none": {
+    "defaultMessage": "Nenhuma",
+    "description": "A plan's role has no permission."
+  },
+  "staff_supporters.plan.retired_at": {
+    "defaultMessage": "Aposentado",
+    "description": "Term of the fact of when a plan was retired."
+  },
+  "staff_supporters.plan.create": {
+    "defaultMessage": "Criar o plano",
+    "description": "Submit button of a new plan's form."
+  },
+  "staff_supporters.plan.save": {
+    "defaultMessage": "Salvar",
+    "description": "Submit button of the change of a plan."
+  },
+  "staff_supporters.plan.change": {
+    "defaultMessage": "Alterar o plano",
+    "description": "Heading of the form that changes a plan."
+  },
+  "staff_supporters.plan.refused.retired": {
+    "defaultMessage": "O plano foi aposentado nesse meio tempo, então não pode ser alterado.",
+    "description": "Beside Save when the server refused to change a plan that was retired."
+  },
+  "staff_supporters.plan.done.saved": {
+    "defaultMessage": "O plano foi salvo. Os novos preços valem para novas assinaturas e mudanças de plano.",
+    "description": "Said once a plan was saved."
+  },
+  "staff_supporters.plan.done.retired": {
+    "defaultMessage": "O plano foi aposentado.",
+    "description": "Said once a plan was retired."
+  },
+  "staff_supporters.plan.retire": {
+    "defaultMessage": "Aposentar o plano",
+    "description": "Heading of the section that retires a plan."
+  },
+  "staff_supporters.plan.retire.about": {
+    "defaultMessage": "{count, plural, =0 {Depois de aposentado, o plano não aceita novas assinaturas, para sempre.} one {Depois de aposentado, o plano não aceita novas assinaturas, para sempre, e a # assinatura dele não é renovada.} other {Depois de aposentado, o plano não aceita novas assinaturas, para sempre, e as # assinaturas dele não são renovadas.}}",
+    "description": "Above Retire the plan…, what retiring does."
+  },
+  "staff_supporters.plan.retire.ask": {
+    "defaultMessage": "Aposentar o plano…",
+    "description": "Button that asks to retire a plan."
+  },
+  "staff_supporters.plan.retire.confirm": {
+    "defaultMessage": "Aposentar {name}?",
+    "description": "Title of the confirmation that retires a plan ({name}: its name)."
+  },
+  "staff_supporters.plan.retire.confirm.about": {
+    "defaultMessage": "{count, plural, =0 {O plano não aceita assinaturas daqui em diante. Isso não pode ser desfeito.} one {O plano não aceita assinaturas daqui em diante. O assinante mantém os benefícios até o fim do período, e nada é renovado; uma assinatura ainda não paga é encerrada agora. Ele é notificado. Isso não pode ser desfeito.} other {O plano não aceita assinaturas daqui em diante. Os # assinantes mantêm os benefícios até o fim do período, e nada é renovado; uma assinatura ainda não paga é encerrada agora. Eles são notificados. Isso não pode ser desfeito.}}",
+    "description": "Body of the confirmation that retires a plan: what happens to its subscribers."
+  },
+  "staff_supporters.plan.retire.do": {
+    "defaultMessage": "Aposentar",
+    "description": "Confirmation button that retires a plan."
+  },
+  "staff_supporters.plan.prices.value": {
+    "defaultMessage": "{monthly} por mês, {yearly} por ano ({discount}% de desconto)",
+    "description": "A plan's prices."
+  },
+  "staff_supporters.plan.role": {
+    "defaultMessage": "Função",
+    "description": "Label of the role a plan is on, its fact and its field. Read by administrators."
+  },
+  "staff_supporters.plan.role.hint": {
+    "defaultMessage": "A chave de uma função sem titulares, só com permissões de membro, abaixo dos moderadores",
+    "description": "Line under the field of the role's key, for a reader who cannot list the roles. Read by administrators."
+  },
+  "staff_supporters.plan.role.choose": {
+    "defaultMessage": "Escolher uma função",
+    "description": "The first option of the choice of a plan's role, while none is chosen. Read by administrators."
+  },
+  "staff_supporters.plan.role.none": {
+    "defaultMessage": "Nenhuma função pode ser usada em um plano. Crie primeiro uma função abaixo dos moderadores só com permissões de membro.",
+    "description": "In the place of the choice of a plan's role when no role qualifies. Read by administrators."
+  },
+  "staff_supporters.plan.role.blank": {
+    "defaultMessage": "Escolha a função que o plano concede.",
+    "description": "Under the role's field when none is chosen. Read by administrators."
+  },
+  "staff_supporters.plan.role.loading": {
+    "defaultMessage": "Carregando as funções…",
+    "description": "In the place of the role of a new supporter plan while the roles load. Read by administrators."
+  },
+  "staff_supporters.plan.discount": {
+    "defaultMessage": "Desconto anual (%)",
+    "description": "Label of a plan's discount for paying yearly, in percent."
+  },
+  "staff_supporters.plan.visibility.value": {
+    "defaultMessage": "{visibility, select, hidden {Oculto: sem novas assinaturas} other {Público}}",
+    "description": "An option of a plan's visibility."
+  },
+  "staff_supporters.plan.position": {
+    "defaultMessage": "Posição da função",
+    "description": "Label of the position of a plan's role, below the moderators. Read by administrators."
+  },
+  "staff_supporters.state": {
+    "defaultMessage": "{state, select, active {Ativa} canceling {Termina no fim do período} past_due {Pagamento falhou} pending {Ainda não paga} lapsed {Expirada} expired {Encerrada} revoked {Reembolsada} other {Encerrada sem pagamento}}",
+    "description": "The state of a subscription to a supporter plan."
+  },
+  "staff_supporters.subscriber_gone": {
+    "defaultMessage": "Uma conta apagada",
+    "description": "In the place of a subscriber's handle when the account was erased."
+  },
+  "staff_supporters.subscription.terms": {
+    "defaultMessage": "{plan}, {interval, select, year {anual} other {mensal}}",
+    "description": "A subscription's plan and how often it is paid."
+  },
+  "staff_supporters.subscription.until": {
+    "defaultMessage": "Até {at}",
+    "description": "When a subscription's current period ends."
+  },
+  "staff_supporters.subscription.no_period": {
+    "defaultMessage": "Sem período",
+    "description": "A subscription with no period (not paid yet, or closed unpaid)."
+  },
+  "staff_supporters.subscription.title": {
+    "defaultMessage": "Assinatura de {subscriber}",
+    "description": "Title of a subscription's screen."
+  },
+  "staff_supporters.subscription.loading": {
+    "defaultMessage": "Carregando a assinatura…",
+    "description": "While a subscription is read."
+  },
+  "staff_supporters.subscription.failed": {
+    "defaultMessage": "Não foi possível carregar a assinatura. Verifique sua conexão e tente novamente.",
+    "description": "When a subscription could not be read; Try again follows."
+  },
+  "staff_supporters.subscription.missing": {
+    "defaultMessage": "Esta assinatura não existe. O endereço pode estar errado.",
+    "description": "At the address of a subscription the server does not have; the link to the subscriptions follows."
+  },
+  "staff_supporters.subscription.state": {
+    "defaultMessage": "Estado",
+    "description": "Term of the fact of a subscription's state."
+  },
+  "staff_supporters.subscription.plan": {
+    "defaultMessage": "Plano",
+    "description": "Term of the fact of a subscription's plan and period."
+  },
+  "staff_supporters.subscription.price": {
+    "defaultMessage": "Preço",
+    "description": "Term of the fact of a subscription's price."
+  },
+  "staff_supporters.subscription.price.value": {
+    "defaultMessage": "{price} por {interval, select, year {ano} other {mês}}",
+    "description": "A subscription's price per period."
+  },
+  "staff_supporters.subscription.started": {
+    "defaultMessage": "Iniciada em",
+    "description": "Term of the fact of when a subscription started."
+  },
+  "staff_supporters.subscription.period_ends": {
+    "defaultMessage": "O período termina em",
+    "description": "Term of the fact of when a subscription's period ends."
+  },
+  "staff_supporters.subscription.grace_until": {
+    "defaultMessage": "Mantém a função até {at}",
+    "description": "Under the state of a subscription whose payment failed: when it loses the plan's role. {at} is a date and a time. Read by administrators."
+  },
+  "staff_supporters.subscription.scheduled": {
+    "defaultMessage": "Mudança agendada",
+    "description": "Term of the fact that a change of plan or period waits for the period's end."
+  },
+  "staff_supporters.subscription.scheduled.value": {
+    "defaultMessage": "No fim do período",
+    "description": "When a scheduled change applies."
+  },
+  "staff_supporters.subscription.end": {
+    "defaultMessage": "Encerrar a assinatura",
+    "description": "Heading of the section that ends a subscription at once."
+  },
+  "staff_supporters.subscription.end.ask": {
+    "defaultMessage": "Encerrar agora…",
+    "description": "Button that asks to end a subscription at once."
+  },
+  "staff_supporters.subscription.end.confirm": {
+    "defaultMessage": "Encerrar agora a assinatura de {subscriber}?",
+    "description": "Title of the confirmation that ends a subscription."
+  },
+  "staff_supporters.subscription.end.do": {
+    "defaultMessage": "Encerrar agora",
+    "description": "Confirmation button that ends a subscription."
+  },
+  "staff_supporters.subscription.end.about": {
+    "defaultMessage": "Encerrar tira agora a função do plano e para a cobrança. Nada é reembolsado; reembolse no provedor se precisar.",
+    "description": "Above End now…, what ending a subscription does. Read by administrators."
+  },
+  "staff_supporters.subscription.end.confirm.about": {
+    "defaultMessage": "A função é removida agora e a cobrança para, sem reembolso. Isso não pode ser desfeito.",
+    "description": "Body of the confirmation that ends a subscription. Read by administrators."
+  },
+  "staff_supporters.subscription.done.ended": {
+    "defaultMessage": "A assinatura foi encerrada.",
+    "description": "Said once a subscription was ended."
+  }
+}

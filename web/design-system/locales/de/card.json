@@ -1,0 +1,6 @@
+{
+  "card.author": {
+    "defaultMessage": "von {name}",
+    "description": "What a screen reader reads for the author of the page that the card of a link in a post links to, after the page's description; name is the author's display name, as their server confirms them."
+  }
+}
