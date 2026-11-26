@@ -20,6 +20,7 @@ import (
 	"github.com/pion/webrtc/v4"
 
 	"github.com/mycroblog/my/internal/adapter/voice/sfu/node"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
@@ -86,7 +87,7 @@ func Connect(t testing.TB, url, ticket, session string) *Client {
 	}
 	t.Cleanup(func() { _ = ws.CloseNow() })
 	c.ws = ws
-	go c.signal()
+	kernel.Go(t.Context(), "voice.sfu.nodetest.signal", nil, func(context.Context) { c.signal() })
 	return c
 }
 
