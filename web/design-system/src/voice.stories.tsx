@@ -6,19 +6,25 @@
 // reader blocks); reactions rising over the stage, Unicode and custom emoji, which stand still with reduced motion; a
 // room as a line of a list (with its icon emoji, a custom one, none, a name that wraps, no speaker yet); the room's bar
 // of controls for a speaker and for a listener, on and off; a host's tile opening its menu, the room's own menu open,
-// and the confirmation of ending it; and the whole room at a phone's, a tablet's and a PC's width. The names are
-// samples in English.
+// and the confirmation of ending it; and the whole room at a phone's, a tablet's and a PC's width. And a room's limit of
+// people (ADR-0100 §3, §5): its field in the room's form, empty for the server's and refused out of range; a room at
+// its limit before the reader joins it; and a room over its limit, which its host lowered, as the host sees it. The
+// names and the words are samples in English.
 
 import { rootPx } from "@my/design-tokens";
+import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CustomEmoji } from "./content";
 import { sampleCustomEmoji } from "./emoji.samples";
 import { Button } from "./button";
+import { ChoiceList } from "./choice";
 import { ConfirmDialog } from "./dialog";
+import { NumberField } from "./field";
+import { FieldError, FormAlert, TextField } from "./form-page";
 import { Box, Row, Stack } from "./layout";
 import { PreviewStill } from "./preview";
-import { GroupHeading, RowItem, RowList } from "./list";
+import { BackButton, GroupHeading, RowItem, RowList, ScreenHead, ScreenStack } from "./list";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { images } from "./samples";
 import {
@@ -487,6 +493,264 @@ export const ControlsDisabled: Story = {
           <RoomControl icon="react" label="React" onPress={none} />
         </RoomControls>
       </Box>
+    </Column>
+  ),
+};
+
+// ---- A room's limit of people (ADR-0100 §3, §5) ------------------------------------------------------------------
+
+/** The server's limit of people in a room (the instance's `voice_max_participants`), as the samples have it. */
+const serverLimit = 50;
+
+/**
+ * The field of a room's limit in the room's form, after who sees it (who may come in, then how many), built as an
+ * event's capacity is: its label, a short number field with its unit, the rule under it, or its error in the rule's
+ * place. Empty, the room takes the server's limit, which the rule names.
+ */
+function LimitField({
+  value,
+  settings = false,
+  error,
+}: {
+  value: number | null;
+  /** The settings of an open room: the rule says that lowering it removes no one. */
+  settings?: boolean;
+  error?: string;
+}) {
+  const id = settings ? "limit-settings" : "limit-open";
+  return (
+    <Stack gap="form-page-field-gap">
+      <Box as="p" id={`${id}-label`} weight="label">
+        Max participants
+      </Box>
+      <NumberField
+        id={id}
+        labelledBy={`${id}-label`}
+        describedBy={error === undefined ? `${id}-hint` : `${id}-error`}
+        defaultValue={value}
+        min={2}
+        max={serverLimit}
+        unit="people"
+        invalid={error !== undefined}
+      />
+      {error === undefined ? (
+        <Box as="p" id={`${id}-hint`} text="caption" tone="muted">
+          {`From 2 to ${String(serverLimit)}. Leave it empty for this server's limit, ${String(serverLimit)}.`}
+          {settings && " Lowering it removes no one."}
+        </Box>
+      ) : (
+        <FieldError id={`${id}-error`}>{error}</FieldError>
+      )}
+    </Stack>
+  );
+}
+
+/** One choice of the room's form under its heading, the first of its options chosen. */
+function FormChoice({ heading, options }: { heading: string; options: readonly string[] }) {
+  return (
+    <Stack gap="entry-line">
+      <GroupHeading>{heading}</GroupHeading>
+      <ChoiceList
+        label={heading}
+        multiple={false}
+        items={options.map((label, i) => ({ key: String(i), label }))}
+        chosen={[0]}
+        onChange={none}
+      />
+    </Stack>
+  );
+}
+
+/**
+ * The room's form with its limit: the fields before it shortened to its name and who sees it, the field of who speaks
+ * after it, and the button, the form's refusal right before it.
+ */
+function LimitForm({ submit, refused, children }: { submit: string; refused?: string; children: ReactNode }) {
+  return (
+    <Column>
+      <ScreenStack>
+        <TextField id="room-name" name="name" label="Name" defaultValue="Morning coffee chat" required />
+        <FormChoice heading="Who can see it" options={["Everyone on this server", "Your followers", "Invited only"]} />
+        {children}
+        <FormChoice heading="Who can speak" options={["Those you let speak", "Everyone in the room"]} />
+        <Stack gap="entry-line">
+          {refused !== undefined && <FormAlert regular>{refused}</FormAlert>}
+          <Box>
+            <Button kind="primary" type="submit">
+              {submit}
+            </Button>
+          </Box>
+        </Stack>
+      </ScreenStack>
+    </Column>
+  );
+}
+
+/** Opening a room: the limit's field empty, for the server's, the rule naming it. */
+export const RoomFormLimit: Story = {
+  render: () => (
+    <LimitForm submit="Open">
+      <LimitField value={null} />
+    </LimitForm>
+  ),
+};
+
+/**
+ * A room's settings with a limit out of range, which the server refused (422, `max_participants`): its error under
+ * the field, in the rule's place, and the form's refusal before Save.
+ */
+export const RoomFormLimitRefused: Story = {
+  render: () => (
+    <LimitForm submit="Save" refused="The settings were not saved. Check the marked field.">
+      <LimitField value={60} settings error={`Enter a number from 2 to ${String(serverLimit)}.`} />
+    </LimitForm>
+  ),
+};
+
+/** A line of what goes on in the room, as the room's screen draws one (its Line). */
+function RoomLineOf({ children }: { children: string }) {
+  return (
+    <Row wrap align="baseline" gapX="entry-caption">
+      <Box as="p" dir="auto">
+        {children}
+      </Box>
+    </Row>
+  );
+}
+
+/** The few on a sample room's stage and among its listeners. */
+function FewInTheRoom({ listeners }: { listeners: number }) {
+  return (
+    <>
+      <Stack gap="entry-line">
+        <GroupHeading>Speakers</GroupHeading>
+        <ParticipantGrid label="Speakers" size="stage">
+          <ParticipantTile name="Mika" src={images.dusk} size="stage" role="Host" speaking="Speaking" />
+          <ParticipantTile name="Ren" src={images.snow} size="stage" role="Co-host" />
+        </ParticipantGrid>
+      </Stack>
+      <Stack gap="entry-line">
+        <GroupHeading>Listeners</GroupHeading>
+        <ParticipantGrid label="Listeners" size="listener">
+          {listenerNames.slice(0, listeners).map((name, i) => (
+            <ParticipantTile
+              key={name}
+              name={name}
+              src={[images.dusk, images.snow, images.logo, undefined][i % 4]}
+              size="listener"
+            />
+          ))}
+        </ParticipantGrid>
+      </Stack>
+    </>
+  );
+}
+
+/** The head of a sample room's screen: back to the rooms, its title, and how many are in it of its limit. */
+function LimitHead({ count, limit }: { count: number; limit: number }) {
+  return (
+    <ScreenHead back={<BackButton onPress={none}>Voice chat rooms</BackButton>}>
+      <RoomTitle
+        icon="☕"
+        name="Morning coffee chat"
+        count={{
+          shown: `${String(count)}/${String(limit)}`,
+          label: `${String(count)} of ${String(limit)} in the room`,
+        }}
+      />
+    </ScreenHead>
+  );
+}
+
+const fullWords = "This room is full. You can join once someone leaves.";
+
+/**
+ * A room at its limit before the reader joins it, 10 of 10, and where the screen says it is full:
+ * - foot: in the foot, before Join, which stays: a press may find a place someone just left, or is refused there;
+ * - held: in the foot, Join held under it, as an event at capacity holds Going;
+ * - head: under the room's description, for all to read before the people; the foot as it is, refused on a press.
+ */
+export const RoomFull: Story = {
+  render: () => {
+    const foot = (join: ReactNode) => (
+      <Stack gap="entry-line">
+        <Box as="p" dir="auto">
+          Joining shows your name in the list.
+        </Box>
+        {join}
+      </Stack>
+    );
+    const room = (said: ReactNode, footOf: ReactNode) => (
+      <Column>
+        <ScreenStack>
+          <LimitHead count={10} limit={10} />
+          <Box as="p" keeps="lines" dir="auto">
+            Coffee, toast and whatever is on your mind this morning.
+          </Box>
+          {said}
+          <FewInTheRoom listeners={8} />
+          {footOf}
+        </ScreenStack>
+      </Column>
+    );
+    const join = (held = false) => (
+      <Stack>
+        <Button kind="primary" size="form" isDisabled={held} onPress={none}>
+          Join
+        </Button>
+      </Stack>
+    );
+    return (
+      <Options
+        id="room-full"
+        variants={{
+          foot: room(
+            null,
+            foot(
+              <>
+                <RoomLineOf>{fullWords}</RoomLineOf>
+                {join()}
+              </>,
+            ),
+          ),
+          held: room(
+            null,
+            foot(
+              <>
+                {join(true)}
+                <Box as="p" text="caption" tone="muted" dir="auto">
+                  {fullWords}
+                </Box>
+              </>,
+            ),
+          ),
+          head: room(<RoomLineOf>{fullWords}</RoomLineOf>, foot(join())),
+        }}
+      />
+    );
+  },
+};
+
+/**
+ * A room over its limit, 12 of 10, as its host sees it in the call after lowering it: the line among the call's
+ * lines, under the description, says that no one was removed and when new people can join again. Who listens reads
+ * the figure alone; who has not joined reads that it is full (RoomFull).
+ */
+export const HostingOverLimit: Story = {
+  render: () => (
+    <Column>
+      <ScreenStack>
+        <LimitHead count={12} limit={10} />
+        <Box as="p" keeps="lines" dir="auto">
+          Coffee, toast and whatever is on your mind this morning.
+        </Box>
+        <RoomLineOf>
+          12 people are in this room, more than its limit of 10. No one was removed: new people can join once fewer than
+          10 are in it.
+        </RoomLineOf>
+        <FewInTheRoom listeners={10} />
+        <Controls speaker />
+      </ScreenStack>
     </Column>
   ),
 };
