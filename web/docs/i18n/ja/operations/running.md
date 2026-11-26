@@ -371,7 +371,7 @@ sha256sum --ignore-missing -c SHA256SUMS
 - 請求がスパムフィルタで落ちないようにしてください。
 - 公開してよいアドレスを使ってください。情報のページ、ランディングページ、NodeInfo で誰でも見られます。
 
-<!-- source: metrics bb10bda1b8a4 -->
+<!-- source: metrics d456616d0cb0 -->
 ## メトリクス
 
 設定 `metrics_exporter` (既定値 `none`) で、サービスのメトリクスを出力します。関連する設定は[設定リファレンス](../reference/configuration.md)にあります。
@@ -424,6 +424,7 @@ sha256sum --ignore-missing -c SHA256SUMS
 | `my.voice.sfu.ticket_refusals` | カウンター | `my.voice.sfu.reason` (`invalid` は期限切れ、使用済み、未知のチケット、`other_node` は別のノードのチケット) |
 | `my.voice.sfu.client.rtt` | ヒストグラム、秒 | なし (参加者までの往復時間。参加者の RTCP レポートによる) |
 | `my.voice.sfu.client.packet_loss` | ヒストグラム、パーセント | なし (参加者までの経路での損失。参加者の RTCP レポートによる) |
+| `my.voice.sfu.offer.wait` | ヒストグラム、秒 | なし (参加者の参加からメディアノードの最初のオファーまでの時間) |
 | `my.errors.exported` | カウンター | `my.outcome` (`success` / `dropped` / `failed`: `errors_exporter` のサービスへのエラーの報告 1 件ごとに 1。`dropped` は、すでに 1,000 件の報告が待っていたか、サービスがサーバーに送る速度を落とすよう求めたために、報告を送らなかったことを表します。サーバーは、もう一度送るまでサービスが求めるだけ待ちます。`failed` は、サービスに届かないか、サービスが報告を拒否したことを表します。報告は一度だけ送り、再試行はしません。停止の開始から 2 秒たってもまだ待っている報告は失われます) |
 | `my.queue.ready` | ゲージ | `my.job.type` (データベースのキューにある、実行できるジョブの数) |
 | `my.queue.oldest_ready_age` | ゲージ、秒 | `my.job.type` (データベースのキューで、種類ごとに最も古い実行できるジョブが待っている時間。実行できるジョブのない種類には値がありません) |

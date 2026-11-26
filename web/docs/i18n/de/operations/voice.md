@@ -208,7 +208,7 @@ Maximum eines Raums, antwortet das Öffnen des Raums oder der erste Beitritt mit
 Setze `voice_sfu_node_capacity` danach, was die Maschine weiterleiten kann ([Gemessene Kosten](#measured-cost)), und halte
 `voice_max_participants` nicht größer, als deine Räume brauchen: Ein Raum mit 500 reserviert 500 Plätze, auch wenn nur 3 Personen darin sind.
 
-<!-- source: measured-cost fef7c9ecfe21 -->
+<!-- source: measured-cost 2d6571f6e923 -->
 ### Gemessene Kosten
 
 Gemessen mit simulierten Clients, die Opus-Audio mit 50 Paketen pro Sekunde senden, auf einem AMD Ryzen 9 7900 (12 Kerne) mit
@@ -218,10 +218,10 @@ die Goroutine-Stacks zusätzlich zum Rest des Prozesses.
 | Was | CPU | Speicher |
 | --- | --- | --- |
 | Ein untätiger Knoten | nicht messbar | etwa 0,1 MiB |
-| Jeder offene Raum | nicht messbar | etwa 24 KiB |
-| Jeder Teilnehmer | etwa 0,0002 Kerne, solange er schweigt | etwa 200 KiB |
-| Jeder weitergeleitete Stream (ein Sprecher, der von einem Teilnehmer gehört wird) | 20 bis 27 µs pro Paket, etwa 0,001 Kerne | etwa 24 KiB |
-| Ein Raum mit 100 und 3 Sprechern, die Geräusche machen | etwa 0,3 Kerne | etwa 25 MiB |
+| Jeder offene Raum | nicht messbar | unter etwa 25 KiB |
+| Jeder Teilnehmer | etwa 0,0002 Kerne, solange er schweigt | etwa 180 KiB |
+| Jeder weitergeleitete Stream (ein Sprecher, der von einem Teilnehmer gehört wird) | 18 bis 27 µs pro Paket, etwa 0,001 Kerne | unter etwa 25 KiB |
+| Ein Raum mit 100 und 3 Sprechern, die Geräusche machen | etwa 0,3 Kerne | etwa 23 MiB |
 
 Eine schnellere oder langsamere Maschine skaliert diese Werte; die eigenen Metriken eines Knotens ([Zu beobachtende Metriken](#metrics-to-watch)) zeigen,
 was er trägt.
@@ -273,7 +273,7 @@ Run und die Knoten auf VMs mit öffentlicher IP, die Datenbank, den `stream` (`p
 (`tls = acme`) oder davor aus, und setze `voice_sfu_origins` auf dem Cloud-Run-Dienst auf die Origins der Knoten. Die
 OpenTofu-Module von [Auf Google Cloud bereitstellen](deploy-google-cloud.md) legen die Knoten nicht an.
 
-<!-- source: metrics-to-watch 3346746d92f1 -->
+<!-- source: metrics-to-watch a8b32402b50d -->
 ### Zu beobachtende Metriken
 
 Jeder Knoten exportiert seine eigenen Metriken `my.voice.sfu.*` ([Metriken](running.md#metrics)).
@@ -285,6 +285,7 @@ Jeder Knoten exportiert seine eigenen Metriken `my.voice.sfu.*` ([Metriken](runn
 | `my.voice.sfu.packets` nach `my.outcome` | `forwarded` ist die Arbeit des Knotens. `silent` und `not_allowed` (ein Teilnehmer, der nicht sprechen darf oder stummgeschaltet ist) werden absichtlich verworfen. `queue_full` heißt, dass die Verbindung eines Teilnehmers nicht mithalten konnte: ein langsamer Client, wenn es wenige sind, ein Knoten mit zu wenig CPU oder Bandbreite, wenn es für alle Clients gleichzeitig steigt. |
 | `my.voice.sfu.bytes` | Das weitergeleitete Audio: die ausgehende Bandbreite des Knotens. |
 | `my.voice.sfu.client.rtt`, `my.voice.sfu.client.packet_loss` | Die Qualität auf dem Weg zu den Teilnehmern. Hoch bei den meisten Clients deutet auf das Netzwerk oder den Standort des Knotens; bei wenigen auf deren eigene Netzwerke. |
+| `my.voice.sfu.offer.wait` | Wie lange ein beitretender Teilnehmer auf das erste Offer des Knotens wartet: Millisekunden bei einem Knoten mit CPU übrig; Sekunden heißen, dass Beitritte auf einem ausgelasteten Knoten warten. |
 | `my.voice.sfu.migrations`, `my.voice.sfu.ice_restarts`, `my.voice.sfu.renegotiations` | Durch eine Leerung verschobene Räume, Clients, die das Netzwerk gewechselt haben, und Wechsel der Sprecher. |
 | `my.voice.sfu.ticket_refusals` nach `my.voice.sfu.reason` | Ein `other_node`, das weiter steigt, heißt, dass Clients einen anderen Knoten erreichen als den ihres Grants: Prüfe, dass die `voice_sfu_public_url` jedes Knotens zu diesem Knoten führt. |
 

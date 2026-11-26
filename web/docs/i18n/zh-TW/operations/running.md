@@ -323,7 +323,7 @@ sha256sum --ignore-missing -c SHA256SUMS
 - 確認垃圾郵件過濾不會擋掉索取請求。
 - 使用你願意公開的地址：任何人都能在資訊頁面、入口頁面和 NodeInfo 中看到它。
 
-<!-- source: metrics bb10bda1b8a4 -->
+<!-- source: metrics d456616d0cb0 -->
 ## 指標
 
 設定 `metrics_exporter`（預設 `none`）會匯出服務指標。相關設定請參閱[設定參考](../reference/configuration.md)。
@@ -376,6 +376,7 @@ sha256sum --ignore-missing -c SHA256SUMS
 | `my.voice.sfu.ticket_refusals` | 計數器 | `my.voice.sfu.reason`（`invalid` 表示已過期、已使用或未知的票證，`other_node` 表示另一個節點的票證） |
 | `my.voice.sfu.client.rtt` | 直方圖，秒 | 無（到參與者的往返時間，來自他們的 RTCP 報告） |
 | `my.voice.sfu.client.packet_loss` | 直方圖，百分比 | 無（到參與者途中的封包遺失，來自他們的 RTCP 報告） |
+| `my.voice.sfu.offer.wait` | 直方圖，秒 | 無（從參與者加入到媒體節點送出第一個 offer 的時間） |
 | `my.errors.exported` | 計數器 | `my.outcome`（`success` / `dropped` / `failed`：傳給 `errors_exporter` 服務的每份錯誤回報計一次。`dropped` 表示因為已有 1,000 份回報在等待，或服務要求伺服器放慢速度而沒有傳送，伺服器會依服務要求的時間等待後才再次傳送；`failed` 表示無法連線到服務或服務拒絕了回報。回報只會傳送一次，絕不重試，而關機開始 2 秒後仍在等待的回報會遺失） |
 | `my.queue.ready` | 量測計 | `my.job.type`（資料庫佇列中可執行的任務數） |
 | `my.queue.oldest_ready_age` | 量測計，秒 | `my.job.type`（資料庫佇列中各類型最舊的可執行任務已等待的時間；沒有可執行任務的類型沒有值） |

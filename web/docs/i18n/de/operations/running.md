@@ -456,7 +456,7 @@ Betreibst du ein unverändertes offizielles Release, behalte den Standard.
 - Stelle sicher, dass der Spamfilter Anfragen nicht verwirft.
 - Verwende eine Adresse, die du gern öffentlich machst: Jeder kann sie auf der Informationsseite, der Startseite und in NodeInfo sehen.
 
-<!-- source: metrics bb10bda1b8a4 -->
+<!-- source: metrics d456616d0cb0 -->
 ## Metriken
 
 Die Einstellung `metrics_exporter` (Standard `none`) exportiert Dienstmetriken. Ihre zugehörigen Einstellungen stehen in der [Konfigurationsreferenz](../reference/configuration.md).
@@ -509,6 +509,7 @@ Die Metriken sind unten aufgelistet. In Prometheus wird `.` in einem Namen zu `_
 | `my.voice.sfu.ticket_refusals` | Zähler | `my.voice.sfu.reason` (`invalid` für ein abgelaufenes, benutztes oder unbekanntes Ticket, `other_node` für ein Ticket eines anderen Knotens) |
 | `my.voice.sfu.client.rtt` | Histogramm, Sekunden | Keine (die Round-Trip-Zeit zu den Teilnehmern, aus ihren RTCP-Berichten) |
 | `my.voice.sfu.client.packet_loss` | Histogramm, Prozent | Keine (der Verlust auf dem Weg zu den Teilnehmern, aus ihren RTCP-Berichten) |
+| `my.voice.sfu.offer.wait` | Histogramm, Sekunden | Keine (die Zeit vom Beitritt eines Teilnehmers bis zum ersten Offer des Medienknotens) |
 | `my.errors.exported` | Zähler | `my.outcome` (`success` / `dropped` / `failed`: eines pro Fehlerbericht für den Dienst von `errors_exporter`. `dropped` heißt, der Bericht wurde nicht gesendet, weil bereits 1.000 Berichte warteten oder der Dienst den Server gebeten hat, langsamer zu werden, und der Server wartet, so lange der Dienst es verlangt, bevor er wieder sendet; `failed` heißt, der Dienst war nicht erreichbar oder hat den Bericht abgelehnt. Ein Bericht wird einmal gesendet und nie wiederholt, und die Berichte, die 2 Sekunden nach Beginn eines Herunterfahrens noch warten, gehen verloren) |
 | `my.queue.ready` | Gauge | `my.job.type` (die Zahl der ausführbaren Jobs in der Datenbank-Queue) |
 | `my.queue.oldest_ready_age` | Gauge, Sekunden | `my.job.type` (wie lange der älteste ausführbare Job jedes Typs in der Datenbank-Queue gewartet hat; ein Typ ohne ausführbaren Job hat keinen Wert) |

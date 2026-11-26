@@ -457,7 +457,7 @@ Se você executa uma versão oficial sem modificações, mantenha o padrão.
 - Garanta que o filtro de spam não descarte os pedidos.
 - Use um endereço que você aceite tornar público: qualquer pessoa pode vê-lo na página de informações, na página de apresentação e no NodeInfo.
 
-<!-- source: metrics bb10bda1b8a4 -->
+<!-- source: metrics d456616d0cb0 -->
 ## Métricas
 
 A configuração `metrics_exporter` (padrão `none`) exporta as métricas do serviço. As configurações relacionadas a ela estão na [referência de configuração](../reference/configuration.md).
@@ -510,6 +510,7 @@ As métricas estão listadas abaixo. No Prometheus, `.` em um nome vira `_` e um
 | `my.voice.sfu.ticket_refusals` | Contador | `my.voice.sfu.reason` (`invalid` para um tíquete expirado, usado ou desconhecido, `other_node` para um tíquete de outro nó) |
 | `my.voice.sfu.client.rtt` | Histograma, segundos | Nenhum (o tempo de ida e volta até os participantes, a partir dos relatórios RTCP deles) |
 | `my.voice.sfu.client.packet_loss` | Histograma, porcentagem | Nenhum (a perda no caminho até os participantes, a partir dos relatórios RTCP deles) |
+| `my.voice.sfu.offer.wait` | Histograma, segundos | Nenhum (o tempo desde a entrada de um participante até a primeira offer do nó de mídia) |
 | `my.errors.exported` | Contador | `my.outcome` (`success` / `dropped` / `failed`: um por relatório de erro para o serviço de `errors_exporter`. `dropped` significa que o relatório não foi enviado porque 1.000 relatórios já estavam esperando ou o serviço pediu ao servidor que desacelerasse, e o servidor espera o tempo que o serviço pede antes de enviar de novo; `failed` significa que o serviço não pôde ser alcançado ou recusou o relatório. Um relatório é enviado uma vez e nunca repetido, e os relatórios que ainda esperam 2 segundos depois do início de um desligamento são perdidos) |
 | `my.queue.ready` | Medidor | `my.job.type` (o número de jobs executáveis na fila do banco de dados) |
 | `my.queue.oldest_ready_age` | Medidor, segundos | `my.job.type` (quanto tempo o job executável mais antigo de cada tipo na fila do banco de dados esperou; um tipo sem job executável não tem valor) |

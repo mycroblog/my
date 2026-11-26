@@ -173,7 +173,7 @@ docker compose up -d
 
 请根据机器能转发的量来设置 `voice_sfu_node_capacity`（[实测成本](#measured-cost)），并让 `voice_max_participants` 不要超过你的房间所需：即使房间里只有 3 个人，500 人的房间也会预留 500 个名额。
 
-<!-- source: measured-cost fef7c9ecfe21 -->
+<!-- source: measured-cost 2d6571f6e923 -->
 ### 实测成本
 
 测试使用以每秒 50 个数据包发送 Opus 音频的模拟客户端，在 AMD Ryzen 9 7900（12 核）、WSL2 下的 Linux 和 Go 1.27 上进行，全部通过回环接口。CPU 以该机器的核数计；内存是节点的堆和 goroutine 栈，加在进程其余部分之上。
@@ -181,10 +181,10 @@ docker compose up -d
 | 内容 | CPU | 内存 |
 | --- | --- | --- |
 | 空闲的节点 | 无法测出 | 约 0.1 MiB |
-| 每个开启的房间 | 无法测出 | 约 24 KiB |
-| 每位参与者 | 静音时约 0.0002 核 | 约 200 KiB |
-| 每路转发的流（一位发言者被一位参与者听到） | 每个数据包 20 到 27 µs，约 0.001 核 | 约 24 KiB |
-| 100 人的房间，3 位发言者正在发声 | 约 0.3 核 | 约 25 MiB |
+| 每个开启的房间 | 无法测出 | 小于约 25 KiB |
+| 每位参与者 | 静音时约 0.0002 核 | 约 180 KiB |
+| 每路转发的流（一位发言者被一位参与者听到） | 每个数据包 18 到 27 µs，约 0.001 核 | 小于约 25 KiB |
+| 100 人的房间，3 位发言者正在发声 | 约 0.3 核 | 约 23 MiB |
 
 更快或更慢的机器会按比例改变这些数字；节点自己的指标（[需关注的指标](#metrics-to-watch)）会显示它承载的负载。
 
@@ -216,7 +216,7 @@ docker compose up -d
 
 Cloud Run 只接受 HTTP 请求，因此 `role = sfu` 无法在那里运行。请把 `web` 和 `worker` 进程运行在 Cloud Run 上，把节点运行在带公网 IP 的虚拟机上，并与它们共用数据库、`stream`（`postgres` 或 `pubsub`）和 `kv`（`db` 或 `valkey`）。请为每个节点设置各自的主机名和 `voice_sfu_public_url`，在节点上（`tls = acme`）或其前面提供 TLS，并把 Cloud Run 服务上的 `voice_sfu_origins` 设为这些节点的源。[在 Google Cloud 上部署](deploy-google-cloud.md)的 OpenTofu 模块不会创建这些节点。
 
-<!-- source: metrics-to-watch 3346746d92f1 -->
+<!-- source: metrics-to-watch a8b32402b50d -->
 ### 需关注的指标
 
 每个节点都会导出自己的 `my.voice.sfu.*` 指标（[指标](running.md#metrics)）。
@@ -228,6 +228,7 @@ Cloud Run 只接受 HTTP 请求，因此 `role = sfu` 无法在那里运行。�
 | 按 `my.outcome` 区分的 `my.voice.sfu.packets` | `forwarded` 是节点的工作量。`silent` 和 `not_allowed`（无权发言或被静音的参与者）按设计被丢弃。`queue_full` 表示某位参与者的连接跟不上：只有少数几个时是客户端太慢，所有客户端同时上升时则是节点的 CPU 或带宽不足。 |
 | `my.voice.sfu.bytes` | 转发的音频量：节点的出站带宽。 |
 | `my.voice.sfu.client.rtt`、`my.voice.sfu.client.packet_loss` | 到参与者途中的质量。大多数客户端都偏高，说明问题在节点的网络或位置；只有少数偏高，则在他们自己的网络。 |
+| `my.voice.sfu.offer.wait` | 加入的参与者等待节点第一个 offer 的时间：CPU 有余量的节点上是毫秒级；达到秒级说明加入请求在繁忙的节点上排队。 |
 | `my.voice.sfu.migrations`、`my.voice.sfu.ice_restarts`、`my.voice.sfu.renegotiations` | 因排空而迁移的房间、更换了网络的客户端，以及发言者的变化。 |
 | 按 `my.voice.sfu.reason` 区分的 `my.voice.sfu.ticket_refusals` | `other_node` 持续上升，说明客户端连到的节点不是其授权中的那个：请检查每个节点的 `voice_sfu_public_url` 是否指向该节点。 |
 

@@ -172,7 +172,7 @@ docker compose up -d
 
 請依機器能轉送的量來設定 `voice_sfu_node_capacity`（[實測成本](#measured-cost)），並讓 `voice_max_participants` 不要超過你的聊天室所需：即使聊天室裡只有 3 個人，500 人的聊天室也會預留 500 個名額。
 
-<!-- source: measured-cost fef7c9ecfe21 -->
+<!-- source: measured-cost 2d6571f6e923 -->
 ### 實測成本
 
 測試使用以每秒 50 個封包傳送 Opus 音訊的模擬用戶端，在 AMD Ryzen 9 7900（12 核心）、WSL2 下的 Linux 和 Go 1.27 上進行，全部透過迴路介面。CPU 以該機器的核心數計；記憶體是節點的堆積和 goroutine 堆疊，加在程序其餘部分之上。
@@ -180,10 +180,10 @@ docker compose up -d
 | 項目 | CPU | 記憶體 |
 | --- | --- | --- |
 | 閒置的節點 | 無法測出 | 約 0.1 MiB |
-| 每個開啟的聊天室 | 無法測出 | 約 24 KiB |
-| 每位參與者 | 靜音時約 0.0002 核心 | 約 200 KiB |
-| 每條轉送的串流（一位發言者被一位參與者聽到） | 每個封包 20 到 27 µs，約 0.001 核心 | 約 24 KiB |
-| 100 人的聊天室，3 位發言者正在發聲 | 約 0.3 核心 | 約 25 MiB |
+| 每個開啟的聊天室 | 無法測出 | 少於約 25 KiB |
+| 每位參與者 | 靜音時約 0.0002 核心 | 約 180 KiB |
+| 每條轉送的串流（一位發言者被一位參與者聽到） | 每個封包 18 到 27 µs，約 0.001 核心 | 少於約 25 KiB |
+| 100 人的聊天室，3 位發言者正在發聲 | 約 0.3 核心 | 約 23 MiB |
 
 更快或更慢的機器會按比例改變這些數字；節點自己的指標（[需留意的指標](#metrics-to-watch)）會顯示它承載的負載。
 
@@ -215,7 +215,7 @@ docker compose up -d
 
 Cloud Run 只接受 HTTP 請求，因此 `role = sfu` 無法在那裡執行。請把 `web` 和 `worker` 程序執行在 Cloud Run 上，把節點執行在有公開 IP 的 VM 上，並與它們共用資料庫、`stream`（`postgres` 或 `pubsub`）和 `kv`（`db` 或 `valkey`）。請為每個節點設定各自的主機名稱和 `voice_sfu_public_url`，在節點上（`tls = acme`）或其前方提供 TLS，並把 Cloud Run 服務上的 `voice_sfu_origins` 設為這些節點的來源。[在 Google Cloud 上部署](deploy-google-cloud.md)的 OpenTofu 模組不會建立這些節點。
 
-<!-- source: metrics-to-watch 3346746d92f1 -->
+<!-- source: metrics-to-watch a8b32402b50d -->
 ### 需留意的指標
 
 每個節點都會匯出自己的 `my.voice.sfu.*` 指標（[指標](running.md#metrics)）。
@@ -227,6 +227,7 @@ Cloud Run 只接受 HTTP 請求，因此 `role = sfu` 無法在那裡執行。�
 | 依 `my.outcome` 區分的 `my.voice.sfu.packets` | `forwarded` 是節點的工作量。`silent` 和 `not_allowed`（不能發言或被靜音的參與者）依設計被丟棄。`queue_full` 表示某位參與者的連線跟不上：只有少數幾個時是用戶端太慢，所有用戶端同時上升時則是節點的 CPU 或頻寬不足。 |
 | `my.voice.sfu.bytes` | 轉送的音訊量：節點的外送頻寬。 |
 | `my.voice.sfu.client.rtt`、`my.voice.sfu.client.packet_loss` | 到參與者途中的品質。多數用戶端都偏高，表示問題在節點的網路或位置；只有少數偏高，則在他們自己的網路。 |
+| `my.voice.sfu.offer.wait` | 加入的參與者等待節點第一個 offer 的時間：CPU 有餘裕的節點上是毫秒級；達到秒級表示加入要求在忙碌的節點上排隊。 |
 | `my.voice.sfu.migrations`、`my.voice.sfu.ice_restarts`、`my.voice.sfu.renegotiations` | 因排空而移動的聊天室、更換了網路的用戶端，以及發言者的變動。 |
 | 依 `my.voice.sfu.reason` 區分的 `my.voice.sfu.ticket_refusals` | `other_node` 持續上升，表示用戶端連到的節點不是其授權中的那個：請檢查每個節點的 `voice_sfu_public_url` 是否指向該節點。 |
 

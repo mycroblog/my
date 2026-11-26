@@ -209,7 +209,7 @@ intentarlo más tarde.
 Define `voice_sfu_node_capacity` según lo que la máquina pueda reenviar ([Costo medido](#measured-cost)), y mantén
 `voice_max_participants` no mayor de lo que necesiten tus salas: una sala de 500 reserva 500 plazas aunque haya 3 personas.
 
-<!-- source: measured-cost fef7c9ecfe21 -->
+<!-- source: measured-cost 2d6571f6e923 -->
 ### Costo medido
 
 Medido con clientes simulados que envían audio Opus a 50 paquetes por segundo, en un AMD Ryzen 9 7900 (12 núcleos) con
@@ -219,10 +219,10 @@ las pilas de las goroutines, sumados al resto del proceso.
 | Qué | CPU | Memoria |
 | --- | --- | --- |
 | Un nodo inactivo | ninguna medible | unos 0,1 MiB |
-| Cada sala abierta | ninguna medible | unos 24 KiB |
-| Cada participante | unos 0,0002 núcleos en silencio | unos 200 KiB |
-| Cada flujo reenviado (alguien que habla, oído por un participante) | de 20 a 27 µs por paquete, unos 0,001 núcleos | unos 24 KiB |
-| Una sala de 100 con 3 personas hablando | unos 0,3 núcleos | unos 25 MiB |
+| Cada sala abierta | ninguna medible | menos de unos 25 KiB |
+| Cada participante | unos 0,0002 núcleos en silencio | unos 180 KiB |
+| Cada flujo reenviado (alguien que habla, oído por un participante) | de 18 a 27 µs por paquete, unos 0,001 núcleos | menos de unos 25 KiB |
+| Una sala de 100 con 3 personas hablando | unos 0,3 núcleos | unos 23 MiB |
 
 Una máquina más rápida o más lenta escala estas cifras; las métricas del propio nodo ([Métricas que vigilar](#metrics-to-watch)) muestran
 lo que soporta.
@@ -274,7 +274,7 @@ Run y los nodos en máquinas virtuales con IP pública, compartiendo con ellos l
 (`tls = acme`) o delante de él, y define `voice_sfu_origins` en el servicio de Cloud Run con los orígenes de los nodos. Los
 módulos de OpenTofu de [Desplegar en Google Cloud](deploy-google-cloud.md) no crean los nodos.
 
-<!-- source: metrics-to-watch 3346746d92f1 -->
+<!-- source: metrics-to-watch a8b32402b50d -->
 ### Métricas que vigilar
 
 Cada nodo exporta sus propias métricas `my.voice.sfu.*` ([Métricas](running.md#metrics)).
@@ -286,6 +286,7 @@ Cada nodo exporta sus propias métricas `my.voice.sfu.*` ([Métricas](running.md
 | `my.voice.sfu.packets` por `my.outcome` | `forwarded` es el trabajo del nodo. `silent` y `not_allowed` (un participante que no puede hablar o está silenciado) se descartan por diseño. `queue_full` significa que la conexión de un participante no pudo seguir el ritmo: un cliente lento cuando son pocos, un nodo con falta de CPU o de ancho de banda cuando sube para todos los clientes a la vez. |
 | `my.voice.sfu.bytes` | El audio reenviado: el ancho de banda de salida del nodo. |
 | `my.voice.sfu.client.rtt`, `my.voice.sfu.client.packet_loss` | La calidad del camino hacia los participantes. Alta para la mayoría de los clientes apunta a la red o la ubicación del nodo; para unos pocos, a sus propias redes. |
+| `my.voice.sfu.offer.wait` | Cuánto espera un participante que se une la primera oferta del nodo: milisegundos en un nodo con CPU de sobra; segundos significan que las uniones esperan en un nodo ocupado. |
 | `my.voice.sfu.migrations`, `my.voice.sfu.ice_restarts`, `my.voice.sfu.renegotiations` | Salas movidas por un vaciado, clientes que cambiaron de red y cambios de quienes hablan. |
 | `my.voice.sfu.ticket_refusals` por `my.voice.sfu.reason` | Un `other_node` que sigue subiendo significa que los clientes llegan a un nodo distinto del de su concesión: comprueba que el `voice_sfu_public_url` de cada nodo lleve a ese nodo. |
 

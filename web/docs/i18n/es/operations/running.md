@@ -446,7 +446,7 @@ Si ejecutas una versión oficial sin modificar, conserva el valor por defecto.
 - Asegúrate de que el filtro de spam no descarte las solicitudes.
 - Usa una dirección que no te importe hacer pública: cualquiera puede verla en la página de información, la página de inicio y en NodeInfo.
 
-<!-- source: metrics bb10bda1b8a4 -->
+<!-- source: metrics d456616d0cb0 -->
 ## Métricas
 
 El ajuste `metrics_exporter` (`none` por defecto) exporta las métricas del servicio. Sus ajustes relacionados están en la [referencia de configuración](../reference/configuration.md).
@@ -499,6 +499,7 @@ Las métricas se enumeran abajo. En Prometheus, `.` en un nombre pasa a `_` y se
 | `my.voice.sfu.ticket_refusals` | Contador | `my.voice.sfu.reason` (`invalid` para un ticket caducado, usado o desconocido, `other_node` para un ticket de otro nodo) |
 | `my.voice.sfu.client.rtt` | Histograma, segundos | Ninguna (el tiempo de ida y vuelta a los participantes, según sus informes RTCP) |
 | `my.voice.sfu.client.packet_loss` | Histograma, porcentaje | Ninguna (la pérdida en el camino hacia los participantes, según sus informes RTCP) |
+| `my.voice.sfu.offer.wait` | Histograma, segundos | Ninguna (el tiempo desde que un participante se une hasta la primera oferta del nodo de medios) |
 | `my.errors.exported` | Contador | `my.outcome` (`success` / `dropped` / `failed`: uno por informe de error para el servicio de `errors_exporter`. `dropped` significa que el informe no se envió porque ya esperaban 1000 informes o el servicio pidió al servidor que fuera más despacio, y el servidor espera lo que el servicio pida antes de enviar de nuevo; `failed` significa que no se pudo llegar al servicio o este rechazó el informe. Un informe se envía una vez y nunca se reintenta, y los informes que aún esperan 2 segundos después de iniciarse un apagado se pierden) |
 | `my.queue.ready` | Indicador | `my.job.type` (el número de jobs ejecutables en la cola de la base de datos) |
 | `my.queue.oldest_ready_age` | Indicador, segundos | `my.job.type` (cuánto ha esperado el job ejecutable más antiguo de cada tipo en la cola de la base de datos; un tipo sin jobs ejecutables no tiene valor) |

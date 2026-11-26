@@ -193,7 +193,7 @@ docker compose up -d
 
 `voice_sfu_node_capacity` は、マシンが転送できる量から決め（[実測の費用](#measured-cost)）、`voice_max_participants` はルームに必要な大きさを超えないようにしてください。500 人のルームは、3 人しかいなくても 500 席を予約します。
 
-<!-- source: measured-cost fef7c9ecfe21 -->
+<!-- source: measured-cost 2d6571f6e923 -->
 ### 実測の費用
 
 50 パケット/秒で Opus の音声を送るシミュレートしたクライアントで、AMD Ryzen 9 7900（12 コア）、WSL2 上の Linux、Go 1.27、すべてループバックで測定しました。CPU はそのマシンのコア数で表し、メモリはプロセスの残りに加えて、ノードのヒープとゴルーチンのスタックです。
@@ -201,10 +201,10 @@ docker compose up -d
 | 対象 | CPU | メモリ |
 | --- | --- | --- |
 | 待機中のノード | 測定できない程度 | 約 0.1 MiB |
-| 開いているルーム 1 つあたり | 測定できない程度 | 約 24 KiB |
-| 参加者 1 人あたり | 無音のときは約 0.0002 コア | 約 200 KiB |
-| 転送するストリーム 1 つあたり（話す人 1 人の音声を参加者 1 人が聞く） | 1 パケットあたり 20 から 27 µs、約 0.001 コア | 約 24 KiB |
-| 100 人のルームで 3 人が音を出して話している | 約 0.3 コア | 約 25 MiB |
+| 開いているルーム 1 つあたり | 測定できない程度 | 約 25 KiB 未満 |
+| 参加者 1 人あたり | 無音のときは約 0.0002 コア | 約 180 KiB |
+| 転送するストリーム 1 つあたり（話す人 1 人の音声を参加者 1 人が聞く） | 1 パケットあたり 18 から 27 µs、約 0.001 コア | 約 25 KiB 未満 |
+| 100 人のルームで 3 人が音を出して話している | 約 0.3 コア | 約 23 MiB |
 
 マシンが速ければ、または遅ければ、これらの数値は比例して変わります。ノード自身のメトリクス（[見るべきメトリクス](#metrics-to-watch)）で、ノードが何を担っているかが分かります。
 
@@ -236,7 +236,7 @@ SIGTERM を受けると、ノードは停止する前にドレインします。
 
 Cloud Run は HTTP のリクエストしか受け付けないので、`role = sfu` はそこでは動かせません。`web` と `worker` のプロセスを Cloud Run で、ノードを公開 IP を持つ VM で動かし、データベース、`stream`（`postgres` か `pubsub`）、`kv`（`db` か `valkey`）を共有してください。各ノードには専用のホスト名と `voice_sfu_public_url` を付け、ノードで TLS を配信するか（`tls = acme`）、その手前で配信し、Cloud Run のサービスの `voice_sfu_origins` にノードのオリジンを設定してください。[Google Cloud へのデプロイ](deploy-google-cloud.md)の OpenTofu のモジュールは、ノードを作りません。
 
-<!-- source: metrics-to-watch 3346746d92f1 -->
+<!-- source: metrics-to-watch a8b32402b50d -->
 ### 見るべきメトリクス
 
 すべてのノードが、自分の `my.voice.sfu.*` のメトリクスを出力します（[メトリクス](running.md#metrics)）。
@@ -248,6 +248,7 @@ Cloud Run は HTTP のリクエストしか受け付けないので、`role = sf
 | `my.outcome` ごとの `my.voice.sfu.packets` | `forwarded` はノードの仕事です。`silent` と `not_allowed`（話せない、またはミュートされている参加者）は、設計どおり捨てられます。`queue_full` は、参加者の接続が追いつけなかったことを示します。数人だけなら遅いクライアント、すべてのクライアントで同時に増えるなら、CPU か帯域が足りないノードです。 |
 | `my.voice.sfu.bytes` | 転送した音声の量。ノードの送信の帯域です。 |
 | `my.voice.sfu.client.rtt`、`my.voice.sfu.client.packet_loss` | 参加者までの経路の品質。ほとんどのクライアントで悪いならノードのネットワークか場所が、数人だけならその人たち自身のネットワークが原因です。 |
+| `my.voice.sfu.offer.wait` | 参加する参加者がノードの最初のオファーを待つ時間。CPU に余裕のあるノードではミリ秒、秒単位になるのは忙しいノードで参加が待たされているということです。 |
 | `my.voice.sfu.migrations`、`my.voice.sfu.ice_restarts`、`my.voice.sfu.renegotiations` | ドレインで移動したルーム、ネットワークを変えたクライアント、話す人の変更。 |
 | `my.voice.sfu.reason` ごとの `my.voice.sfu.ticket_refusals` | `other_node` が増え続けるなら、クライアントが grant のノードとは別のノードに届いています。各ノードの `voice_sfu_public_url` がそのノードに通じているか確認してください。 |
 

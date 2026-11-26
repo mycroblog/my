@@ -448,7 +448,7 @@ Si vous exécutez une version officielle non modifiée, gardez la valeur par dé
 - Assurez-vous que le filtrage antispam ne supprime pas les demandes.
 - Utilisez une adresse que vous acceptez de rendre publique : n’importe qui peut la voir sur la page d’informations, sur la page d’accueil et dans NodeInfo.
 
-<!-- source: metrics bb10bda1b8a4 -->
+<!-- source: metrics d456616d0cb0 -->
 ## Métriques
 
 Le paramètre `metrics_exporter` (par défaut `none`) exporte les métriques du service. Ses paramètres associés se trouvent dans la [référence de la configuration](../reference/configuration.md).
@@ -501,6 +501,7 @@ Les métriques sont listées ci-dessous. Dans Prometheus, `.` dans un nom devien
 | `my.voice.sfu.ticket_refusals` | Compteur | `my.voice.sfu.reason` (`invalid` pour un ticket expiré, déjà utilisé ou inconnu, `other_node` pour un ticket d’un autre nœud) |
 | `my.voice.sfu.client.rtt` | Histogramme, secondes | Aucune (le temps d’aller-retour jusqu’aux participants, d’après leurs rapports RTCP) |
 | `my.voice.sfu.client.packet_loss` | Histogramme, pourcentage | Aucune (la perte sur le chemin vers les participants, d’après leurs rapports RTCP) |
+| `my.voice.sfu.offer.wait` | Histogramme, secondes | Aucune (le temps entre l’arrivée d’un participant et la première offre du nœud média) |
 | `my.errors.exported` | Compteur | `my.outcome` (`success` / `dropped` / `failed` : un par signalement d’erreur pour le service de `errors_exporter`. `dropped` signifie que le signalement n’a pas été envoyé parce que 1 000 signalements attendaient déjà ou que le service a demandé au serveur de ralentir, et le serveur attend aussi longtemps que le service le demande avant de renvoyer ; `failed` signifie que le service n’a pas pu être joint ou a refusé le signalement. Un signalement est envoyé une fois et jamais réessayé, et les signalements encore en attente 2 secondes après le début d’un arrêt sont perdus) |
 | `my.queue.ready` | Jauge | `my.job.type` (le nombre de jobs exécutables dans la file de la base de données) |
 | `my.queue.oldest_ready_age` | Jauge, secondes | `my.job.type` (depuis combien de temps attend le plus ancien job exécutable de chaque type dans la file de la base de données ; un type sans job exécutable n’a pas de valeur) |

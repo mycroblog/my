@@ -184,7 +184,7 @@ Un salon réserve son maximum (le maximum de l’hôte pour le salon, ou `voice_
 
 Définissez `voice_sfu_node_capacity` d’après ce que la machine peut transmettre ([Coût mesuré](#measured-cost)), et ne laissez pas `voice_max_participants` dépasser ce dont vos salons ont besoin : un salon de 500 réserve 500 places même avec 3 personnes dedans.
 
-<!-- source: measured-cost fef7c9ecfe21 -->
+<!-- source: measured-cost 2d6571f6e923 -->
 ### Coût mesuré
 
 Mesuré avec des clients simulés envoyant de l’audio Opus à 50 paquets par seconde, sur un AMD Ryzen 9 7900 (12 cœurs) sous Linux avec WSL2 et Go 1.27, le tout en boucle locale. Le CPU est exprimé en cœurs de cette machine ; la mémoire est le tas du nœud et les piles des goroutines, en plus du reste du processus.
@@ -192,10 +192,10 @@ Mesuré avec des clients simulés envoyant de l’audio Opus à 50 paquets par s
 | Quoi | CPU | Mémoire |
 | --- | --- | --- |
 | Un nœud inactif | non mesurable | environ 0,1 MiB |
-| Chaque salon ouvert | non mesurable | environ 24 KiB |
-| Chaque participant | environ 0,0002 cœur tant qu’il se tait | environ 200 KiB |
-| Chaque flux transmis (un intervenant entendu par un participant) | 20 à 27 µs par paquet, environ 0,001 cœur | environ 24 KiB |
-| Un salon de 100 avec 3 intervenants qui émettent du son | environ 0,3 cœur | environ 25 MiB |
+| Chaque salon ouvert | non mesurable | moins d’environ 25 KiB |
+| Chaque participant | environ 0,0002 cœur tant qu’il se tait | environ 180 KiB |
+| Chaque flux transmis (un intervenant entendu par un participant) | 18 à 27 µs par paquet, environ 0,001 cœur | moins d’environ 25 KiB |
+| Un salon de 100 avec 3 intervenants qui émettent du son | environ 0,3 cœur | environ 23 MiB |
 
 Une machine plus rapide ou plus lente fait varier ces chiffres ; les métriques propres à un nœud ([Métriques à surveiller](#metrics-to-watch)) montrent ce qu’il porte.
 
@@ -227,7 +227,7 @@ Un navigateur joint un nœud en UDP, ou en TCP quand UDP est bloqué. Sur les r�
 
 Cloud Run n’accepte que des requêtes HTTP, donc `role = sfu` ne peut pas y fonctionner. Exécutez les processus `web` et `worker` sur Cloud Run et les nœuds sur des VM dotées d’une IP publique, en partageant avec eux la base de données, le `stream` (`postgres` ou `pubsub`) et le `kv` (`db` ou `valkey`). Donnez à chaque nœud son propre nom d’hôte et son propre `voice_sfu_public_url`, servez TLS sur le nœud (`tls = acme`) ou devant lui, et définissez `voice_sfu_origins` sur le service Cloud Run avec les origines des nœuds. Les modules OpenTofu de [Déployer sur Google Cloud](deploy-google-cloud.md) ne créent pas les nœuds.
 
-<!-- source: metrics-to-watch 3346746d92f1 -->
+<!-- source: metrics-to-watch a8b32402b50d -->
 ### Métriques à surveiller
 
 Chaque nœud exporte ses propres métriques `my.voice.sfu.*` ([Métriques](running.md#metrics)).
@@ -239,6 +239,7 @@ Chaque nœud exporte ses propres métriques `my.voice.sfu.*` ([Métriques](runni
 | `my.voice.sfu.packets` par `my.outcome` | `forwarded` est le travail du nœud. `silent` et `not_allowed` (un participant qui n’a pas le droit de parler ou est coupé) sont abandonnés par conception. `queue_full` signifie que la connexion d’un participant n’a pas pu suivre : un client lent quand ils sont peu nombreux, un nœud à court de CPU ou de bande passante quand cela monte pour tous les clients à la fois. |
 | `my.voice.sfu.bytes` | L’audio transmis : la bande passante sortante du nœud. |
 | `my.voice.sfu.client.rtt`, `my.voice.sfu.client.packet_loss` | La qualité sur le chemin vers les participants. Élevée pour la plupart des clients, elle désigne le réseau ou l’emplacement du nœud ; pour quelques-uns, leurs propres réseaux. |
+| `my.voice.sfu.offer.wait` | Combien de temps un participant qui rejoint attend la première offre du nœud : des millisecondes sur un nœud avec du CPU à revendre ; des secondes signifient que les arrivées attendent sur un nœud occupé. |
 | `my.voice.sfu.migrations`, `my.voice.sfu.ice_restarts`, `my.voice.sfu.renegotiations` | Les salons déplacés par un drainage, les clients qui ont changé de réseau et les changements d’intervenants. |
 | `my.voice.sfu.ticket_refusals` par `my.voice.sfu.reason` | Un `other_node` qui ne cesse de monter signifie que des clients joignent un autre nœud que celui de leur autorisation : vérifiez que le `voice_sfu_public_url` de chaque nœud mène à ce nœud. |
 

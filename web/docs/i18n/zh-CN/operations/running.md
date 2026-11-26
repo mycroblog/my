@@ -321,7 +321,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 确保垃圾邮件过滤不会丢弃索取请求。
 - 使用你愿意公开的地址：任何人都能在信息页面、首页和 NodeInfo 中看到它。
 
-<!-- source: metrics bb10bda1b8a4 -->
+<!-- source: metrics d456616d0cb0 -->
 ## 指标
 
 设置 `metrics_exporter`（默认 `none`）用于导出服务指标。相关设置见[配置参考](../reference/configuration.md)。
@@ -374,6 +374,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.voice.sfu.ticket_refusals` | Counter | `my.voice.sfu.reason`（`invalid` 表示已过期、已使用或未知的票据，`other_node` 表示另一个节点的票据） |
 | `my.voice.sfu.client.rtt` | Histogram，秒 | 无（到参与者的往返时间，来自他们的 RTCP 报告） |
 | `my.voice.sfu.client.packet_loss` | Histogram，百分比 | 无（到参与者途中的丢包，来自他们的 RTCP 报告） |
+| `my.voice.sfu.offer.wait` | Histogram，秒 | 无（从参与者加入到媒体节点发出第一个 offer 的时间） |
 | `my.errors.exported` | Counter | `my.outcome`（`success` / `dropped` / `failed`：发往 `errors_exporter` 服务的每份错误报告计一次。`dropped` 表示因已有 1,000 份报告在等待，或者服务要求服务器放慢速度而没有发送该报告，服务器会按服务要求的时长等待后再发送；`failed` 表示无法连接到服务或服务拒绝了报告。报告只发送一次，从不重试，关闭过程开始 2 秒后仍在等待的报告会丢失） |
 | `my.queue.ready` | Gauge | `my.job.type`（数据库队列中可运行任务的数量） |
 | `my.queue.oldest_ready_age` | Gauge，秒 | `my.job.type`（数据库队列中每种类型最早的可运行任务已等待的时长；没有可运行任务的类型没有值） |
