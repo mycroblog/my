@@ -119,6 +119,7 @@ func (s *Service) decideConnect(ctx context.Context, a ConnectAttempt) (ConnectD
 	}
 	p := ps[at]
 	banned, err := s.d.Repository.Banned(ctx, nil, a.Room.ID, p.AccountID)
+	capacity := rec.Revision.Settings.Capacity(s.d.Config.Capacity)
 	switch {
 	case err != nil:
 		return ConnectDecision{}, err
@@ -126,7 +127,7 @@ func (s *Service) decideConnect(ctx context.Context, a ConnectAttempt) (ConnectD
 		return refuse(connectReasonBanned)
 	case a.Speaker && p.Role != voice.RoleSpeaker:
 		return refuse(connectReasonSpeaker)
-	case s.d.Config.Capacity > 0 && at >= s.d.Config.Capacity:
+	case capacity > 0 && at >= capacity:
 		return refuse(connectReasonFull)
 	}
 	return ConnectDecision{Allowed: true}, nil

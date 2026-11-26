@@ -33,6 +33,7 @@ import (
 const (
 	VoiceOff     = "off"
 	VoiceP2P     = "p2p"
+	VoiceSFU     = "sfu"
 	VoiceLiveKit = "livekit"
 	VoiceSora    = "sora"
 )
@@ -41,12 +42,10 @@ const (
 // operator's limits of the rooms. The composition root passes it on to the voice chat; with
 // the method off, the voice chat API answers 404 (ADR-0100 §2).
 type Voice struct {
-	// Method is VoiceOff, VoiceP2P, VoiceLiveKit, or VoiceSora.
+	// Method is VoiceOff, VoiceP2P, VoiceSFU, VoiceLiveKit, or VoiceSora.
 	Method string
-	// P2PMaxParticipants bounds a room of VoiceP2P, and MaxParticipants a room of an SFU (0 for
-	// no limit).
-	P2PMaxParticipants int
-	MaxParticipants    int
+	// MaxParticipants bounds the maximum of every room (voice_max_participants), 0 for no limit.
+	MaxParticipants int
 	// MaxRoomDuration is the longest a room stays open, and MaxOpenRooms how many rooms may be
 	// open at once; 0 is no limit.
 	MaxRoomDuration time.Duration
@@ -56,18 +55,13 @@ type Voice struct {
 // Enabled reports whether the voice chat runs.
 func (v Voice) Enabled() bool { return v.Method != "" && v.Method != VoiceOff }
 
-// RoomCapacity returns how many people a room holds with the method, 0 for no limit.
-func (v Voice) RoomCapacity() int {
-	if v.Method == VoiceP2P {
-		return v.P2PMaxParticipants
-	}
-	return v.MaxParticipants
-}
+// RoomCapacity returns the most people a room may hold, 0 for no limit.
+func (v Voice) RoomCapacity() int { return v.MaxParticipants }
 
 // newVoice returns the Voice of cfg.
 func newVoice(cfg *config.Config) Voice {
 	v := Voice{
-		Method: cfg.Voice, P2PMaxParticipants: cfg.VoiceP2PMaxParticipants, MaxParticipants: cfg.VoiceMaxParticipants,
+		Method: cfg.Voice, MaxParticipants: cfg.VoiceMaxParticipants,
 		MaxRoomDuration: cfg.VoiceMaxRoomDuration, MaxOpenRooms: cfg.VoiceMaxOpenRooms,
 	}
 	if v.Method == "" {
@@ -96,6 +90,9 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 			STUNURLs: cfg.VoiceSTUNURLs, TURN: turn, TTL: cfg.VoiceTURNCredentialTTL,
 			RelayOnly: cfg.VoiceICETransportPolicy == "relay", Sessions: heartbeats, Clock: a.Clock, Meter: a.Meter,
 		})
+	case VoiceSFU:
+		// The media nodes of ADR-0101 §10 to §16 are not in this build yet.
+		return errors.New("voice = sfu: this build has no media node (SFU) yet; use p2p, livekit, sora, or off")
 	case VoiceLiveKit:
 		var err error
 		if transport, err = a.newLiveKitTransport(cfg); err != nil {

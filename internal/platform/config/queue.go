@@ -107,8 +107,8 @@ func workerJobTypeChecks(vals map[string]string) []Issue {
 		if len(splitJobTypePatterns(vals[key])) == 0 {
 			continue
 		}
-		if vals["role"] == string(RoleWeb) {
-			issues = append(issues, Issue{Key: key, Message: "needs a process that runs jobs, role = all or worker, not web"})
+		if !Role(vals["role"]).RunsJobs() {
+			issues = append(issues, Issue{Key: key, Message: "needs a process that runs jobs, role = all or worker, not " + vals["role"]})
 		}
 		if q := vals["queue"]; q != "" && q != "db" {
 			issues = append(issues, Issue{Key: key, Message: fmt.Sprintf("works only with queue = db, not %s", q)})
@@ -142,8 +142,8 @@ func workerJobConcurrencyChecks(vals map[string]string) []Issue {
 		return nil
 	}
 	var issues []Issue
-	if vals["role"] == string(RoleWeb) {
-		issues = append(issues, Issue{Key: "worker_job_concurrency", Message: "above 1 needs a process that runs jobs, role = all or worker, not web"})
+	if !Role(vals["role"]).RunsJobs() {
+		issues = append(issues, Issue{Key: "worker_job_concurrency", Message: "above 1 needs a process that runs jobs, role = all or worker, not " + vals["role"]})
 	}
 	if q := vals["queue"]; q != "" && q != "db" {
 		issues = append(issues, Issue{Key: "worker_job_concurrency", Message: fmt.Sprintf("above 1 works only with queue = db, not %s", q)})

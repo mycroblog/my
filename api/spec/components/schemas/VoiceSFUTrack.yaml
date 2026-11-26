@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: A transceiver of an `offer` that sends the audio of one speaker.
+type: object
+required: [mid, participant]
+properties:
+  mid:
+    description: The `mid` of the transceiver in the offer's session description.
+    type: string
+  participant:
+    description: The account ID of the speaker, as in the `account` of a `VoiceRoomParticipant`.
+    allOf:
+      - $ref: ./Id.yaml

@@ -58,6 +58,7 @@ type VoiceRoomRevision struct {
 	IconCustomEmojiID  sql.NullString
 	RevisedByAccountID string
 	RevisedAt          int64
+	MaxParticipants    sql.NullInt64
 }
 
 type VoiceRoomRevisionHashtag struct {

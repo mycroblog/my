@@ -9,8 +9,8 @@ post:
     room already, from another device, keeps the place with a new session, and the previous
     session is disconnected. Joining leaves the room the user was in; the host of an open room
     leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
-    `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
-    allows.
+    `/api/v1/problems/voice-room-full` for a room that holds as many people as its
+    `max_participants` allows, also after the host lowered it below the people in the room.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

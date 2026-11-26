@@ -58,6 +58,7 @@ type VoiceRoomRevision struct {
 	IconCustomEmojiID  *string
 	RevisedByAccountID string
 	RevisedAt          time.Time
+	MaxParticipants    *int32
 }
 
 type VoiceRoomRevisionHashtag struct {

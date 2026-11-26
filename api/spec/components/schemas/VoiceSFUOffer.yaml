@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+title: offer
+description: |
+  The node's offer for the session's connection, which the client answers with an `answer`:
+  the first one on connecting, then one each time the speakers change or ICE restarts.
+type: object
+required: [v, type, sdp, tracks]
+properties:
+  v:
+    $ref: ./VoiceSFUVersion.yaml
+  type:
+    type: string
+    enum: [offer]
+  sdp:
+    description: The session description of the offer.
+    type: string
+  tracks:
+    description: |
+      Which transceiver carries the audio of which speaker. The transceiver that receives the
+      user's microphone is not listed.
+    type: array
+    items:
+      $ref: ./VoiceSFUTrack.yaml

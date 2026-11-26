@@ -22,6 +22,8 @@ CREATE TABLE voice_rooms (
 -- erasure of the account that wrote a revision empties its name and description. The icon has
 -- the shape of the emoji of a reaction (04-content.sql reactions): icon_emoji_key is the Unicode
 -- emoji, fully qualified, or the custom_emojis.id of icon_custom_emoji_id, '' for no icon.
+-- max_participants is the host's maximum of the people in the room, NULL for none: the
+-- operator's voice_max_participants bounds it and applies alone without it (ADR-0100 section 3).
 CREATE TABLE voice_room_revisions (
   id uuid NOT NULL PRIMARY KEY,
   room_id uuid NOT NULL,
@@ -33,6 +35,7 @@ CREATE TABLE voice_room_revisions (
   icon_custom_emoji_id uuid,
   revised_by_account_id uuid NOT NULL,
   revised_at timestamptz NOT NULL,
+  max_participants integer CHECK (max_participants IS NULL OR max_participants >= 2),
   CONSTRAINT voice_room_revisions_icon_custom_emoji_check CHECK (icon_custom_emoji_id IS NULL OR icon_custom_emoji_id::text = icon_emoji_key)
 );
 CREATE INDEX voice_room_revisions_room_id_id ON voice_room_revisions (room_id, id DESC);

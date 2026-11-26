@@ -430,6 +430,7 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
         speakers: body.speakers ?? "manual",
         host: c.viewer(),
         opened_at: at,
+        max_participants: body.max_participants ?? 10,
         participants_count: 0,
         participants: [],
         can_speak: false,

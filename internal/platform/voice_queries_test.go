@@ -21,7 +21,7 @@ func voiceQueries(t *testing.T, n int) (room, list int) {
 	t.Helper()
 	tracer := testkit.NewTracer()
 	cfg := loadConfig(t, map[string]string{
-		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_VOICE": "p2p", "MY_VOICE_STUN_URLS": "stun:stun.example.org", "MY_VOICE_P2P_MAX_PARTICIPANTS": "20", "MY_VOICE_MAX_OPEN_ROOMS": "20",
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_VOICE": "p2p", "MY_VOICE_STUN_URLS": "stun:stun.example.org", "MY_VOICE_MAX_PARTICIPANTS": "20", "MY_VOICE_MAX_OPEN_ROOMS": "20",
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), Tracer: tracer})
 	if err != nil {

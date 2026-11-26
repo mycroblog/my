@@ -99,7 +99,7 @@ var ErrWorkerJobConcurrency = errors.New("worker_job_concurrency is too high for
 // table has nothing to check: the settings refuse more than one there.
 func (a *App) setUpWorkerJobConcurrency(cfg *config.Config) error {
 	n := cfg.WorkerJobConcurrency
-	if n == 0 || cfg.Role == config.RoleWeb || a.runnerSource == nil {
+	if n == 0 || !cfg.Role.RunsJobs() || a.runnerSource == nil {
 		return nil
 	}
 	// A slot waits for a connection to claim and to record, and a handler that takes a second one

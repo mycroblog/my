@@ -48,8 +48,7 @@ The limits keep the cost of a paid media server bounded. `0` removes any of them
 | --- | --- | --- |
 | `voice_max_room_duration` | `4h` | The longest a room stays open. A room that reaches it is ended. |
 | `voice_max_open_rooms` | `10` | How many rooms may be open at once on this server. A room opened for a scheduled time counts from its opening, while it waits for its first participant. |
-| `voice_sfu_max_participants` | `10` | The room size for `livekit` and `sora`. |
-| `voice_p2p_max_participants` | `10` | The room size for `p2p`, from 2 to 50. |
+| `voice_max_participants` | `10` | The largest room, from 2 to 500 (50 with `p2p`). A host may set a smaller maximum for their room. |
 
 Who may open rooms is the instance setting `voice_room_starters` ([instance settings](instance-settings.md)): by default only holders of the permission `start_voice_rooms` (the built-in `admin` role has it); `everyone` lets every signed-in local user who is not suspended or limited open rooms.
 
@@ -77,7 +76,7 @@ docker compose up -d
 Two browsers connect to each other when at least one of them is speaking; two people who only listen do not connect.
 A speaker therefore sends a separate copy of their audio to every other participant. Speech in Opus takes roughly 30 to 50 kbit/s with overhead, so a speaker in a room of 10 uploads about 9 copies, a few hundred kbit/s,
 and a speaker in a room of 50 uploads 49 copies, around 2 Mbit/s, which a phone on mobile data or a home connection may not sustain. The number of connections in a room of N people is at most N(N-1)/2: 45 for 10 and 1,225 for 50.
-That is why the default is 10. Raise `voice_p2p_max_participants` only when your users have the upload bandwidth; use `livekit` or `sora` for large rooms.
+That is why the default is 10. Raise `voice_max_participants` only when your users have the upload bandwidth; use `livekit` or `sora` for large rooms.
 
 ### STUN and TURN
 

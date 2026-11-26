@@ -120,7 +120,7 @@ type Grant struct {
 ### 4. P2P のシグナリング
 
 - **結ぶ組**: 少なくとも一方が話者（ホスト・共同ホストで話している人を含む）である 2 つのセッションを結ぶ。聞き手どうしは結ばない。聞き手が話者になったら、まだ結んでいないすべての参加者と結び、話者が聞き手に戻ったら、聞き手どうしになった組を切る。
-  人数の上限 `voice_p2p_max_participants`（既定 10）で、組の数は最大 45 に収まる。
+  人数の上限（§1 の `voice_max_participants`。既定 10）で、組の数は最大 45 に収まる。P2P ではこの上限を 50 までにする。
 - **offer する側**: 結ぶ組のうち、セッションの ID が大きい側が最初の offer を送る。再ネゴシエーションは WebRTC の perfect negotiation の手順に従い、ID が小さい側を polite とする。
 - **送り方**: `POST /voice/rooms/{id}/signals`（`write:voice`）に `{session, to, kind, sdp?, candidate?}`（`kind` は `offer` / `answer` / `candidate` / `restart`）。サーバーは次を検査し、満たさなければ `422` で中継しない:
   - 送り手と宛先が同じルームの生きたセッションで、§4 の結ぶ組である

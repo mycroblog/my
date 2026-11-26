@@ -135,7 +135,8 @@ func (s *Service) joined(ctx context.Context, roomID, session string, g Grant) (
 // ADR-0101 §6). A participant of the room who joins again, from another device, keeps the
 // participation with a new session, and the previous session is disconnected. A participation
 // in another room ends (moved), but a host of an open room leaves it first
-// (ErrHostingElsewhere). A room as full as the operator allows fails with ErrRoomFull.
+// (ErrHostingElsewhere). A room that holds as many people as its maximum (Capacity) fails with
+// ErrRoomFull, also after the host lowered the maximum below the people in it.
 //
 // The grant of the session is issued before anything is written, so that a transport that
 // gives no grant (ErrTransportUnavailable) leaves no participation behind and the caller can
@@ -174,8 +175,7 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	if err != nil {
 		return Joined{}, err
 	}
-	capacity := s.d.Config.Capacity
-	if capacity > 0 && len(v.Participants) >= capacity {
+	if capacity := s.Capacity(v); capacity > 0 && len(v.Participants) >= capacity {
 		return Joined{}, ErrRoomFull
 	}
 	blocks, err := s.readBlocks(ctx, v, accountID)
@@ -218,7 +218,8 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 			}
 			return err
 		}
-		if capacity > 0 {
+		// The maximum of the settings that committed, which the host may have changed meanwhile.
+		if capacity := rec.Revision.Settings.Capacity(s.d.Config.Capacity); capacity > 0 {
 			ps, err := s.d.Repository.Participants(ctx, tx, roomID)
 			if err != nil {
 				return err

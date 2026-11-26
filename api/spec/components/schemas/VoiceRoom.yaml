@@ -3,7 +3,7 @@ description: |
   An open voice chat room: its settings, its host, and its participants in the order they
   joined. Everyone who sees the room sees its participants.
 type: object
-required: [id, name, description, hashtags, visibility, speakers, host, opened_at, participants_count, participants, can_speak]
+required: [id, name, description, hashtags, visibility, speakers, max_participants, host, opened_at, participants_count, participants, can_speak]
 properties:
   id:
     $ref: ./Id.yaml
@@ -24,6 +24,13 @@ properties:
     $ref: ./VoiceRoomVisibility.yaml
   speakers:
     $ref: ./VoiceRoomSpeakers.yaml
+  max_participants:
+    description: |
+      How many people the room holds, the host included: the host's maximum, or the server's
+      (`voice_max_participants` of `Instance`) when the host set none or the server's is lower.
+      A join while the room holds as many people is a 409. The room may hold more after the
+      host lowered it; nobody leaves for it.
+    type: integer
   host:
     $ref: ./Account.yaml
   opened_at:

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+title: restart
+description: |
+  Asks the node to restart ICE, after the client's network changed; the node answers with an
+  `offer` that restarts it.
+type: object
+required: [v, type]
+properties:
+  v:
+    $ref: ./VoiceSFUVersion.yaml
+  type:
+    type: string
+    enum: [restart]

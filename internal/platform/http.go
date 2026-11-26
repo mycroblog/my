@@ -68,14 +68,14 @@ func (a *App) handler(gateDomains bool) http.Handler {
 	mux.HandleFunc("GET "+PathHealthReady, a.readiness)
 	var page http.Handler
 	targets := map[string]routeTarget{}
-	if a.Config.Role != config.RoleWorker {
+	if a.Config.Role.ServesAPI() {
 		for _, r := range a.routes {
 			mux.Handle(r.pattern, r.handler)
 			targets[r.pattern] = routeTarget{route: routeOf(r.pattern), surface: r.surface}
 		}
 		page = a.page
 	}
-	if a.Config.Role != config.RoleWeb {
+	if a.Config.Role.RunsJobs() {
 		for _, r := range a.internalRoutes {
 			mux.Handle(r.pattern, r.handler)
 			targets[r.pattern] = routeTarget{route: routeOf(r.pattern), surface: r.surface}

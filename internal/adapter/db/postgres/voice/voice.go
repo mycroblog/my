@@ -48,9 +48,18 @@ func (r *Repository) InsertRevision(ctx context.Context, tx uow.Tx, rev appvoice
 		return err
 	}
 	s := rev.Settings
+	var maxParticipants *int32
+	if s.MaxParticipants != 0 {
+		n, err := postgres.ToInt32(s.MaxParticipants, "voice room max participants")
+		if err != nil {
+			return err
+		}
+		maxParticipants = &n
+	}
 	if err := q.InsertVoiceRoomRevision(ctx, voicegen.InsertVoiceRoomRevisionParams{
 		ID: rev.ID, RoomID: rev.RoomID, Name: s.Name, Description: s.Description, Visibility: string(s.Visibility),
 		Speakers: string(s.Speakers), IconEmojiKey: s.Icon.Key(), IconCustomEmojiID: postgres.ToNullString(s.Icon.CustomEmojiID),
+		MaxParticipants:    maxParticipants,
 		RevisedByAccountID: rev.RevisedByAccountID, RevisedAt: rev.RevisedAt,
 	}); err != nil {
 		return postgres.Wrap(err, "insert voice room revision")
@@ -245,6 +254,14 @@ func (r *Repository) FindParticipationEnd(ctx context.Context, tx uow.Tx, partic
 	return appvoice.ParticipationEnd{ParticipationID: row.ParticipationID, Reason: voice.ParticipationEndReason(row.Reason), EndedAt: postgres.UTC(row.EndedAt)}, nil
 }
 
+// maxParticipantsOf reads the host's maximum of a revision, 0 for none (NULL).
+func maxParticipantsOf(n *int32) int {
+	if n == nil {
+		return 0
+	}
+	return int(*n)
+}
+
 func voiceRoomRecord(row voicegen.GetVoiceRoomRow) appvoice.RoomRecord {
 	rec := appvoice.RoomRecord{
 		Room: appvoice.Room{
@@ -258,7 +275,7 @@ func voiceRoomRecord(row voicegen.GetVoiceRoomRow) appvoice.RoomRecord {
 			ID: row.RevisionID, RoomID: row.ID,
 			Settings: voice.Settings{
 				Name: row.Name, Description: row.Description, Visibility: voice.Visibility(row.Visibility), Speakers: voice.Speakers(row.Speakers),
-				Icon: voice.IconOf(row.IconEmojiKey, postgres.FromNullString(row.IconCustomEmojiID)),
+				Icon: voice.IconOf(row.IconEmojiKey, postgres.FromNullString(row.IconCustomEmojiID)), MaxParticipants: maxParticipantsOf(row.MaxParticipants),
 			},
 			RevisedByAccountID: row.RevisedByAccountID, RevisedAt: postgres.UTC(row.RevisedAt),
 		},

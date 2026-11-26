@@ -212,6 +212,10 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	// Whether the voice chat rooms are on and who may open them (ADR-0100 §2), so that clients
 	// show their entries only then.
 	out.VoiceEnabled = s.o.Voice != nil
+	if out.VoiceEnabled {
+		n := s.o.Voice.MaxParticipants()
+		out.VoiceMaxParticipants = &n
+	}
 	out.VoiceRoomStarters = InstanceVoiceRoomStartersPermitted
 	if out.VoiceEnabled && settings.VoiceRoomStarters() == instance.VoiceRoomStartersEveryone {
 		out.VoiceRoomStarters = InstanceVoiceRoomStartersEveryone

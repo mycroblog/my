@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/internal/platform/config"
 	"github.com/mycroblog/my/internal/platform/tlsserve"
 )
 
@@ -117,7 +116,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	// Open streams never finish on their own: end them when the shutdown starts, so that it
 	// waits only for the other requests. A worker has no streams and keeps sending the signals
 	// of its jobs to the other processes until the jobs stop.
-	if a.Config.Role != config.RoleWorker {
+	if a.Config.Role.ServesAPI() {
 		srv.RegisterOnShutdown(func() {
 			closeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), opts.ShutdownTimeout)
 			defer cancel()
@@ -208,7 +207,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	// scheduler tick the periodic ones (ADR-0004 §12). The line "started" names which (jobsRun).
 	jobsRun := jobsRunNone
 	switch {
-	case a.Config.Role == config.RoleWeb:
+	case !a.Config.Role.RunsJobs():
 	case a.pushReceiver != nil:
 		jobsRun = jobsRunPush
 	default:
@@ -324,7 +323,7 @@ func (a *App) afterDomainsVerified(ctx context.Context) {
 	if err := a.Identity.EnsureBuiltinRoles(ctx); err != nil {
 		a.Logger.WarnContext(ctx, "built-in roles not ensured yet", slog.Any("error", err))
 	}
-	if a.Config.Role != config.RoleWorker {
+	if a.Config.Role.ServesAPI() {
 		// The authorization server also registers the web client on its first request.
 		if err := a.Identity.EnsureWebClient(ctx); err != nil {
 			a.Logger.WarnContext(ctx, "web client not registered yet", slog.Any("error", err))

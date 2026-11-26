@@ -4812,8 +4812,8 @@ export interface paths {
          *     room already, from another device, keeps the place with a new session, and the previous
          *     session is disconnected. Joining leaves the room the user was in; the host of an open room
          *     leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
-         *     `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
-         *     allows.
+         *     `/api/v1/problems/voice-room-full` for a room that holds as many people as its
+         *     `max_participants` allows, also after the host lowered it below the people in the room.
          */
         post: operations["joinVoiceRoom"];
         /**
@@ -15871,6 +15871,11 @@ export interface components {
              */
             voice_enabled: boolean;
             /**
+             * @description The most people a voice chat room may hold, the bound of a room's `max_participants`.
+             *     Given while the voice chat rooms are on.
+             */
+            voice_max_participants?: number;
+            /**
              * @description Who may write new articles (`createArticle`): `everyone` (every local user who is not
              *     limited) or `permission` (only the users whose roles have `create_articles`). Always given.
              * @enum {string}
@@ -19691,17 +19696,37 @@ export interface components {
         VoiceEndReason: "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled" | "host_absent" | "unattended";
         /**
          * @description What the client of a session needs to connect to the audio of a room. `kind` is the method
-         *     of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+         *     of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
          *     `expires_at`.
+         *
+         *     With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
+         *     a ticket for it, which connects once and only within 30 seconds. The client opens a
+         *     WebSocket to `url` with the query parameter `ticket` set to `token`
+         *     (`GET <url>?ticket=<token>`, an upgrade to the WebSocket protocol; browsers cannot send
+         *     headers on a WebSocket, so the ticket travels in the URL). An expired or used ticket, or
+         *     one for another node, is refused. Each message is a JSON text frame with a version `v` (1)
+         *     and a `type`: the client sends a `VoiceSFUClientMessage` and receives a
+         *     `VoiceSFUNodeMessage`. The node always makes the offer, on one `RTCPeerConnection` for the
+         *     session: its first `offer` has one transceiver that receives the user's microphone and one
+         *     that sends the audio of each speaker, and it offers again only when the speakers change. A
+         *     client that changes network sends `restart` and gets an offer that restarts ICE. When the
+         *     WebSocket closes while the connection lives, or on `migrate`, the client asks for a new
+         *     grant (`POST /voice/rooms/{id}/grant`) and connects to its `url` with the same session.
          */
         VoiceGrant: {
             /** @enum {string} */
-            kind: "p2p" | "livekit" | "sora";
-            /** @description The endpoint of the media server; omitted for `p2p`. */
+            kind: "p2p" | "sfu" | "livekit" | "sora";
+            /**
+             * @description The endpoint of the media server, the `wss:` URL of the media node for `sfu`; omitted for
+             *     `p2p`.
+             */
             url?: string;
-            /** @description The access token of the media server; omitted for `p2p`. */
+            /**
+             * @description The access token of the media server, the single-use ticket of the media node for `sfu`;
+             *     omitted for `p2p`.
+             */
             token?: string;
-            /** @description The options of the method for the client. */
+            /** @description The options of the method for the client; empty for `p2p` and `sfu`. */
             options: {
                 [key: string]: string;
             };
@@ -19754,6 +19779,13 @@ export interface components {
             hashtags: string[];
             visibility: components["schemas"]["VoiceRoomVisibility"];
             speakers: components["schemas"]["VoiceRoomSpeakers"];
+            /**
+             * @description How many people the room holds, the host included: the host's maximum, or the server's
+             *     (`voice_max_participants` of `Instance`) when the host set none or the server's is lower.
+             *     A join while the room holds as many people is a 409. The room may hold more after the
+             *     host lowered it; nobody leaves for it.
+             */
+            max_participants: number;
             host: components["schemas"]["Account"];
             /**
              * Format: date-time
@@ -19902,6 +19934,12 @@ export interface components {
             visibility?: components["schemas"]["VoiceRoomVisibility"];
             /** @description Who may become a speaker without asking; `manual` when omitted. */
             speakers?: components["schemas"]["VoiceRoomSpeakers"];
+            /**
+             * @description How many people the room holds, the host included, from 2 to the server's maximum
+             *     (`voice_max_participants` of `Instance`); the server's maximum when omitted. Any other
+             *     number is a 422.
+             */
+            max_participants?: number;
             post?: components["schemas"]["VoiceStartPost"];
         };
         /**
@@ -19945,6 +19983,12 @@ export interface components {
             hashtags?: string[];
             visibility?: components["schemas"]["VoiceRoomVisibility"];
             speakers?: components["schemas"]["VoiceRoomSpeakers"];
+            /**
+             * @description How many people the room holds, from 2 to the server's maximum, as in
+             *     `VoiceRoomSettings`. A maximum below the people in the room is accepted: nobody leaves,
+             *     and joins are refused until fewer people are in it.
+             */
+            max_participants?: number;
         };
         /**
          * @description Who sees a voice chat room and may join it: `local` every local user, `followers` the
@@ -19959,6 +20003,147 @@ export interface components {
             /** @description The `session` of the join. */
             session: string;
         };
+        /**
+         * answer
+         * @description The client's answer to the node's latest `offer`.
+         */
+        VoiceSFUAnswer: {
+            v: components["schemas"]["VoiceSFUVersion"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "answer";
+            /** @description The session description of the answer. */
+            sdp: string;
+        };
+        /**
+         * candidate
+         * @description An ICE candidate of the connection, which the client and the node both send.
+         */
+        VoiceSFUCandidate: {
+            v: components["schemas"]["VoiceSFUVersion"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "candidate";
+            /**
+             * @description The JSON of an `RTCIceCandidateInit` with only `candidate`, `sdpMid`, `sdpMLineIndex`,
+             *     and `usernameFragment`; `candidate` is empty (no more candidates) or a `candidate:`
+             *     attribute on one line.
+             */
+            candidate: string;
+        };
+        /**
+         * @description A message that the client sends to the media node over the WebSocket of a `sfu` grant
+         *     (`VoiceGrant`), one JSON text frame each. `type` tells which. No operation takes it.
+         */
+        VoiceSFUClientMessage: components["schemas"]["VoiceSFUAnswer"] | components["schemas"]["VoiceSFUCandidate"] | components["schemas"]["VoiceSFURestart"];
+        /**
+         * error
+         * @description The node refused the connection or a message, and closes the WebSocket after it. Clients
+         *     branch on `code`, never on `message`.
+         */
+        VoiceSFUError: {
+            v: components["schemas"]["VoiceSFUVersion"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "error";
+            /**
+             * @description Why: `invalid_ticket` (the ticket expired, was used, or is for another node; ask for a
+             *     new grant), `invalid_message` (a message the node does not understand),
+             *     `unsupported_version` (a `v` the node does not know), or `room_unavailable` (the session
+             *     or the room is no longer on the node). A client treats an unknown code as
+             *     `room_unavailable`.
+             */
+            code: string;
+            /** @description A description of the error in English, for logs. */
+            message: string;
+        };
+        /**
+         * migrate
+         * @description The node is stopping and the room moved to another node: the client asks for a new grant
+         *     (`POST /voice/rooms/{id}/grant`) and connects to its `url` with the same session. The node
+         *     closes the WebSocket after it.
+         */
+        VoiceSFUMigrate: {
+            v: components["schemas"]["VoiceSFUVersion"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "migrate";
+        };
+        /**
+         * @description A message that the media node sends to the client over the WebSocket of a `sfu` grant
+         *     (`VoiceGrant`), one JSON text frame each. `type` tells which; a client ignores a `type` it
+         *     does not know. No operation returns it.
+         */
+        VoiceSFUNodeMessage: components["schemas"]["VoiceSFUOffer"] | components["schemas"]["VoiceSFUCandidate"] | components["schemas"]["VoiceSFUSpeaking"] | components["schemas"]["VoiceSFUMigrate"] | components["schemas"]["VoiceSFUError"];
+        /**
+         * offer
+         * @description The node's offer for the session's connection, which the client answers with an `answer`:
+         *     the first one on connecting, then one each time the speakers change or ICE restarts.
+         */
+        VoiceSFUOffer: {
+            v: components["schemas"]["VoiceSFUVersion"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "offer";
+            /** @description The session description of the offer. */
+            sdp: string;
+            /**
+             * @description Which transceiver carries the audio of which speaker. The transceiver that receives the
+             *     user's microphone is not listed.
+             */
+            tracks: components["schemas"]["VoiceSFUTrack"][];
+        };
+        /**
+         * restart
+         * @description Asks the node to restart ICE, after the client's network changed; the node answers with an
+         *     `offer` that restarts it.
+         */
+        VoiceSFURestart: {
+            v: components["schemas"]["VoiceSFUVersion"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "restart";
+        };
+        /**
+         * speaking
+         * @description Who makes sound now, from the audio levels that the node receives; it arrives at most every
+         *     250 milliseconds.
+         */
+        VoiceSFUSpeaking: {
+            v: components["schemas"]["VoiceSFUVersion"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "speaking";
+            /** @description The account IDs of the speakers who make sound; empty when nobody does. */
+            participants: components["schemas"]["Id"][];
+        };
+        /** @description A transceiver of an `offer` that sends the audio of one speaker. */
+        VoiceSFUTrack: {
+            /** @description The `mid` of the transceiver in the offer's session description. */
+            mid: string;
+            /** @description The account ID of the speaker, as in the `account` of a `VoiceRoomParticipant`. */
+            participant: components["schemas"]["Id"];
+        };
+        /**
+         * @description The version of the messages of the media node's WebSocket. A message of a version that the
+         *     receiver does not know is refused with an `error`.
+         * @enum {integer}
+         */
+        VoiceSFUVersion: 1;
         /**
          * @description The post that the host writes when opening a voice chat room. Asking for one needs the
          *     `write:statuses` scope besides `write:voice`, or the request is a 403

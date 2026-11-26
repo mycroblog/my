@@ -32,7 +32,7 @@ func (r *Repository) Revisions(ctx context.Context, tx uow.Tx, roomID string) ([
 			ID: row.ID, RoomID: row.RoomID,
 			Settings: voice.Settings{
 				Name: row.Name, Description: row.Description, Visibility: voice.Visibility(row.Visibility), Speakers: voice.Speakers(row.Speakers),
-				Icon: voice.IconOf(row.IconEmojiKey, row.IconCustomEmojiID.String),
+				Icon: voice.IconOf(row.IconEmojiKey, row.IconCustomEmojiID.String), MaxParticipants: int(row.MaxParticipants.Int64),
 			},
 			RevisedByAccountID: row.RevisedByAccountID, RevisedAt: sqlite.FromMillis(row.RevisedAt),
 		}

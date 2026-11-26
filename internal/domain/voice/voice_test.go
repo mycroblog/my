@@ -239,6 +239,10 @@ func TestSettingsValidate(t *testing.T) {
 			s.Icon = Icon{Unicode: "\U0001F3B5", CustomEmojiID: "0190a6f2-0000-7000-8000-000000000001"}
 		}), runes, FieldIcon},
 		{"an icon too long", with(func(s *Settings) { s.Icon = Icon{Unicode: strings.Repeat("a", MaxIconLength+1)} }), runes, FieldIcon},
+		{"no maximum of the host", with(func(s *Settings) { s.MaxParticipants = 0 }), runes, ""},
+		{"a maximum of two", with(func(s *Settings) { s.MaxParticipants = MinMaxParticipants }), runes, ""},
+		{"a maximum of one", with(func(s *Settings) { s.MaxParticipants = MinMaxParticipants - 1 }), runes, FieldMaxParticipants},
+		{"a negative maximum", with(func(s *Settings) { s.MaxParticipants = -1 }), runes, FieldMaxParticipants},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -253,6 +257,30 @@ func TestSettingsValidate(t *testing.T) {
 			var se *SettingsError
 			if !errors.As(err, &se) || se.Field != tc.field {
 				t.Errorf("Validate = %v, want the field %s", err, tc.field)
+			}
+		})
+	}
+}
+
+func TestSettingsCapacity(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name           string
+		room, operator int
+		want           int
+	}{
+		{"the room's below the operator's", 5, 10, 5},
+		{"the room's at the operator's", 10, 10, 10},
+		{"the room's above the operator's", 20, 10, 10},
+		{"the host set none", 0, 10, 10},
+		{"the operator set none", 5, 0, 5},
+		{"neither set one", 0, 0, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if got := (Settings{MaxParticipants: tc.room}).Capacity(tc.operator); got != tc.want {
+				t.Errorf("Capacity(%d) of a room of %d = %d, want %d", tc.operator, tc.room, got, tc.want)
 			}
 		})
 	}

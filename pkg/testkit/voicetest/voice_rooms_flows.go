@@ -84,6 +84,8 @@ func VoiceRoomsFlows(t *testing.T, newHarness VoiceFactory) {
 		{"WaitsForTheFirstParticipantAndTheHost", roomsWaits, ""},
 		{"AssignsCandidatesAndEndsByTheSchedule", roomsScheduledCohosts, ""},
 		{"OpensAScheduledRoomOnTheMediaPathAtTheFirstJoin", roomsScheduledMedia, voice.TransportLiveKit},
+		{"BoundsTheRoomByItsMaximum", roomsMaximum, ""},
+		{"BoundsAScheduledRoomByItsMaximum", roomsScheduledMaximum, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -28,5 +28,11 @@ properties:
     description: Who may become a speaker without asking; `manual` when omitted.
     allOf:
       - $ref: ./VoiceRoomSpeakers.yaml
+  max_participants:
+    description: |
+      How many people the room holds, the host included, from 2 to the server's maximum
+      (`voice_max_participants` of `Instance`); the server's maximum when omitted. Any other
+      number is a 422.
+    type: integer
   post:
     $ref: ./VoiceStartPost.yaml

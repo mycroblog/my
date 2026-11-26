@@ -25,6 +25,8 @@ func (f *fakeVoiceRooms) CanSpeak(_ context.Context, accountID string, _ appvoic
 	return f.canSpeak, nil
 }
 
+func (f *fakeVoiceRooms) MaxParticipants() int { return 10 }
+
 func (f *fakeVoiceRooms) OpenStream(context.Context, string, string, string) (appvoice.RoomStream, error) {
 	return appvoice.RoomStream{}, f.err
 }

@@ -1123,16 +1123,32 @@
     "env": "MY_VOICE_MAX_OPEN_ROOMS",
     "secret": false
   },
+  "voice_max_participants": {
+    "env": "MY_VOICE_MAX_PARTICIPANTS",
+    "secret": false
+  },
   "voice_max_room_duration": {
     "env": "MY_VOICE_MAX_ROOM_DURATION",
     "secret": false
   },
-  "voice_p2p_max_participants": {
-    "env": "MY_VOICE_P2P_MAX_PARTICIPANTS",
+  "voice_sfu_node_capacity": {
+    "env": "MY_VOICE_SFU_NODE_CAPACITY",
     "secret": false
   },
-  "voice_sfu_max_participants": {
-    "env": "MY_VOICE_SFU_MAX_PARTICIPANTS",
+  "voice_sfu_public_ip": {
+    "env": "MY_VOICE_SFU_PUBLIC_IP",
+    "secret": false
+  },
+  "voice_sfu_public_url": {
+    "env": "MY_VOICE_SFU_PUBLIC_URL",
+    "secret": false
+  },
+  "voice_sfu_tcp_port": {
+    "env": "MY_VOICE_SFU_TCP_PORT",
+    "secret": false
+  },
+  "voice_sfu_udp_port": {
+    "env": "MY_VOICE_SFU_UDP_PORT",
     "secret": false
   },
   "voice_sora_api_header_name": {
