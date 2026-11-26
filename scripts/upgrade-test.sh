@@ -103,9 +103,13 @@ previous_db_upgrade=0
 if git -C "$root" show "$previous:cmd/my/db.go" 2>/dev/null | grep -q '"upgrade"'; then
 	previous_db_upgrade=1
 fi
-echo "upgrade-test: building the image of $candidate" >&2
 candidate_image="my-upgrade-test:candidate"
-docker build -q --build-arg "VERSION=$candidate" --target app -t "$candidate_image" "$root" >/dev/null
+if [[ -n "${MY_BUILT_IMAGE:-}" ]]; then
+	docker tag "$MY_BUILT_IMAGE" "$candidate_image"
+else
+	echo "upgrade-test: building the image of $candidate" >&2
+	docker build -q --build-arg "VERSION=$candidate" --target app -t "$candidate_image" "$root" >/dev/null
+fi
 
 # --- The private CA, remote.test, and the previous release's PostgreSQL preparation ---------------
 remote_test_files "$work"

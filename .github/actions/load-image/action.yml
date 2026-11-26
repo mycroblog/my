@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Load the server image
+description: >-
+  Load the server image that slow-suite.yml's image-build built from this commit (the artifact my-image), and set
+  MY_BUILT_IMAGE to its name for the later steps: scripts/docker-smoke.sh, upgrade-test.sh, restore-drill.sh, and
+  federation-live.sh then start it instead of building their own (ADR-0079 §9).
+
+runs:
+  using: composite
+  steps:
+    - name: Fetch the image
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: my-image
+        path: ${{ runner.temp }}/my-image
+    - name: Load the image
+      shell: bash
+      env:
+        DIR: ${{ runner.temp }}/my-image
+      run: |
+        image="$(docker load -i "$DIR/my-image.tar.gz" | sed -n 's/^Loaded image: //p')"
+        test -n "$image"
+        rm -rf "$DIR"
+        echo "MY_BUILT_IMAGE=$image" >> "$GITHUB_ENV"

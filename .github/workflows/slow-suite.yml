@@ -20,6 +20,7 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 #   server-fakes-test                        go vet and the tests of the test build (the build tag e2e_fakes)
 #   deps-license                             the licenses of every dependency, where a pull request checks them when a
 #                                            manifest changes
+#   image-build                              not a check: the server image, built once for the jobs that start it
 #   docker-smoke, docker-arm64-build         the image and the Compose files; the image for linux/arm64
 #   image-upgrade, image-restore             an upgrade from the previous release; a backup restored
 #   tofu-test                                the OpenTofu modules under tofu (validate and the tests)
@@ -111,8 +112,11 @@ defaults:
 
 jobs:
   federation-live:
+    needs: image-build
     if: inputs.scope == 'all'
     uses: ./.github/workflows/federation-live.yml
+    with:
+      built-image: true
 
   server-contract:
     # Every contract of the adapters on its real service, a runner each, where the merge queue runs those of the
@@ -239,10 +243,41 @@ jobs:
       - name: mykit:mybot-ts-licenses
         run: scripts/task.sh mykit:mybot-ts-licenses
 
+  image-build:
+    if: inputs.scope != 'none'
+    # Not a check: the server image of the commit (the Dockerfile's app stage), built once for the jobs that start it
+    # (docker-smoke, image-upgrade, image-restore, federation-live), as web-e2e-build builds bin/my once (ADR-0079 §9):
+    # every job then tests the same build. A job loads it with .github/actions/load-image, which sets MY_BUILT_IMAGE;
+    # each script builds its own when run without it.
+    runs-on: ubuntu-latest
+    steps:
+      # The image takes its version from `git describe`, as the scripts that start it expect.
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: docker:build
+        run: |
+          version="$(git describe --tags --match 'v[0-9]*' --always --dirty)"
+          scripts/task.sh docker:build VERSION="$version"
+          mkdir -p .tmp/my-image
+          docker save "my:$version" | gzip > .tmp/my-image/my-image.tar.gz
+      - name: Keep the image for the jobs that start it
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: my-image
+          path: .tmp/my-image/my-image.tar.gz
+          retention-days: 1
+          compression-level: 0
+
   docker-smoke:
+    needs: image-build
     if: inputs.scope == 'all'
     # The Docker Compose smoke test, as ci.yml's docker-smoke, which runs when the Docker files change: a change of
-    # the code can break the image too (a directory the Dockerfile does not copy), and shows here.
+    # the code can break the image too (a directory the Dockerfile does not copy), and shows here. It starts the image
+    # of image-build; ci.yml's docker-smoke builds it through compose.build.yaml.
     runs-on: ubuntu-latest
     steps:
       # The images take their version from `git describe`.
@@ -252,6 +287,8 @@ jobs:
           fetch-depth: 0
       - name: Set up go-task
         uses: ./.github/actions/setup-task
+      - name: Load the server image
+        uses: ./.github/actions/load-image
       - name: docker:smoke
         run: scripts/task.sh docker:smoke
 
@@ -271,6 +308,7 @@ jobs:
         run: scripts/task.sh docker:build-arm64
 
   image-upgrade:
+    needs: image-build
     if: inputs.scope != 'none'
     # A database made and filled by the previous release's images, upgraded with this commit's server image in the order
     # of deploy/docker/compose.yaml (my db upgrade -check, my schema apply, my db upgrade), on SQLite and PostgreSQL
@@ -308,6 +346,9 @@ jobs:
       - name: Set up go-task
         if: steps.previous.outputs.tag != ''
         uses: ./.github/actions/setup-task
+      - name: Load the server image
+        if: steps.previous.outputs.tag != ''
+        uses: ./.github/actions/load-image
       - name: docker:upgrade-test
         if: steps.previous.outputs.tag != ''
         env:
@@ -321,6 +362,7 @@ jobs:
           scripts/task.sh docker:upgrade-test PREVIOUS="$PREVIOUS"
 
   image-restore:
+    needs: image-build
     if: inputs.scope != 'none'
     # An instance filled through this commit's images, backed up while it runs (my db backup or pg_dump, then the
     # media), lost with every container and volume, and restored into new ones, on SQLite and PostgreSQL: the data, the
@@ -334,6 +376,8 @@ jobs:
           fetch-depth: 0
       - name: Set up go-task
         uses: ./.github/actions/setup-task
+      - name: Load the server image
+        uses: ./.github/actions/load-image
       - name: docker:restore-drill
         run: scripts/task.sh docker:restore-drill
 
@@ -568,7 +612,7 @@ jobs:
   # (ADR-0079 §11).
   result:
     if: always()
-    needs: [federation-live, server-contract, server-lint, agentkit-lint, mykit-lint, server-fakes-test, deps-license, docker-smoke, docker-arm64-build, image-upgrade, image-restore, tofu-test, web-test, web-browser-image, web-stories-scan, web-e2e-build, web-e2e, code-scan]
+    needs: [federation-live, server-contract, server-lint, agentkit-lint, mykit-lint, server-fakes-test, deps-license, image-build, docker-smoke, docker-arm64-build, image-upgrade, image-restore, tofu-test, web-test, web-browser-image, web-stories-scan, web-e2e-build, web-e2e, code-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results
