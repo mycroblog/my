@@ -177,19 +177,23 @@ test("once the destination stops hearing, a call's quality goes nowhere", async 
   session.close();
 });
 
-test("the samples are the server's: its metrics, its names, and values in its range", async () => {
-  jest.useFakeTimers();
-  const session = await started("sora");
-  await sampled(1);
-  expect(heard.length).toBeGreaterThan(0);
-  for (const sample of heard) {
-    expect(["call_rtt", "call_jitter", "call_packet_loss"]).toContain(sample.metric);
-    expect(["p2p", "livekit", "sora"]).toContain(sample.name);
-    expect(sample.value).toBeGreaterThanOrEqual(0);
-  }
-  expect(heard.find((sample) => sample.metric === "call_packet_loss")?.value).toBeLessThanOrEqual(100);
-  session.close();
-});
+// The server's names of a call's quality are its transports' (api/spec/components/schemas/UXMetric.yaml).
+test.each(["p2p", "sfu", "livekit", "sora"] as const)(
+  "the samples of a %s call are the server's: its metrics, its names, and values in its range",
+  async (kind) => {
+    jest.useFakeTimers();
+    const session = await started(kind);
+    await sampled(1);
+    expect(heard.length).toBeGreaterThan(0);
+    for (const sample of heard) {
+      expect(["call_rtt", "call_jitter", "call_packet_loss"]).toContain(sample.metric);
+      expect(["p2p", "sfu", "livekit", "sora"]).toContain(sample.name);
+      expect(sample.value).toBeGreaterThanOrEqual(0);
+    }
+    expect(heard.find((sample) => sample.metric === "call_packet_loss")?.value).toBeLessThanOrEqual(100);
+    session.close();
+  },
+);
 
 /** A session of `kind` made by hand, whose quality the test gives with `say`. */
 function handMade(kind: RoomKind): { session: RoomSession; say: (rtt: number) => void } {

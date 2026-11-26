@@ -380,6 +380,55 @@ describe("recovering", () => {
     session.close();
   });
 
+  test("a room the node no longer has asks once for a grant, and goes on a new connection", async () => {
+    const { session, grants } = join();
+    await offered({ "1": "a2" });
+    pc().setIce("connected");
+    FakeSocket.latest().receive({ v: 1, type: "error", code: "room_unavailable", message: "" });
+    FakeSocket.latest().drop(1000);
+    await settle();
+    expect(grants).toHaveBeenCalledTimes(1);
+    expect(FakeSocket.latest().ticket).toBe("t2");
+    expect(pc(0).closed).toBe(true);
+    await offered({ "1": "a2" });
+    expect(FakePeerConnection.all).toHaveLength(2);
+    expect(pc(1).closed).toBe(false);
+    session.close();
+  });
+
+  test("a socket that drops while the connection lives, given a grant of another node, goes on a new connection", async () => {
+    const { session, grants } = join({
+      next: () => Promise.resolve(grantOf("t2", "wss://node2.example/voice/sfu")),
+    });
+    await offered({ "1": "a2" });
+    pc().setIce("connected");
+    FakeSocket.latest().drop();
+    await settle();
+    expect(grants).toHaveBeenCalledTimes(1);
+    expect(FakeSocket.latest().url).toBe("wss://node2.example/voice/sfu?ticket=t2");
+    expect(pc(0).closed).toBe(true);
+    await offered({ "1": "a2" });
+    expect(FakePeerConnection.all).toHaveLength(2);
+    session.close();
+  });
+
+  test("a lost session that is renewed connects again with the renewed grant", async () => {
+    const { session, grants } = join({ next: () => Promise.reject(new Error("offline")) });
+    await offered({ "1": "a2" });
+    pc().setIce("connected");
+    FakeSocket.latest().drop();
+    await settle();
+    expect(session.snapshot().connection.state).toBe("lost");
+
+    session.renew({ ...grantOf("t6"), iceServers: [{ urls: ["turn:turn2.example"] }] });
+    await settle();
+    expect(FakeSocket.latest().ticket).toBe("t6");
+    expect(FakeSocket.all).toHaveLength(2);
+    expect(session.snapshot().connection.state).not.toBe("lost");
+    expect(grants).toHaveBeenCalledTimes(1);
+    session.close();
+  });
+
   test("a grant that cannot be had says lost, and the caller's reconnect connects again", async () => {
     const { session, grants } = join({ next: () => Promise.reject(new Error("offline")) });
     await offered({ "1": "a2" });

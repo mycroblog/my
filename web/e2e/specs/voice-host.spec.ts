@@ -3,7 +3,8 @@
 // The host's side of a voice chat room on the real server (ADR-0100 §3, §5, §6, §9; FR-923, FR-925, FR-926, FR-929):
 // the host opens a room with its start post from the form, a second person joins it and raises a hand, the host lets
 // them speak, makes them a co-host, hands the room over to them and leaves; the room goes on under its new host, and
-// the start post, with its draft that holds the room's name, is on the host's profile.
+// the start post, with its draft that holds the room's name, is on the host's profile. And a room's maximum
+// (ADR-0100 §3): a host opens a room for two, a guest joins it, and a third is told it is full and refused.
 
 import { Frame, Profile, SignIn, VoiceRoom, VoiceRoomOpen } from "./screens";
 import type { Page } from "@playwright/test";
@@ -98,4 +99,69 @@ test("a host opens a room with its start post, lets a guest speak, makes them co
   const started = new RegExp(`^I opened the voice chat room “${name}”\\.(?:\\s.*)?$`, "s");
   await expect(page.getByRole("main").getByText(started)).toBeVisible();
   await other.close();
+});
+
+test("a host opens a room for two; once a guest is in it, a third is told it is full and refused next to Join", async ({
+  page,
+  browser,
+  baseURL,
+  fresh,
+}) => {
+  const host = await fresh.person({ admin: true });
+  const guest = await fresh.person();
+  const third = await fresh.person();
+  const name = `Max check ${guest.username.slice(-6)}`;
+  const full = "The room is full. Try again when fewer people are in it.";
+
+  await signInOn(page, host);
+  const form = new VoiceRoomOpen(page);
+  await form.open();
+  await form.name.fill(name);
+  await form.maxParticipants.fill("2");
+  await form.submit.click();
+  await expect(page.getByRole("toolbar", { name: "Room controls", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/voice\/(?!new$)[^/]+$/);
+  const id = new URL(page.url()).pathname.split("/").at(-1) ?? "";
+  const hosting = new VoiceRoom(page, id);
+  await expect(hosting.title(name, 1, 2)).toBeVisible();
+
+  /** A browser of its own for `p`, from an address of its own, on the room's page. */
+  const roomFor = async (p: Person, address: string) => {
+    const context = await browser.newContext({
+      ...(baseURL === undefined ? {} : { baseURL }),
+      permissions: ["microphone"],
+      extraHTTPHeaders: { "X-Forwarded-For": address },
+    });
+    const opened = await context.newPage();
+    await signInOn(opened, p);
+    const room = new VoiceRoom(opened, id);
+    await room.open();
+    return { context, room };
+  };
+
+  // The guest takes the second place.
+  const second = await roomFor(guest, "198.19.250.3");
+  await expect(second.room.saying(full)).toHaveCount(0);
+  await second.room.join.click();
+  await expect(second.room.controls).toBeVisible();
+  await expect(hosting.title(name, 2, 2)).toBeVisible();
+
+  // The third finds the room full before joining, and the server refuses their join, said next to Join.
+  const last = await roomFor(third, "198.19.250.4");
+  await expect(last.room.title(name, 2, 2)).toBeVisible();
+  await expect(last.room.saying(full)).toHaveCount(1);
+  await expect(last.room.join).toBeEnabled();
+  const refused = last.room.page.waitForResponse(
+    (response) => response.request().method() === "POST" && response.url().endsWith(`/voice/rooms/${id}/participation`),
+  );
+  await last.room.join.click();
+  const answer = await refused;
+  expect(answer.status()).toBe(409);
+  await expect(last.room.saying(full)).toHaveCount(2);
+  await expect(last.room.controls).toHaveCount(0);
+  await expect(last.room.join).toBeVisible();
+  await expect(hosting.title(name, 2, 2)).toBeVisible();
+
+  await last.context.close();
+  await second.context.close();
 });
