@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What every RoomSession keeps, whichever transport carries it (ADR-0101 §7, §15): the package's entry makes the three,
+// What every RoomSession keeps, whichever transport carries it (ADR-0101 §7, §15): the package's entry makes the four,
 // the relay policy of a grant, a snapshot that is a new object only when something changed, listeners that unsubscribe,
 // the quality sampled at the interval asked for, and a close that happens once.
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
@@ -11,7 +11,16 @@ import {
   type RoomRoster,
   type RoomSession,
 } from "./index";
-import { browser, FakePeerConnection, fakeEnvironment, resetFakes, settle, statsReport } from "./test/fake";
+import {
+  browser,
+  FakePeerConnection,
+  FakeSocket,
+  fakeEnvironment,
+  nodeOffer,
+  resetFakes,
+  settle,
+  statsReport,
+} from "./test/fake";
 import { loadFakeLiveKit, resetFakeLiveKit, room } from "./test/livekit";
 import { loadFakeSora, resetFakeSora, sora } from "./test/sora";
 
@@ -24,7 +33,7 @@ type Transport = {
   stats: (report: RTCStatsReport) => void;
 };
 
-const roster: RoomRoster = { speaker: false, members: [{ session: "s2", speaker: true }] };
+const roster: RoomRoster = { speaker: false, members: [{ session: "s2", speaker: true, participant: "a2" }] };
 
 function grantOf(kind: RoomKind): RoomGrant {
   return {
@@ -56,6 +65,11 @@ async function started(kind: RoomKind, qualityInterval?: number): Promise<RoomSe
       sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n",
     });
   }
+  if (kind === "sfu") {
+    // The node takes the WebSocket and offers s2's audio.
+    FakeSocket.latest().open();
+    FakeSocket.latest().receive({ v: 1, type: "offer", sdp: nodeOffer(1), tracks: [{ mid: "1", participant: "a2" }] });
+  }
   await settle();
   return session;
 }
@@ -63,6 +77,13 @@ async function started(kind: RoomKind, qualityInterval?: number): Promise<RoomSe
 const transports: Record<RoomKind, Transport> = {
   p2p: {
     start: (qualityInterval) => started("p2p", qualityInterval),
+    roster,
+    stats: (report) => {
+      for (const pc of FakePeerConnection.all) pc.stats = report;
+    },
+  },
+  sfu: {
+    start: (qualityInterval) => started("sfu", qualityInterval),
     roster,
     stats: (report) => {
       for (const pc of FakePeerConnection.all) pc.stats = report;
@@ -112,7 +133,7 @@ test("the grant's ICE servers go into the configuration, through TURN only when 
   expect(rtcConfiguration(grant).iceTransportPolicy).toBe("all");
 });
 
-describe.each(["p2p", "livekit", "sora"] as const)("a %s session", (kind) => {
+describe.each(["p2p", "sfu", "livekit", "sora"] as const)("a %s session", (kind) => {
   const transport = transports[kind];
 
   test("is of the grant's kind and of the session it was made for", async () => {

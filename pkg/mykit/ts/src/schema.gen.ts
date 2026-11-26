@@ -19672,7 +19672,7 @@ export interface components {
          *       `replace`, `none`).
          *     - `press`: the time from a press to its response, named by the action ID (`post.reply`).
          *     - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-         *       call transport (`p2p`, `livekit`, `sora`).
+         *       call transport (`p2p`, `sfu`, `livekit`, `sora`).
          * @enum {string}
          */
         UXMetric: "lcp" | "inp" | "long_frame" | "transition" | "press" | "call_rtt" | "call_jitter" | "call_packet_loss";

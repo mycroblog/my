@@ -2,9 +2,9 @@
 
 // The quality of the calls as UX measurements (ADR-0167 §1, §2): every RoomSession that `createRoomSession` makes
 // reports the round-trip time, the jitter and the packet loss of its media path, named by what carries the audio
-// (`p2p`, `livekit`, `sora`), to where the app says (`measureCallsWith`). It reports the first quality the session
-// hears and then one in `qualityReportEvery` (about one a minute at the default interval), so that a long call does
-// not fill the reports. The caller of a session writes no code for it; without a destination nothing is reported.
+// (`p2p`, `sfu`, `livekit`, `sora`), to where the app says (`measureCallsWith`). It reports the first quality the
+// session hears and then one in `qualityReportEvery` (about one a minute at the default interval), so that a long call
+// does not fill the reports. The caller of a session writes no code for it; without a destination nothing is reported.
 
 import type { ConnectionQuality, RoomKind, RoomSession } from "./types";
 

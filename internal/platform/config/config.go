@@ -376,6 +376,9 @@ type Config struct {
 	VoiceSFUPublicIP     string
 	VoiceSFUPublicURL    string
 	VoiceSFUNodeCapacity int
+	// VoiceSFUOrigins are the wss: origins of the media nodes on other hosts that the web
+	// client may connect to (its connect-src); a host may start with "*.".
+	VoiceSFUOrigins []string
 	// The LiveKit server of voice = livekit (ADR-0101 §14); VoiceLiveKitAPIURL defaults to
 	// VoiceLiveKitURL over https (http for ws).
 	VoiceLiveKitURL       string
@@ -630,6 +633,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("voice_sfu_public_ip", c.VoiceSFUPublicIP),
 		slog.String("voice_sfu_public_url", c.VoiceSFUPublicURL),
 		slog.Int("voice_sfu_node_capacity", c.VoiceSFUNodeCapacity),
+		slog.Any("voice_sfu_origins", c.VoiceSFUOrigins),
 		slog.String("voice_livekit_url", c.VoiceLiveKitURL),
 		slog.String("voice_livekit_api_url", c.VoiceLiveKitAPIURL),
 		slog.String("voice_livekit_api_key", c.VoiceLiveKitAPIKey),

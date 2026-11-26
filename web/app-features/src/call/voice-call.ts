@@ -14,9 +14,10 @@
 // - 10 minutes before a P2P grant expires (halfway through a shorter lifetime, counted from the server's time of the
 //   answer, and never within 30 seconds of the last) the call asks for a new one and gives it to the audio (`renew`:
 //   new TURN credentials and an ICE restart); the same credentials again wait and ask later. An SFU's grant only
-//   connects and lives a minute; the SFU keeps the connection, and while the audio says it is `lost` the call asks for
-//   a new grant and connects again with it (`reconnect`), after a wait that grows with the tries, or as the network
-//   comes back.
+//   connects and lives a minute; the SFU keeps the connection. The audio of my's SFU asks the call for a new grant by
+//   itself when its node moves the room or its socket drops (`requestGrant`), and while the audio says it is `lost`
+//   the call asks for a new grant and connects again with it (`reconnect`), after a wait that grows with the tries, or
+//   as the network comes back.
 // - The microphone follows the reader's latest wish, one change after another, and sends only while the reader speaks;
 //   the server hears of it whenever what applies differs from what it last heard. The microphones of the participants
 //   are those of the speakers in the latest `state`.
@@ -263,6 +264,7 @@ export class VoiceCall {
       grant: this.#grant,
       session: join.session,
       environment,
+      requestGrant: () => this.#takeGrant(),
       signaling: {
         send: async ({ to, kind, sdp, candidate }) => {
           if (this.#over()) return;
@@ -453,7 +455,7 @@ export class VoiceCall {
         this.#members = event.room.participants.flatMap((p) =>
           p.session === undefined || p.session === this.session
             ? []
-            : [{ session: p.session, speaker: p.role === "speaker" }],
+            : [{ session: p.session, speaker: p.role === "speaker", participant: p.account.id }],
         );
         this.#applyRoom(event.room);
         return;
@@ -588,6 +590,25 @@ export class VoiceCall {
         return;
       }
       this.#retryRenewal();
+    }
+  }
+
+  /**
+   * A new grant for audio that asks for one by itself (my's SFU, whose node moved the room or whose socket dropped),
+   * kept as the call's grant; a session the server dropped ends the call as `lost`.
+   */
+  async #takeGrant(): Promise<RoomGrant> {
+    if (this.#over()) throw new Error("app-features: the call ended");
+    try {
+      const { grant, serverTime } = await renewVoiceGrant(this.#data, this.roomId, this.session);
+      if (this.#over()) throw new Error("app-features: the call ended");
+      this.#grant = roomGrant(grant);
+      this.#grantTimes(grant, serverTime);
+      this.#scheduleRenewal();
+      return this.#grant;
+    } catch (error) {
+      if (isVoiceSessionGone(error)) this.#finish({ kind: "lost", reason: "session" }, false);
+      throw error;
     }
   }
 

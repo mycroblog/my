@@ -268,3 +268,37 @@ func checkVoiceJoinSecret(v string) error {
 	}
 	return nil
 }
+
+// checkVoiceSFUOrigins accepts a comma-separated list of wss: origins (ws: on a loopback host),
+// each without a path, whose host may start with "*." (ADR-0101 §11).
+func checkVoiceSFUOrigins(v string) error {
+	for _, o := range splitList(v) {
+		host := strings.TrimPrefix(strings.TrimPrefix(o, "wss://"), "ws://")
+		wildcard := strings.HasPrefix(host, "*.")
+		probe := o
+		if wildcard {
+			probe = strings.Replace(o, "*.", "x.", 1)
+		}
+		if err := checkVoiceServerURL(probe, "wss", "ws"); err != nil {
+			return fmt.Errorf("%s: %w", o, err)
+		}
+		if u, _ := url.Parse(probe); u.Path != "" {
+			return fmt.Errorf("%s: must be an origin, with no path", o)
+		}
+	}
+	return nil
+}
+
+// VoiceSFUConnectSources returns the origins that the web client's connect-src lets it reach for
+// the media nodes of voice = sfu: none with another method, and otherwise voice_sfu_origins and
+// the origin of this process's own node URL.
+func (c *Config) VoiceSFUConnectSources() []string {
+	if c.Voice != "sfu" {
+		return nil
+	}
+	sources := append([]string(nil), c.VoiceSFUOrigins...)
+	if u, err := url.Parse(c.VoiceSFUURL()); err == nil && u.Host != "" {
+		sources = append(sources, u.Scheme+"://"+u.Host)
+	}
+	return sources
+}

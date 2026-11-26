@@ -84,6 +84,11 @@ export class VoiceRoomOpen {
     return this.page.getByRole("textbox", { name: "Text of the post", exact: true });
   }
 
+  /** How many people the room holds at most; empty for the server's maximum. */
+  get maxParticipants(): Locator {
+    return this.page.getByRole("textbox", { name: "How many can be in the room", exact: true });
+  }
+
   get submit(): Locator {
     return this.page.getByRole("button", { name: "Open and join", exact: true });
   }
@@ -133,6 +138,18 @@ export class VoiceRoom {
   /** Raise hand, a listener's control in a room where they must ask to speak. */
   get raiseHand(): Locator {
     return this.controls.getByRole("button", { name: "Raise hand", exact: true });
+  }
+
+  /** The room's title, whose name ends with how many of how many are in it ("2 of 2 in the room"). */
+  title(name: string, count: number, max: number): Locator {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`^${escaped}.*${String(count)} of ${String(max)} in the room$`);
+    return this.page.getByRole("main").getByRole("heading", { level: 2, name: pattern });
+  }
+
+  /** The paragraphs of the room's page that say `sentence`. */
+  saying(sentence: string): Locator {
+    return this.page.getByRole("main").getByRole("paragraph").filter({ hasText: sentence });
   }
 
   /** The room's Leave. */

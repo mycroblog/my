@@ -9998,7 +9998,7 @@ type ClientMeasurement struct {
 	//   `replace`, `none`).
 	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
 	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-	//   call transport (`p2p`, `livekit`, `sora`).
+	//   call transport (`p2p`, `sfu`, `livekit`, `sora`).
 	Metric UXMetric `json:"metric"`
 
 	// Name The route ID, interaction kind, action ID, or call transport that `metric` names.
@@ -17724,7 +17724,7 @@ type UXMeasurementSummary struct {
 	//   `replace`, `none`).
 	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
 	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-	//   call transport (`p2p`, `livekit`, `sora`).
+	//   call transport (`p2p`, `sfu`, `livekit`, `sora`).
 	Metric UXMetric `json:"metric"`
 
 	// Name The route ID, interaction kind, action ID, or call transport; `other` for the names past
@@ -17747,7 +17747,7 @@ type UXMeasurementSummary struct {
 //     `replace`, `none`).
 //   - `press`: the time from a press to its response, named by the action ID (`post.reply`).
 //   - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-//     call transport (`p2p`, `livekit`, `sora`).
+//     call transport (`p2p`, `sfu`, `livekit`, `sora`).
 type UXMetric string
 
 // UpdateBadgeChoiceRequest Whether to show the badge of the role on the authenticated user's profile.

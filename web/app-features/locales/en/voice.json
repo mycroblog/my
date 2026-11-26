@@ -80,8 +80,12 @@
     "description": "Over the Join button of a voice chat room while the reader is in another one ({room}, its name): one can be in one room at a time."
   },
   "voice.join_full": {
-    "defaultMessage": "The room is full. Try again later.",
-    "description": "After pressing Join, when the voice chat room has as many people as the server allows."
+    "defaultMessage": "The room is full. Try again when fewer people are in it.",
+    "description": "After pressing Join (409 voice-room-full), when the voice chat room holds as many people as its maximum allows, or more after the maximum was lowered."
+  },
+  "voice.over_max": {
+    "defaultMessage": "{reader, select, host {More people are in the room than the maximum you set, {max}. No one was removed, and no one new can join until fewer than {max} are in it. To let new people join now, raise the maximum.} other {More people are in the room than its maximum, {max}. No one was removed, and no one new can join until fewer than {max} are in it.}}",
+    "description": "A notice on a voice chat room's page while it holds more people than its maximum ({max}, a number), after the maximum was lowered: reader is host (the host, while the room's maximum is the one the host set; a link to Room settings, voice.settings.title, follows the host's sentence) or other (everyone else, and the host when the server's lower maximum applies)."
   },
   "voice.join_hosting": {
     "defaultMessage": "You host another room. End it or hand it over before you join this one.",
@@ -306,6 +310,22 @@
   "voice.form.speakers_choice": {
     "defaultMessage": "{speakers, select, everyone {Everyone in the room} followers {Your followers} following {People you follow} mutuals {People you follow who follow you back} other {Only people allowed to speak}}",
     "description": "An option of who speaks in a voice chat room without asking: speakers is everyone, followers, following, mutuals, or other (manual: only the people the host or a co-host lets speak)."
+  },
+  "voice.form.max_participants": {
+    "defaultMessage": "How many can be in the room",
+    "description": "The label of the number field of the most people a voice chat room holds at once, in the form that opens a room and in its settings; also named in the field's errors."
+  },
+  "voice.form.max_participants_hint": {
+    "defaultMessage": "2 to {max}. Leave it empty for this server's maximum, {max}.",
+    "description": "Under the label of the field How many can be in the room of a voice chat room's form: the range, and what an empty field means ({max}, the server's maximum of the people in a room, a number)."
+  },
+  "voice.form.max_participants_rule": {
+    "defaultMessage": "Enter a number from 2 to {max} for how many can be in the room, or leave it empty.",
+    "description": "Under the field How many can be in the room of a voice chat room's form, when the form or the server (422, field max_participants) refused the number: below 2 or above {max}, the server's maximum of the people in a room."
+  },
+  "voice.form.max_participants_unavailable": {
+    "defaultMessage": "This server has no space for that many people right now, so the settings were not saved. Lower how many can be in the room, or try again later.",
+    "description": "Under the field How many can be in the room of an open voice chat room's settings, when the host raised the number and the server answered 503: it has no space for that many people now. A number no larger than the room's current maximum is always saved."
   },
   "voice.form.post": {
     "defaultMessage": "Start post",

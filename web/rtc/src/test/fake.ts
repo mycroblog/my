@@ -3,8 +3,9 @@
 // RTCPeerConnection that models the JSEP states that the perfect negotiation pattern meets (offers, answers, the
 // implicit rollback of an offer in glare, transceivers and their directions, negotiationneeded, restartIce,
 // setConfiguration) and writes session descriptions with one `m=audio` line and the direction of each transceiver; a
-// microphone whose tracks end and change device; the remote audio and the level meters; and an environment of them
-// all. Nothing sends media: a remote description that sends audio fires `track` with a fake stream.
+// microphone whose tracks end and change device; the remote audio and the level meters; the WebSocket to a media node,
+// on which the test plays the node; and an environment of them all. Nothing sends media: a remote description that
+// sends audio fires `track` with a fake stream. A remote offer's `a=mid:` lines name the transceivers it makes.
 import type { RoomEnvironment } from "../types";
 
 type Direction = RTCRtpTransceiverDirection;
@@ -90,6 +91,8 @@ class FakeTransceiver {
   #direction: Direction;
   readonly sender = new FakeSender();
   readonly receiver = { track: new FakeTrack() };
+  /** The mid of the m= section, once a description named it. */
+  mid: string | null = null;
 
   constructor(pc: FakePeerConnection, direction: Direction) {
     this.#pc = pc;
@@ -265,6 +268,10 @@ export class FakePeerConnection {
       if (this.signalingState === "have-local-offer") this.localDescription = null;
       while (this.transceivers.length < directions.length)
         this.transceivers.push(new FakeTransceiver(this, "recvonly"));
+      const mids = [...description.sdp.matchAll(/^a=mid:(\S+)$/gmu)].map((match) => match[1] ?? null);
+      this.transceivers.forEach((transceiver, i) => {
+        transceiver.mid ??= mids[i] ?? null;
+      });
       this.remoteDescription = description;
       this.signalingState = "have-remote-offer";
     } else {
@@ -377,6 +384,84 @@ export class FakeLevelMeter {
   };
 }
 
+/** A WebSocket to a media node, on which the test plays the node: what the session sends is kept parsed. */
+export class FakeSocket {
+  /** Every socket opened, in order. */
+  static all: FakeSocket[] = [];
+  readonly url: string;
+  readyState = 0;
+  /** The messages the session sent, parsed. */
+  readonly sent: Record<string, unknown>[] = [];
+  /** The code the session closed the socket with, or null while it did not. */
+  closedWith: number | null = null;
+  onopen: (() => void) | null = null;
+  onmessage: ((event: { data: unknown }) => void) | null = null;
+  onclose: ((event: { code: number }) => void) | null = null;
+  onerror: (() => void) | null = null;
+
+  constructor(url: string) {
+    this.url = url;
+    FakeSocket.all.push(this);
+  }
+
+  /** The latest socket opened. */
+  static latest(): FakeSocket {
+    const socket = FakeSocket.all.at(-1);
+    if (socket === undefined) throw new Error("no socket was opened");
+    return socket;
+  }
+
+  /** The ticket of the URL it was opened with. */
+  get ticket(): string | null {
+    return new URL(this.url).searchParams.get("ticket");
+  }
+
+  /** The messages sent of `type`. */
+  ofType(type: string): Record<string, unknown>[] {
+    return this.sent.filter((message) => message["type"] === type);
+  }
+
+  /** The node accepted the WebSocket. */
+  open(): void {
+    this.readyState = 1;
+    this.onopen?.();
+  }
+
+  /** The node sends `message` (its JSON), or a text frame as it is. */
+  receive(message: Record<string, unknown> | string): void {
+    this.onmessage?.({ data: typeof message === "string" ? message : JSON.stringify(message) });
+  }
+
+  /** The node closes the WebSocket, or it drops. */
+  drop(code = 1006): void {
+    this.readyState = 3;
+    this.onclose?.({ code });
+  }
+
+  send(data: string): void {
+    if (this.readyState !== 1) throw new DOMException("not open", "InvalidStateError");
+    this.sent.push(JSON.parse(data) as Record<string, unknown>);
+  }
+
+  close(code = 1005): void {
+    if (this.readyState === 3) return;
+    this.readyState = 3;
+    this.closedWith = code;
+    queueMicrotask(() => this.onclose?.({ code }));
+  }
+}
+
+/**
+ * The SDP of a media node's offer: the m= section that receives the session's microphone (mid 0, `recvonly`), then one
+ * that sends each speaker (mids 1 and up, `sendonly`), under the ICE username fragment `ufrag`.
+ */
+export function nodeOffer(speakers: number, ufrag = "node1"): string {
+  const section = (mid: number, direction: string) =>
+    `m=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=mid:${String(mid)}\r\na=${direction}\r\n`;
+  const media = [section(0, "recvonly"), ...Array.from({ length: speakers }, (_, i) => section(i + 1, "sendonly"))];
+  return `v=0\r\no=- 1 1 IN IP4 192.0.2.10\r\na=ice-lite\r\na=ice-ufrag:${ufrag}\r\n${media.join("")}`;
+}
+
 /** The microphone of the fake environment: each grant a new stream on the current device. */
 export const microphone = {
   streams: [] as FakeStream[],
@@ -440,6 +525,7 @@ export function fakeEnvironment(overrides: Partial<RoomEnvironment> = {}): RoomE
         networkWatchers.delete(onChange);
       };
     },
+    openSocket: (url) => new FakeSocket(url) as unknown as WebSocket,
     close: () => {
       browser.closed++;
     },
@@ -454,6 +540,7 @@ export function resetFakes(): void {
   FakeRemoteAudio.all = [];
   FakeRemoteAudio.blocked = false;
   FakeLevelMeter.all = [];
+  FakeSocket.all = [];
   microphone.streams = [];
   microphone.device = "mic-1";
   microphone.inputs = ["mic-1"];

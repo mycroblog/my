@@ -3,6 +3,10 @@
     "defaultMessage": "{count, plural, other {# 人が参加中}}",
     "description": "How many are in a voice chat room, for assistive technology, beside the people glyph and the figure: in a room's line of a list, its title and the call's bar."
   },
+  "room.count_max": {
+    "defaultMessage": "{count, plural, other {{max} 人中 # 人が参加中}}",
+    "description": "How many are in a voice chat room against its maximum ({max}, a number), for assistive technology, beside the people glyph and the figures shown as \"8 / 10\": in a room's title and the call's bar. Count may exceed max after the maximum was lowered."
+  },
   "room.hosted_by": {
     "defaultMessage": "ホスト: {host}",
     "description": "Under a voice chat room's name in a list of rooms (the rooms' screen, a hashtag's page): who hosts it ({host}, a display name)."

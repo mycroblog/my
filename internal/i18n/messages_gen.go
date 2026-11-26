@@ -2885,9 +2885,9 @@ func (l *Localizer) ServerErrorsVoiceNotHostOrCohost() string {
 	return l.format("server:errors.voice.not_host_or_cohost", nil)
 }
 
-// ServerErrorsVoiceRoomFull formats "server:errors.voice.room_full". API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows.
+// ServerErrorsVoiceRoomFull formats "server:errors.voice.room_full". API error title for HTTP 409 when a user joins a voice chat room that holds as many people as its maximum allows (the host's, else the server's), or more after the maximum was lowered.
 //
-//	en: The room is full. Try again when someone leaves.
+//	en: The room is full. Try again when fewer people are in it.
 func (l *Localizer) ServerErrorsVoiceRoomFull() string {
 	return l.format("server:errors.voice.room_full", nil)
 }

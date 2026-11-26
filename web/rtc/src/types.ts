@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The boundary of the audio of a call (ADR-0101 §7): one RoomSession per joined session of a room, whatever carries
-// its audio (P2P, LiveKit or Sora on the web; a native implementation behind the same interface later). It knows
-// nothing of mycroblog: its caller hands it the grant, the roster of each room state and the signals of P2P, and
-// hears what it does through its events. It holds no React and no DOM subtree, so a session outlives every screen.
+// its audio (P2P, the media nodes' SFU, LiveKit or Sora on the web; a native implementation behind the same interface
+// later). It knows nothing of mycroblog: its caller hands it the grant, the roster of each room state, the signals of
+// P2P and, for the SFU, a way to get a new grant, and hears what it does through its events. It holds no React and no
+// DOM subtree, so a session outlives every screen.
 
 /** What carries the audio of a room (ADR-0101 §1). */
-export type RoomKind = "p2p" | "livekit" | "sora";
+export type RoomKind = "p2p" | "sfu" | "livekit" | "sora";
 
 /** A STUN or TURN server, as the grant names it (the browser's RTCIceServer). */
 export type IceServer = {
@@ -16,11 +17,14 @@ export type IceServer = {
 
 /** What a session needs to connect to the audio of a room (ADR-0101 §2 `Grant`). */
 export type RoomGrant = {
-  /** What carries the audio: `p2p`, `livekit` or `sora`; any other is refused by `createRoomSession`. */
+  /** What carries the audio: `p2p`, `sfu`, `livekit` or `sora`; any other is refused by `createRoomSession`. */
   readonly kind: string;
-  /** The SFU's endpoint; absent for P2P. */
+  /** The SFU's endpoint (`sfu`: the `wss:` URL of the media node that holds the room); absent for P2P. */
   readonly url?: string | undefined;
-  /** The SFU's access token (Sora: the signed join value); absent for P2P. */
+  /**
+   * The SFU's access token (`sfu`: the media node's ticket, which connects once within 30 seconds; Sora: the signed
+   * join value); absent for P2P.
+   */
   readonly token?: string | undefined;
   /** The options of the kind (ADR-0101 §12): Sora's `role`, `channel_id`, `signaling_urls`, `access_token`. */
   readonly options: Readonly<Record<string, string>>;
@@ -36,6 +40,11 @@ export type RoomMember = {
   readonly session: string;
   /** Whether the participant may speak: only a speaker's audio is played (ADR-0101 §4). */
   readonly speaker: boolean;
+  /**
+   * The ID the media node of `sfu` names the participant by in its offers and its `speaking` (an account ID); without
+   * it, `sfu` neither plays nor shows as talking what the node says of the participant.
+   */
+  readonly participant?: string | undefined;
 };
 
 /** The room as the latest room state has it: whether this session speaks, and the other live sessions. */
@@ -158,7 +167,8 @@ export interface RoomSession {
   setOutputDevice(deviceId: string): Promise<void>;
   /**
    * Takes a renewed grant on the live connections (ADR-0101 §5): P2P sets its ICE servers on each connection and
-   * restarts ICE with them; an SFU keeps it, and joins again with it when its connection went away.
+   * restarts ICE with them; `sfu` sets its ICE servers on its connection; an SFU keeps it, and joins again with it
+   * when its connection went away.
    */
   renew(grant: RoomGrant): void;
   /** Connects again with a new grant, for the same session (the server asked for it, or the connection was lost). */
@@ -224,6 +234,8 @@ export type RoomEnvironment = {
   loadLiveKit?: (() => Promise<LiveKitSdk>) | undefined;
   /** Loads sora-js-sdk; by default `import("sora-js-sdk")`. */
   loadSora?: (() => Promise<SoraSdk>) | undefined;
+  /** Opens the WebSocket to the media node of `sfu`; by default `new WebSocket(url)`. */
+  openSocket?: ((url: string) => WebSocket) | undefined;
   /** Releases what the environment holds (its audio context). */
   close?: (() => void) | undefined;
 };
@@ -235,6 +247,13 @@ export type RoomSessionOptions = {
   readonly session: string;
   /** How P2P sends its signals; required for P2P, unused by an SFU. */
   readonly signaling?: SignalingPort | undefined;
+  /**
+   * Asks the caller for a new grant of the same session (`POST /voice/rooms/{id}/grant`): `sfu` asks when its node
+   * moved the room (`migrate`), refused the ticket, or went away, since each ticket connects once. Rejects when none
+   * can be had now; the session then says `lost` and waits for `reconnect`. Unused by the other kinds; without it,
+   * `sfu` says `lost` at once.
+   */
+  readonly requestGrant?: (() => Promise<RoomGrant>) | undefined;
   readonly environment: RoomEnvironment;
   /** How often the quality is sampled, in milliseconds (5000 by default). */
   readonly qualityInterval?: number | undefined;

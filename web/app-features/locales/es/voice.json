@@ -79,10 +79,6 @@
     "defaultMessage": "Sales de {room} al unirte a esta.",
     "description": "Over the Join button of a voice chat room while the reader is in another one ({room}, its name): one can be in one room at a time."
   },
-  "voice.join_full": {
-    "defaultMessage": "La sala está llena. Inténtalo más tarde.",
-    "description": "After pressing Join, when the voice chat room has as many people as the server allows."
-  },
   "voice.join_hosting": {
     "defaultMessage": "Eres anfitrión de otra sala. Termínala o cédela antes de unirte a esta.",
     "description": "After pressing Join, when the reader hosts another open voice chat room."

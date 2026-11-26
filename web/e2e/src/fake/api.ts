@@ -75,7 +75,13 @@ import { financeHandlers, type FakeFinanceOptions } from "./finance";
 import { financeAdminHandlers, type FakeFinanceAdmin, type FakeFinanceAdminOptions } from "./finance-admin";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { supportersAdminHandlers, type FakeSupportersAdmin, type FakeSupportersAdminOptions } from "./supporters-admin";
-import { voiceHandlers, type FakeVoice, type FakeVoiceMany, type FakeVoiceOpenRefusal } from "./voice";
+import {
+  voiceHandlers,
+  type FakeVoice,
+  type FakeVoiceMany,
+  type FakeVoiceMax,
+  type FakeVoiceOpenRefusal,
+} from "./voice";
 import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-settings";
 import { closureHandlers, type FakeClosureOptions } from "./closure";
 import { themeHandlers, type FakeThemeOptions } from "./theme";
@@ -325,6 +331,8 @@ export type FakeOptions = {
   voiceOpen?: FakeVoiceOpenRefusal;
   /** More open rooms, rooms the reader hosted, and invitations to the reader's room than a page holds. */
   voiceMany?: FakeVoiceMany;
+  /** The most people a room holds: the server's, each open room's, and whether a raised one has room now. */
+  voiceMax?: FakeVoiceMax;
   /**
    * Who may create events (the instance setting `event_creators`): every local account by default, or only those
    * whose roles have `create_events` (`permitted`), as the admin's do.
@@ -2293,7 +2301,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ...finance.instance,
     ...supporting.instance,
     voice_enabled: o.voiceOff !== true,
-    ...(o.voiceOff === true ? {} : { voice_max_participants: 10 }),
+    ...(o.voiceOff === true ? {} : { voice_max_participants: o.voiceMax?.server ?? 10 }),
     voice_room_starters: o.voiceStarters ?? "everyone",
     event_creators: o.eventCreators ?? "everyone",
     full_text_search:
@@ -2478,13 +2486,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         speakers: r.speakers ?? "everyone",
         host: accountOf(r.host),
         opened_at: new Date(started - (i + 1) * 30 * minute).toISOString(),
-        max_participants: 10,
+        max_participants: o.voiceMax?.server ?? 10,
         participants_count: participants.length,
         participants,
         can_speak: false,
       },
     ];
   });
+  // Each room's own maximum, by its place in the list, where the options give one.
+  for (const [i, room] of rooms.entries()) room.max_participants = o.voiceMax?.rooms?.[i] ?? room.max_participants;
 
   let voiceIds = 0;
   const voiceRooms = voiceHandlers({
@@ -2519,6 +2529,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ],
     openRefusal: o.voiceOpen,
     many: o.voiceMany,
+    max: o.voiceMax?.server ?? 10,
+    noRoom: o.voiceMax?.noRoom === true,
     accountByName: (username) => (local(username) ? accountOf(username) : undefined),
     newId: () => idAt(Date.now(), 31_000 + (voiceIds += 1)),
     accountById: (id) => {

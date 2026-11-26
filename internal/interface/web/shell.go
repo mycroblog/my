@@ -216,6 +216,15 @@ func withMediaOrigin(csp, origin string) string {
 	).Replace(csp)
 }
 
+// withConnectSources lets the policy's connections also reach sources, such as the media nodes
+// of the voice chat on other hosts (ADR-0101 §11); none leaves it unchanged.
+func withConnectSources(csp string, sources []string) string {
+	if len(sources) == 0 {
+		return csp
+	}
+	return strings.Replace(csp, "connect-src 'self'", "connect-src 'self' "+strings.Join(sources, " "), 1)
+}
+
 // upgradeInsecureRequests ends the policy of a server served over HTTPS. A server served over plain
 // HTTP on localhost leaves it out: WebKit upgrades even loopback requests, which then fail.
 const upgradeInsecureRequests = "; upgrade-insecure-requests"

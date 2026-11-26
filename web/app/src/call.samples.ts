@@ -7,9 +7,10 @@
 // with reactions, with people talking, the sound held back, the microphone refused, the connection lost, or the call
 // ended by the server (removed, replaced, the room ended). A host's story opens a room of their own as the form does,
 // or joins the room the fake has them host, and puts it in its state by the host's own operations: a raised hand let
-// speak, a co-host named, an invitation sent, the room handed over.
+// speak, a co-host named, an invitation sent, the room handed over; and the room's maximum lowered below the people in
+// it, by the reader who hosts it or by its host.
 
-import { inviteToVoiceRoom, type AppData } from "@my/app-data";
+import { inviteToVoiceRoom, updateVoiceRoom, type AppData } from "@my/app-data";
 import { currentCall, hostsOthers, joinRoom, openRoom, runCallsOn, type CallRuntime } from "@my/app-features";
 import type { FakeApi } from "@my/e2e/fake";
 
@@ -32,7 +33,8 @@ type StoryCallStep =
   | "granted"
   | "cohost"
   | "invited"
-  | "handed-over";
+  | "handed-over"
+  | "lowered";
 
 /**
  * The room a story's reader joined (the fake's room at `room` of its list, or `opened`: one they opened, alone in
@@ -200,6 +202,15 @@ export function joinStoryCall(data: AppData, fake: FakeApi, call: StoryCall): ()
         case "handed-over": {
           const next = stage.find((p) => !p.hosting);
           if (next !== undefined) await joined.host(next.account.id, "hand-over");
+          break;
+        }
+        case "lowered": {
+          // The room's maximum lowered to two below the people in it: by the reader where they host it, else by its
+          // host; nobody leaves.
+          const max = Math.max(2, room.participants_count - 2);
+          if (joined.getState().self?.hosting === true)
+            await updateVoiceRoom(data, joined.roomId, { max_participants: max });
+          else fake.voice.hostSetsMax(max);
           break;
         }
       }

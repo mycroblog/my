@@ -29,7 +29,8 @@ func (a *App) setUpWeb(opts AppOptions) (auth, pay web.Entry, err error) {
 		WebClientID: a.Identity.WebClientID(),
 		Host:        a.Config.Host, AccountDomain: a.Config.AccountDomain, WebOrigin: a.Config.WebOrigin,
 		// Images and media may come from the CDN in front of /media/ (media_origin).
-		MediaOrigin: a.Config.MediaOrigin,
+		MediaOrigin:    a.Config.MediaOrigin,
+		ConnectSources: a.Config.VoiceSFUConnectSources(),
 		// The instance's display name, read per request; the host when it has none.
 		InstanceName: a.instanceName,
 		// The landing page's link preview describes the instance by its summary, read per request.

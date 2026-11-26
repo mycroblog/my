@@ -220,6 +220,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`voice_sfu_public_ip`](#voice_sfu_public_ip) | `MY_VOICE_SFU_PUBLIC_IP` | the node's own address | no | no |
 | [`voice_sfu_public_url`](#voice_sfu_public_url) | `MY_VOICE_SFU_PUBLIC_URL` | `wss://<host>/voice/sfu` (`ws:` when `web_origin` is plain HTTP on `host`) | no | no |
 | [`voice_sfu_node_capacity`](#voice_sfu_node_capacity) | `MY_VOICE_SFU_NODE_CAPACITY` | `500` | no | no |
+| [`voice_sfu_origins`](#voice_sfu_origins) | `MY_VOICE_SFU_ORIGINS` | none | no | no |
 | [`voice_livekit_url`](#voice_livekit_url) | `MY_VOICE_LIVEKIT_URL` | none | when `voice = livekit` | no |
 | [`voice_livekit_api_url`](#voice_livekit_api_url) | `MY_VOICE_LIVEKIT_API_URL` | `voice_livekit_url` with `https:` (`http:` for `ws:`) | no | no |
 | [`voice_livekit_api_key`](#voice_livekit_api_key) | `MY_VOICE_LIVEKIT_API_KEY` | none | when `voice = livekit` | no |
@@ -1925,6 +1926,14 @@ How many participants a media node of `voice = sfu` holds. A room on the node re
 
 - Environment variable: `MY_VOICE_SFU_NODE_CAPACITY`
 - Default: `500`
+- Required: no
+
+### `voice_sfu_origins`
+
+Comma-separated `wss:` origins of the media nodes of `voice = sfu` that are not on `host`, such as `wss://*.sfu.example.org`, which the web client may connect to (its Content Security Policy); a host may start with `*.` for every node under a domain. A node on `host` needs none.
+
+- Environment variable: `MY_VOICE_SFU_ORIGINS`
+- Default: none
 - Required: no
 
 ### `voice_livekit_url`

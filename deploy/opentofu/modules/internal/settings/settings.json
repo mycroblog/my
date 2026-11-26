@@ -1135,6 +1135,10 @@
     "env": "MY_VOICE_SFU_NODE_CAPACITY",
     "secret": false
   },
+  "voice_sfu_origins": {
+    "env": "MY_VOICE_SFU_ORIGINS",
+    "secret": false
+  },
   "voice_sfu_public_ip": {
     "env": "MY_VOICE_SFU_PUBLIC_IP",
     "secret": false

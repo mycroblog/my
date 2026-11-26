@@ -319,6 +319,8 @@ export type Headcount = {
   shown: string;
   /** What it says to assistive technology ("20 in the room"). */
   label: string;
+  /** As many as the room holds, or more ("10/10", "12/10"): where it is shown muted, it stands out. */
+  full?: boolean | undefined;
 };
 
 /**
@@ -355,14 +357,17 @@ const title = tv({
     emoji: "leading-none",
     count: "text-body text-muted-text",
   },
+  variants: {
+    full: { true: { count: "font-label text-text" } },
+  },
 });
 
 /**
  * The title of a room's screen: its icon emoji, its name, which wraps, and how many are in it, muted, where that is
- * shown (not to a visitor, nor once the room ended).
+ * shown (not to a visitor, nor once the room ended), in the text's color at the label's weight once the room is full.
  */
 export function RoomTitle({ icon, name, count }: { icon?: ReactNode; name: string; count?: Headcount | undefined }) {
-  const s = title();
+  const s = title({ full: count?.full === true });
   return (
     <Row as={<Heading level={2} className={s.root()} />} wrap align="center" gapX="entry-caption">
       {icon !== undefined && (
