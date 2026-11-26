@@ -37,6 +37,10 @@ type fakeVoiceRooms struct {
 	// canSpeak is what CanSpeak answers for every viewer; canSpeakOf records whom it was asked of.
 	canSpeak   bool
 	canSpeakOf []string
+	// maxParticipants is the host's maximum of the room, 0 for none; grant is the grant of a
+	// join, the one of p2p when its Kind is empty.
+	maxParticipants int
+	grant           appvoice.Grant
 }
 
 func (f *fakeVoiceRooms) room() appvoice.RoomView {
@@ -46,7 +50,7 @@ func (f *fakeVoiceRooms) room() appvoice.RoomView {
 			Head: appvoice.Head{RoomID: voiceRoomID, HostAccountID: aliceAccountID, State: voice.StateOpen, ParticipantsCount: 1},
 			Revision: appvoice.Revision{Settings: voice.Settings{
 				Name: "Talk", Description: "About", Hashtags: []voice.Hashtag{{Name: "Go", NameNormalized: "go"}},
-				Visibility: voice.VisibilityLocal, Speakers: voice.SpeakersManual, Icon: f.icon,
+				Visibility: voice.VisibilityLocal, Speakers: voice.SpeakersManual, Icon: f.icon, MaxParticipants: f.maxParticipants,
 			}},
 		},
 		Participants: []appvoice.Participant{{AccountID: aliceAccountID, RoomID: voiceRoomID, ParticipationID: voiceRoomID, Role: voice.RoleSpeaker}},
@@ -54,6 +58,9 @@ func (f *fakeVoiceRooms) room() appvoice.RoomView {
 }
 
 func (f *fakeVoiceRooms) joined() appvoice.Joined {
+	if f.grant.Kind != "" {
+		return appvoice.Joined{Room: f.room(), Session: "session-1", Grant: f.grant}
+	}
 	return appvoice.Joined{Room: f.room(), Session: "session-1", Grant: appvoice.Grant{
 		Kind: "p2p", ICE: []appvoice.ICEServer{{URLs: []string{"stun:stun.example.org"}}}, ExpiresAt: time.Date(2026, 10, 26, 15, 0, 0, 0, time.UTC),
 	}}
