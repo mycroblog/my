@@ -196,15 +196,20 @@ Set `voice_sfu_node_capacity` from what the machine can forward ([Measured cost]
 
 ### Measured cost
 
-Measured with simulated clients sending Opus audio, on TBD (the machine, its CPU, and the release of `my`). CPU is in
-cores of that machine; memory is the resident memory of the process.
+Measured with simulated clients sending Opus audio at 50 packets per second, on an AMD Ryzen 9 7900 (12 cores) with
+Linux under WSL2 and Go 1.27, everything on loopback. CPU is in cores of that machine; memory is the node's heap and
+goroutine stacks on top of the rest of the process.
 
 | What | CPU | Memory |
 | --- | --- | --- |
-| An idle node | TBD | TBD |
-| Each open room | TBD | TBD |
-| Each participant | TBD | TBD |
-| Forwarding for TBD participants with TBD speakers | TBD | TBD |
+| An idle node | none measurable | about 0.1 MiB |
+| Each open room | none measurable | about 24 KiB |
+| Each participant | about 0.0002 cores while silent | about 200 KiB |
+| Each forwarded stream (a speaker heard by one participant) | 20 to 27 µs per packet, about 0.001 cores | about 24 KiB |
+| A room of 100 with 3 speakers making sound | about 0.3 cores | about 25 MiB |
+
+A faster or slower machine scales these figures; a node's own metrics ([Metrics to watch](#metrics-to-watch)) show
+what it carries.
 
 The cost of forwarding follows the packets the node sends: the audio of every speaker goes to every other
 participant, so a room of N participants with K speakers sends about K × (N − 1) streams of 30 to 50 kbit/s. A room of
