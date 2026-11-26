@@ -99,6 +99,9 @@ function serverEnv(dir: string, port: number): Record<string, string> {
     // test sends an address of its own (specs/test.ts), as each person comes from their own, so that the tests do not
     // share one sign-in limit.
     MY_TRUSTED_PROXIES: "127.0.0.1",
+    // The server reads the instance settings on every use, so that a change that `my instance set` makes from another
+    // process shows at once, as the specs and the shots expect (#3546); a server keeps them for a period otherwise.
+    MY_INSTANCE_SETTINGS_CACHE_TTL: "0",
   };
 }
 
