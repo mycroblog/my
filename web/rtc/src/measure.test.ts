@@ -6,7 +6,15 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
 import { createRoomSession, type RoomGrant, type RoomKind, type RoomSession } from "./index";
 import { callSamples, measureCallsWith, qualityReportEvery, reportQuality, type CallSample } from "./measure";
-import { FakePeerConnection, fakeEnvironment, resetFakes, settle, statsReport } from "./test/fake";
+import {
+  FakePeerConnection,
+  FakeSocket,
+  fakeEnvironment,
+  nodeOffer,
+  resetFakes,
+  settle,
+  statsReport,
+} from "./test/fake";
 import { loadFakeLiveKit, resetFakeLiveKit, room } from "./test/livekit";
 import { loadFakeSora, resetFakeSora, sora } from "./test/sora";
 
@@ -34,6 +42,9 @@ const statsOf: Record<RoomKind, (stats: RTCStatsReport) => void> = {
   p2p: (stats) => {
     for (const pc of FakePeerConnection.all) pc.stats = stats;
   },
+  sfu: (stats) => {
+    for (const pc of FakePeerConnection.all) pc.stats = stats;
+  },
   livekit: (stats) => {
     room().subscribe("s2", "t2", stats);
   },
@@ -51,13 +62,17 @@ async function started(kind: RoomKind): Promise<RoomSession> {
     ...(kind === "p2p" ? { signaling: { send: () => Promise.resolve() } } : {}),
     qualityInterval: 1_000,
   });
-  session.update({ speaker: false, members: [{ session: "s2", speaker: true }] });
+  session.update({ speaker: false, members: [{ session: "s2", speaker: true, participant: "a2" }] });
   if (kind === "p2p")
     session.receiveSignal({
       from: "s2",
       kind: "offer",
       sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n",
     });
+  if (kind === "sfu") {
+    FakeSocket.latest().open();
+    FakeSocket.latest().receive({ v: 1, type: "offer", sdp: nodeOffer(1), tracks: [{ mid: "1", participant: "a2" }] });
+  }
   await settle();
   statsOf[kind](report());
   return session;
@@ -103,7 +118,7 @@ test("a quality gives its round trip and jitter in milliseconds and its loss in 
   expect(callSamples("livekit", { rtt: 0, jitter: 0, packetLoss: 0 })).toHaveLength(3);
 });
 
-describe.each(["p2p", "livekit", "sora"] as const)("a %s call", (kind) => {
+describe.each(["p2p", "sfu", "livekit", "sora"] as const)("a %s call", (kind) => {
   test("reports its quality by its transport's name, the first sample and then one in twelve", async () => {
     jest.useFakeTimers();
     const session = await started(kind);
