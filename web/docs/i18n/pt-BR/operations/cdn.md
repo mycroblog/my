@@ -99,7 +99,7 @@ Não ajuda quando o próprio recurso da plataforma encaminha o tráfego e não a
 
 Sem nenhuma delas definida, nada é verificado e o servidor se comporta como se esta seção não existisse.
 
-<!-- source: what-passes-without-the-header b79877bb91a3 -->
+<!-- source: what-passes-without-the-header e5891c904fa1 -->
 ### O que passa sem o cabeçalho
 
 | Requisição | Motivo |
@@ -108,7 +108,7 @@ Sem nenhuma delas definida, nada é verificado e o servidor se comporta como se 
 | `POST` para caminhos `/_internal/` | Cloud Tasks e Cloud Scheduler as chamam na URL do próprio servidor. Elas trazem o próprio token assinado |
 
 Todo o resto exige o cabeçalho, também no modo de manutenção: o cliente web e os seus recursos, `/media/`, a API cliente, o OAuth e o ActivityPub, inclusive as entregas de outros servidores.
-Assim, qualquer coisa que chame o servidor diretamente pelo próprio endereço, em vez de passar pela CDN, é recusada: um webhook seu, um servidor de mídia de voz, um script. Aponte-a para o nome de host da CDN.
+Assim, qualquer coisa que chame o servidor diretamente pelo próprio endereço, em vez de passar pela CDN, é recusada: um webhook seu, um script. Aponte-a para o nome de host da CDN.
 
 A porta de métricas (`metrics_listen`) é um listener separado, que não é público e não é verificado.
 

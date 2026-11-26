@@ -51,7 +51,7 @@ Com o par `MY_HOST=localhost:8080` e `MY_WEB_ORIGIN=http://localhost:8080` do `e
 - O cookie de login é `Secure`. Chrome e Firefox aceitam esse cookie em `http://localhost`; o Safari (WebKit) não aceita, então use o Chrome ou o Firefox localmente.
 - Os links de hashtags e menções nos corpos das publicações usam `https://`, pois são as URLs federadas.
 
-<!-- source: going-public a59510155d91 -->
+<!-- source: going-public 8a7149acda33 -->
 ## Abrindo ao público
 
 - Defina `MY_HOST` em `.env` com o seu domínio real, remova `MY_WEB_ORIGIN` (o padrão é `https://{MY_HOST}`) e termine o
@@ -61,6 +61,9 @@ Com o par `MY_HOST=localhost:8080` e `MY_WEB_ORIGIN=http://localhost:8080` do `e
   inicialização e não pode ser alterado depois.
 - Atrás de um proxy reverso seu, defina `MY_TRUSTED_PROXIES` em `.env` para que limites de taxa, como o do login,
   se apliquem por IP de cliente e não ao proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).
+- O chat de voz com o nó de mídia do próprio servidor (`voice = sfu`) é a camada `compose.sfu.yaml`: ela executa o servidor como
+  `role = web`, um `worker` e um nó `sfu` sobre PostgreSQL atrás do Caddy, e publica UDP 7882 e TCP 7881
+  ([Chat de voz](voice.md#docker-compose)).
 - Antes de abrir o servidor aos usuários, percorra a [lista de verificação de produção](production-checklist.md).
 - `docker compose down` para a stack. `down -v` também exclui os volumes de dados.
 

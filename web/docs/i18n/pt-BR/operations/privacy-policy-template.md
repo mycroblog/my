@@ -83,7 +83,7 @@ O servidor os remove apenas quando uma conta é apagada, ou nunca. Uma lei pode 
 - O relatório mais recente de cada grupo de erros, que o próximo relatório desse grupo substitui. Ele é limpo por padrões, então um fragmento de texto de usuário pode permanecer.
 - Backups, seus logs e os logs da sua plataforma e do seu proxy. O servidor não gerencia isso: o [backup](backup.md#how-often-and-where) descreve as gerações a manter, e um backup restaurado traz de volta os dados apagados.
 
-<!-- source: the-services-you-choose 81461216c966 -->
+<!-- source: the-services-you-choose ae854360ee1c -->
 ## Os serviços que você escolhe
 
 Cada serviço que recebe dados pessoais aparece na política somente se você o ativou. Preencha a tabela da seção 6 a partir desta lista e leia a política e o contrato do próprio serviço: o que o serviço faz com os dados depois que eles chegam não é algo que este documento possa dizer.
@@ -123,7 +123,7 @@ Duas coisas chegam a terceiros sem uma configuração sua:
 - **Web Push.** Quando um usuário o ativa, o navegador dele escolhe o serviço de push e informa o endereço dele ao servidor. O corpo da mensagem é criptografado para esse navegador, então o serviço de push não deveria conseguir lê-lo. Ele vê o endereço da assinatura, o tamanho e a hora de cada mensagem e o contato (assunto VAPID) do seu servidor, e retém uma mensagem por até 48 horas enquanto o navegador está offline.
 - **Federação.** Veja a seção 5 do modelo. `federation_mode` a desativa ou limita a sua direção, e os relays ficam por sua conta ([relays](relays.md)).
 
-<!-- source: the-template 7d380628fcdc -->
+<!-- source: the-template 35479e0aacb5 -->
 ## O modelo
 
 ```markdown
