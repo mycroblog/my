@@ -3,7 +3,7 @@
 
 サーバーの起動と停止、イメージの入手、そして稼働中の監視 (メトリクス、トレース、ジョブキュー、ヘルスチェック) の方法を説明します。
 
-<!-- source: start-the-server 93f89c7d7b66 -->
+<!-- source: start-the-server 3cc6acc9fe88 -->
 ## サーバーを起動する
 
 ```sh
@@ -39,6 +39,7 @@ Docker Compose の構成 (`deploy/docker/compose.yaml`。[Docker Compose での�
 リクエストの処理中に書かれたログには `request_id` が付き、同じ ID がレスポンスヘッダー `X-Request-Id` で返されます。
 リクエストの `X-Request-Id` が英数字と `-_.:` からなる 128 文字以内なら、ロードバランサーが割り当てた ID としてそのまま使います。
 トレースの中のログ (リクエストとジョブ) には `trace_id` と `span_id` も付きます ([トレース](#traces)を参照)。
+Cloud Run 向けの `logs_exporter = gcp` では、ログ行に、Cloud Trace のトレースへ行をリンクする Cloud Logging のフィールドも付き、アクセスログの行にはそのリクエストが `httpRequest` として付きます。ほかのフィールドはそのままです。
 
 HTTP リクエストとジョブの実行は、それぞれ終わったときに 1 行を書きます。この行は下の[メトリクス](#metrics)のラベルと同じ名前と値を持つので、
 `metrics_exporter = none` でも、プラットフォームはこれらの行からログベースの指標 (カウンターと分布) を作れます。

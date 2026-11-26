@@ -3,7 +3,7 @@
 
 本頁說明如何啟動和停止伺服器、取得其映像檔，以及在執行期間監看它：指標、追蹤、任務佇列和健康檢查。
 
-<!-- source: start-the-server 93f89c7d7b66 -->
+<!-- source: start-the-server 3cc6acc9fe88 -->
 ## 啟動伺服器
 
 ```sh
@@ -25,7 +25,7 @@ my version        # print the version of the binary
 | `web` | 所有路由 | 不執行 |
 | `worker` | 只有健康檢查（供平台探測使用） | 執行 |
 
-日誌會以 JSON Lines 格式輸出到標準錯誤。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，後者是以 Cloud Logging 讀取的形式表示的同一個等級（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用於讓程序停止之錯誤的 `CRITICAL`）。處理請求時寫入的日誌會帶有 `request_id`，同一個 ID 也會在 `X-Request-Id` 回應標頭中傳回。如果請求的 `X-Request-Id` 最多 128 個字元，且只由英文字母、數字和 `-_.:` 組成，就會被視為負載平衡器指定的 ID 而原樣使用。追蹤內（請求和任務）的日誌也會帶有 `trace_id` 和 `span_id`（請參閱[追蹤](#traces)）。
+日誌會以 JSON Lines 格式輸出到標準錯誤。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，後者是以 Cloud Logging 讀取的形式表示的同一個等級（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用於讓程序停止之錯誤的 `CRITICAL`）。處理請求時寫入的日誌會帶有 `request_id`，同一個 ID 也會在 `X-Request-Id` 回應標頭中傳回。如果請求的 `X-Request-Id` 最多 128 個字元，且只由英文字母、數字和 `-_.:` 組成，就會被視為負載平衡器指定的 ID 而原樣使用。追蹤內（請求和任務）的日誌也會帶有 `trace_id` 和 `span_id`（請參閱[追蹤](#traces)）。對於 Cloud Run，使用 `logs_exporter = gcp` 時，日誌行還會帶有將一行連結到 Cloud Trace 中其追蹤的 Cloud Logging 欄位，每個存取日誌行也會以 `httpRequest` 帶有其請求；其他欄位維持不變。
 
 每個 HTTP 請求和每次任務執行在結束時都會寫入一行。這一行的名稱和值與下方[指標](#metrics)的標籤相同，所以在 `metrics_exporter = none` 時，平台可以從這些行建立記錄型指標（計數器和分布）。
 

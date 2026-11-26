@@ -3,7 +3,7 @@
 
 Como iniciar e parar o servidor, obter a imagem dele e acompanhá-lo enquanto roda: métricas, traces, a fila de jobs e verificações de saúde.
 
-<!-- source: start-the-server 93f89c7d7b66 -->
+<!-- source: start-the-server 3cc6acc9fe88 -->
 ## Iniciando o servidor
 
 ```sh
@@ -39,6 +39,7 @@ Os logs vão para a saída de erro padrão como JSON Lines. Toda linha tem `leve
 Os logs gravados ao tratar uma requisição trazem um `request_id`, e o mesmo ID é retornado no cabeçalho de resposta `X-Request-Id`.
 Se o `X-Request-Id` da requisição tem no máximo 128 caracteres de letras, dígitos e `-_.:`, ele é usado como está, como o ID atribuído por um balanceador de carga.
 Os logs dentro de um trace (requisições e jobs) também trazem `trace_id` e `span_id` (veja [Traces](#traces)).
+Com `logs_exporter = gcp`, para o Cloud Run, as linhas também trazem os campos do Cloud Logging que vinculam uma linha ao seu trace no Cloud Trace, e cada linha de acesso a sua requisição como `httpRequest`; os demais campos ficam como estão.
 
 Cada requisição HTTP e cada execução de job grava uma linha quando termina. A linha tem os mesmos nomes e valores dos rótulos das [métricas](#metrics) abaixo,
 então, com `metrics_exporter = none`, uma plataforma pode criar métricas baseadas em logs (contadores e distribuições) a partir dessas linhas.

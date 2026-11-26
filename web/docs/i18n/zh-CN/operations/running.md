@@ -3,7 +3,7 @@
 
 本文介绍如何启动和停止服务器、获取镜像，以及在运行期间监控它：指标、追踪、任务队列和健康检查。
 
-<!-- source: start-the-server 93f89c7d7b66 -->
+<!-- source: start-the-server 3cc6acc9fe88 -->
 ## 启动服务器
 
 ```sh
@@ -25,7 +25,7 @@ my version        # print the version of the binary
 | `web` | 所有路由 | 不运行 |
 | `worker` | 仅健康检查（供平台探针使用） | 运行 |
 
-日志以 JSON Lines 格式写入标准错误。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，后者是以 Cloud Logging 读取的形式表示的同一级别（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用于导致进程停止的错误的 `CRITICAL`）。处理请求期间写入的日志带有 `request_id`，同一 ID 也会在 `X-Request-Id` 响应头中返回。如果请求的 `X-Request-Id` 不超过 128 个字符，且只由字母、数字和 `-_.:` 组成，就会作为负载均衡器分配的 ID 原样使用。追踪中的日志（请求和任务）还带有 `trace_id` 和 `span_id`（参见[追踪](#traces)）。
+日志以 JSON Lines 格式写入标准错误。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，后者是以 Cloud Logging 读取的形式表示的同一级别（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用于导致进程停止的错误的 `CRITICAL`）。处理请求期间写入的日志带有 `request_id`，同一 ID 也会在 `X-Request-Id` 响应头中返回。如果请求的 `X-Request-Id` 不超过 128 个字符，且只由字母、数字和 `-_.:` 组成，就会作为负载均衡器分配的 ID 原样使用。追踪中的日志（请求和任务）还带有 `trace_id` 和 `span_id`（参见[追踪](#traces)）。对于 Cloud Run，使用 `logs_exporter = gcp` 时，日志行还带有把一行链接到 Cloud Trace 中其追踪的 Cloud Logging 字段，每个访问日志行还以 `httpRequest` 带有其请求；其他字段保持不变。
 
 每个 HTTP 请求和每次任务执行在结束时都会写入一行。这一行使用与下面[指标](#metrics)的标签相同的名称和值，因此在 `metrics_exporter = none` 时，平台可以基于这些行构建基于日志的指标（计数器和分布）。
 

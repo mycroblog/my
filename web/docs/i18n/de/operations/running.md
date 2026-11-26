@@ -3,7 +3,7 @@
 
 So startest und stoppst du den Server, beziehst sein Image und beobachtest ihn im Betrieb: Metriken, Traces, die Job-Warteschlange und Health-Checks.
 
-<!-- source: start-the-server 93f89c7d7b66 -->
+<!-- source: start-the-server 3cc6acc9fe88 -->
 ## Den Server starten
 
 ```sh
@@ -39,6 +39,7 @@ Logs gehen als JSON Lines auf die Standardfehlerausgabe. Jede Zeile hat `level` 
 Logs, die beim Bearbeiten einer Anfrage geschrieben werden, tragen eine `request_id`, und dieselbe ID wird im Antwort-Header `X-Request-Id` zurückgegeben.
 Hat die `X-Request-Id` der Anfrage höchstens 128 Zeichen aus Buchstaben, Ziffern und `-_.:`, wird sie unverändert verwendet, als die von einem Load Balancer vergebene ID.
 Logs innerhalb eines Traces (Anfragen und Jobs) tragen außerdem `trace_id` und `span_id` (siehe [Traces](#traces)).
+Mit `logs_exporter = gcp`, für Cloud Run, tragen die Zeilen außerdem die Felder von Cloud Logging, die eine Zeile mit ihrem Trace in Cloud Trace verknüpfen, und jede Zugriffszeile ihre Anfrage als `httpRequest`; die übrigen Felder bleiben, wie sie sind.
 
 Jede HTTP-Anfrage und jede Job-Ausführung schreibt am Ende eine Zeile. Die Zeile hat dieselben Namen und Werte wie die Labels der [Metriken](#metrics) unten,
 sodass eine Plattform mit `metrics_exporter = none` aus diesen Zeilen logbasierte Metriken (Zähler und Verteilungen) bauen kann.

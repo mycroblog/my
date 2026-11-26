@@ -192,10 +192,10 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
 
 `monitoring` 會加入 `/health/live` 的可用性檢查、以日誌為基礎的指標，以及以[運作手冊](alerts.md)的名稱命名的警示政策，它們會通知 `notification_emails`（範例中的 `alert_emails`）的地址或 `notification_channels` 的通道。這個區段沒有預設值：請指定誰要收到通知，或設定 `monitoring = null` 完全不使用它。它從未被套用過，所以請讓一項檢查失敗來試用一次。檢查的每次執行都會喚醒一個執行個體：`uptime_period` 預設為 15 分鐘，就是執行的頻率。
 
-<!-- source: traces da2e58dc6a3a -->
+<!-- source: traces b1f84a2f93b9 -->
 ### 追蹤
 
-Cloud Trace 會顯示 Cloud Run 為每個請求記錄的追蹤，而伺服器的日誌行會帶有它的 `trace_id`，因為模組信任入口（`MY_TRUSTED_PROXIES`）。這些日誌行不會填入 Cloud Logging 用來連結的追蹤欄位（`logging.googleapis.com/trace`），而 Cloud Run 是否一定會取代公開請求的 `traceparent`，尚未驗證。伺服器自己的 span 需要旁邊有一個 OpenTelemetry Collector，而模組不會執行它。
+Cloud Trace 會顯示 Cloud Run 為每個請求記錄的追蹤，而伺服器的日誌行會帶有它的 `trace_id`，因為模組信任入口（`MY_TRUSTED_PROXIES`）。模組會設定 `logs_exporter = gcp`，因此每一行也會填入 Cloud Logging 連結到 Cloud Trace 的追蹤欄位（`logging.googleapis.com/trace`），每個存取日誌行會顯示為一個請求。`observability.logs = "settings"` 會把 `logs_exporter` 交給 `settings`。尚未驗證：Cloud Logging 是否會以它寫入的單純追蹤 ID 連結一行，以及 Cloud Run 是否一定會取代公開請求的 `traceparent`。伺服器自己的 span 需要旁邊有一個 OpenTelemetry Collector，而模組不會執行它。
 
 <!-- source: limits 3d4721415f18 -->
 ## 限制

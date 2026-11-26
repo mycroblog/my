@@ -148,10 +148,10 @@ Memorystore 只有私有地址，要为 Cloud SQL 提供私有地址，或者要
 
 `monitoring` 会添加对 `/health/live` 的可用性检查、基于日志的指标，以及名称与[运行手册](alerts.md)一致的告警策略，它们会通知 `notification_emails`（示例中为 `alert_emails`）中的地址或 `notification_channels` 中的渠道。该区段没有默认值：请指明通知谁，或设置 `monitoring = null` 来完全不要它。它从未被应用过，所以请通过让一次检查失败来试用一次。每次运行检查都会唤醒一个实例：`uptime_period`（默认 15 分钟）决定了多久一次。
 
-<!-- source: traces da2e58dc6a3a -->
+<!-- source: traces b1f84a2f93b9 -->
 ### 追踪
 
-Cloud Trace 会显示 Cloud Run 为每个请求记录的追踪，服务器的日志行带有它的 `trace_id`，因为模块信任 ingress（`MY_TRUSTED_PROXIES`）。这些日志行不会填充 Cloud Logging 用来建立链接的追踪字段（`logging.googleapis.com/trace`），而且 Cloud Run 是否总会替换公开请求的 `traceparent` 尚未验证。服务器自己的 span 需要在它旁边放一个 OpenTelemetry Collector，而模块不运行它。
+Cloud Trace 会显示 Cloud Run 为每个请求记录的追踪，服务器的日志行带有它的 `trace_id`，因为模块信任 ingress（`MY_TRUSTED_PROXIES`）。模块设置了 `logs_exporter = gcp`，因此每一行还会填充 Cloud Logging 链接到 Cloud Trace 的追踪字段（`logging.googleapis.com/trace`），每个访问日志行会显示为一个请求。`observability.logs = "settings"` 会把 `logs_exporter` 交给 `settings`。尚未验证：Cloud Logging 是否会凭它写入的裸追踪 ID 链接一行，以及 Cloud Run 是否总会替换公开请求的 `traceparent`。服务器自己的 span 需要在它旁边放一个 OpenTelemetry Collector，而模块不运行它。
 
 <!-- source: how-traffic-reaches-the-service 094ddaf201c8 -->
 ## 流量如何到达服务
