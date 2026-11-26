@@ -61,6 +61,14 @@ tasks:
     cmds:
       - go run ./test/bench run {{.CLI_ARGS}}
 
+  # The measurement of a media node of voice = sfu (ADR-0101 §16), run by hand: no check, CI job or gate runs it.
+  voice-sfu-measure:
+    desc: Measure the memory and CPU of a voice = sfu media node on loopback, its simulated clients in a child process (about three minutes), and its forward path per packet
+    env:
+      TEST_VOICE_SFU_MEASURE: "1"
+    cmds:
+      - go test -count=1 -v -run '^TestMeasureCost$' -bench '^BenchmarkForward$' -benchmem ./internal/adapter/voice/sfu/node/
+
   lint:
     desc: Run golangci-lint (includes the depguard architecture boundaries) on the server module, or on its shard SHARD (scripts/go-shard.sh)
     vars:
