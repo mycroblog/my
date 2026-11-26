@@ -497,10 +497,12 @@ func markedPage[M any](ctx context.Context, r *Reader, viewer Viewer, marks []M,
 	if len(ids) == 0 {
 		return nil, next, nil
 	}
-	out, err := r.Views(ctx, viewer, ids)
+	views, err := r.Views(ctx, viewer, ids)
 	if err != nil {
 		return nil, "", err
 	}
+	// Views shows a board post to a viewer who reads its board, as View does; a list leaves it out.
+	out := slices.DeleteFunc(views, func(v StatusView) bool { return v.BoardGatheringID != "" })
 	return out, next, nil
 }
 
