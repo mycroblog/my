@@ -11,7 +11,9 @@
 #   - every other module returns platform, which is what its name says: gcp or aws when the name has it, neutral otherwise;
 #   - a network-* module is no backend: it returns the fields of its platform's table of the network contract and nothing else;
 #   - every module with an input network, and every app-*, has those same fields in its type: a conversion drops a field that the
-#     type does not name in the same way.
+#     type does not name in the same way;
+#   - every module has tests (tests/*.tftest.hcl): tofu:test runs only the modules that have them, so one without would
+#     pass unread.
 #
 # Usage: scripts/tofu-backend-fields-check.sh [DIR]   (default: deploy/opentofu/modules/internal, whose README.md holds the contract)
 set -euo pipefail
@@ -103,6 +105,10 @@ done
 
 for module in "$dir"/*/; do
   name="$(basename "$module")"
+  if ! compgen -G "$module/tests/*.tftest.hcl" > /dev/null; then
+    echo "$name: no tests/*.tftest.hcl, so tofu:test never reads it: test what it promises its callers, on mocked providers" >&2
+    status=1
+  fi
   # What the workers and settings inputs mean, read by the modules that take them: no backend, with no platform to compare.
   case "$name" in workers | settings) continue ;; esac
   case "$name" in

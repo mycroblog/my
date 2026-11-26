@@ -330,6 +330,7 @@ fields_copy() {
   for module in "$root"/deploy/opentofu/modules/internal/*/; do
     mkdir "$fields/$(basename "$module")"
     cp "$module"*.tf "$fields/$(basename "$module")/"
+    cp -r "$module"tests "$fields/$(basename "$module")/"
   done
 }
 fields_copy
@@ -359,6 +360,10 @@ fields_copy
 sed -i '/^output "platform"/,/^}/s/"aws"/"neutral"/' "$fields/blob-aws-s3/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module of AWS that says it is neutral"; fi
 grep -qF 'blob-aws-s3: its platform is "neutral", and its name says aws' "$tmp/fields.err" || fail "the fields check did not name the module with the wrong platform"
+fields_copy
+rm -r "$fields/stream-gcp-pubsub/tests"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module without tests"; fi
+grep -qF 'stream-gcp-pubsub: no tests/*.tftest.hcl' "$tmp/fields.err" || fail "the fields check did not name the module without tests"
 
 # tofu-backend-fields-check: a network's fields.
 fields_copy
