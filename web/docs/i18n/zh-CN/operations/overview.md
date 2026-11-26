@@ -18,7 +18,7 @@
 - **你选择的组件。** 图中间的每个组件都有一个选择其适配器的设置，列在[下一节](#parts-you-choose-by-configuration)中。
 - **服务器外部的服务。** CAPTCHA、语音聊天、支付、插件和云费用导入在你设置之前都保持关闭，设置后服务器会调用你指定的服务。
 
-<!-- source: parts-you-choose-by-configuration 34c2a60744fd -->
+<!-- source: parts-you-choose-by-configuration 4d878bcd8b84 -->
 ## 通过配置选择的部分
 
 每个部分都是[配置参考](../reference/configuration.md)中的一个设置，可以写在 TOML 文件中，也可以作为环境变量设置（`MY_` 加上大写的键，例如 `MY_DATABASE`）。每个列表中的第一个选项是默认值。
@@ -35,7 +35,7 @@
 | 密钥管理器，用于加密账号的私钥 | [`key_manager`](../reference/configuration.md#key_manager) | `local`（由你保管的密钥加密密钥）、`gcpkms`（Google Cloud KMS）、`awskms`（AWS KMS）、`plugin` | [管理密钥](key-management.md) |
 | 电子邮件 | [`mail`](../reference/configuration.md#mail) | `none`、`smtp`、`ses`（Amazon SES）、`plugin` | [发送电子邮件](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`、`turnstile`（Cloudflare Turnstile）、`hcaptcha`、`recaptcha`（Google reCAPTCHA v2） | [CAPTCHA](captcha.md) |
-| 语音聊天 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（浏览器到浏览器，TURN 由 `voice_turn` 决定：`none`、`coturn` 或 `cloudflare`）、`livekit`、`sora` | [语音聊天](voice.md) |
+| 语音聊天 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（浏览器到浏览器）、`sfu`（服务器的媒体节点），各自的 TURN 由 `voice_turn` 决定：`none`、`coturn` 或 `cloudflare` | [语音聊天](voice.md) |
 | 支持者付款 | [`payments`](../reference/configuration.md#payments) | `none`、`stripe`、`payjp`（PAY.JP） | [支持者](supporters.md)、[Stripe](payments-stripe.md)、[PAY.JP](payments-payjp.md) |
 | 插件 | `plugin_<kind>_address` | 默认没有；每种类型一个地址：`translator`、`search`、`billing`、`mailer`、`media_image`、`media_video`、`media_audio`、`key_manager`，以及决策钩子 `inbound.status`、`local.status`、`inbound.follow`、`signup.check`、`media.check`、`inbound.actor`、`local.profile` | [插件](plugins.md)、[决策钩子](decision-hooks.md) |
 | 帖子翻译 | `translator_<provider>_*`、[`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | 无（只有浏览器自带的翻译）；`libretranslate`、`deepl`、`google`（Google Cloud Translation）、`aws`（Amazon Translate），或者在你所选服务前面的你自己的插件 | [翻译帖子](translation.md)、[翻译插件](plugins.md#translating-posts) |

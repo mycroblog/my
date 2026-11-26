@@ -86,7 +86,7 @@ CDN 只能保护服务器免受经过它的请求的影响。如果源站本身�
 
 三项都不设置时，不进行任何检查，服务器的行为就像本节不存在一样。
 
-<!-- source: what-passes-without-the-header b79877bb91a3 -->
+<!-- source: what-passes-without-the-header e5891c904fa1 -->
 ### 没有该请求头时能通过的请求
 
 | 请求 | 原因 |
@@ -94,7 +94,7 @@ CDN 只能保护服务器免受经过它的请求的影响。如果源站本身�
 | 对 `/healthz`、`/readyz`、`/health/live`、`/health/ready`、`/api/v1/instance/health` 的 `GET` 或 `HEAD` | 平台的探测和可用性监控会直接调用它们 |
 | 对 `/_internal/` 路径的 `POST` | Cloud Tasks 和 Cloud Scheduler 会在服务器自己的 URL 上调用它们。它们携带自己的签名令牌 |
 
-其他所有请求都需要该请求头，在维护模式下也是如此：Web 客户端及其资源、`/media/`、客户端 API、OAuth 和 ActivityPub，包括其他服务器的投递。因此，任何不经过 CDN、而是直接用服务器自己的地址调用它的东西都会被拒绝：你自己的 webhook、语音媒体服务器、脚本。请让它指向 CDN 的主机名。
+其他所有请求都需要该请求头，在维护模式下也是如此：Web 客户端及其资源、`/media/`、客户端 API、OAuth 和 ActivityPub，包括其他服务器的投递。因此，任何不经过 CDN、而是直接用服务器自己的地址调用它的东西都会被拒绝：你自己的 webhook、脚本。请让它指向 CDN 的主机名。
 
 指标端口（`metrics_listen`）是一个单独的监听器，它不公开，也不做检查。
 
