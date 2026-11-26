@@ -139,7 +139,8 @@ func (r *ErrorReporter) fill(ctx context.Context, ev *kernel.ErrorEvent) {
 		ev.RequestID = RequestID(ctx)
 	}
 	if ev.TraceID == "" {
-		ev.TraceID, ev.SpanID = r.tracer.LogIDs(ctx)
+		p := r.tracer.LogIDs(ctx)
+		ev.TraceID, ev.SpanID = p.TraceID, p.SpanID
 	}
 }
 

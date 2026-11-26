@@ -175,12 +175,12 @@ func (t *Tracer) Linked(ctx context.Context, traceparent string) context.Context
 }
 
 // LogIDs implements kernel.Tracer.
-func (t *Tracer) LogIDs(ctx context.Context) (string, string) {
+func (t *Tracer) LogIDs(ctx context.Context) kernel.TraceParent {
 	sc := trace.SpanContextFromContext(ctx)
 	if !sc.IsValid() {
-		return "", ""
+		return kernel.TraceParent{}
 	}
-	return sc.TraceID().String(), sc.SpanID().String()
+	return kernel.TraceParent{TraceID: sc.TraceID().String(), SpanID: sc.SpanID().String(), Sampled: sc.IsSampled()}
 }
 
 // spanContext parses a traceparent into a remote span context.

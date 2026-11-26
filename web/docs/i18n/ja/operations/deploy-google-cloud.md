@@ -192,10 +192,10 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
 
 `monitoring` は、`/health/live` の死活監視のチェック、ログベースのメトリクス、そして[運用手順書](alerts.md)と同じ名前のアラートポリシーを追加します。通知先は `notification_emails`（例では `alert_emails`）のアドレスか、`notification_channels` のチャネルです。このセクションに既定値はありません。誰に通知するかを指定するか、`monitoring = null` にして全体を外してください。まだ一度も適用されたことがないので、チェックをわざと失敗させて 1 度試してください。チェックは実行のたびにインスタンスを起こします。その間隔が `uptime_period` で、既定では 15 分です。
 
-<!-- source: traces da2e58dc6a3a -->
+<!-- source: traces b1f84a2f93b9 -->
 ### トレース
 
-Cloud Trace は、Cloud Run がリクエストごとに記録するトレースを表示し、モジュールがイングレスを信頼する（`MY_TRUSTED_PROXIES`）ので、サーバーのログ行は `trace_id` を持ちます。ただしログ行は、Cloud Logging がリンクするトレースのフィールド（`logging.googleapis.com/trace`）を埋めず、公開リクエストの `traceparent` を Cloud Run が必ず置き換えるかどうかも確認できていません。サーバー自身のスパンには、その隣で OpenTelemetry Collector を動かす必要があり、モジュールはそれを動かしません。
+Cloud Trace は、Cloud Run がリクエストごとに記録するトレースを表示し、モジュールがイングレスを信頼する（`MY_TRUSTED_PROXIES`）ので、サーバーのログ行は `trace_id` を持ちます。モジュールは `logs_exporter = gcp` を設定するので、各ログ行は Cloud Logging が Cloud Trace にリンクするトレースのフィールド（`logging.googleapis.com/trace`）も埋め、アクセスログの行はリクエストとして表示されます。`observability.logs = "settings"` にすると、`logs_exporter` は `settings` に任されます。確認できていないこと: Cloud Logging が、ログ行に書かれた trace ID だけでその行をリンクすること、および公開リクエストの `traceparent` を Cloud Run が必ず置き換えること。サーバー自身のスパンには、その隣で OpenTelemetry Collector を動かす必要があり、モジュールはそれを動かしません。
 
 <!-- source: limits 3d4721415f18 -->
 ## 制限

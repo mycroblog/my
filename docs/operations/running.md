@@ -37,6 +37,7 @@ Logs go to standard error as JSON Lines. Every line has `level` (`DEBUG`, `INFO`
 Logs written while handling a request carry a `request_id`, and the same ID is returned in the `X-Request-Id` response header.
 If the request's `X-Request-Id` is at most 128 characters of letters, digits and `-_.:`, it is used as is, as the ID assigned by a load balancer.
 Logs inside a trace (requests and jobs) also carry `trace_id` and `span_id` (see [Traces](#traces)).
+With `logs_exporter = gcp`, for Cloud Run, the lines also carry the fields of Cloud Logging that link a line to its trace in Cloud Trace, and each access line its request as `httpRequest`; the other fields stay as they are.
 
 Each HTTP request and each job execution writes one line when it finishes. The line has the same names and values as the labels of the [metrics](#metrics) below,
 so with `metrics_exporter = none` a platform can build log-based metrics (counters and distributions) from these lines.

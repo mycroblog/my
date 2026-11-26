@@ -414,7 +414,7 @@ run "observability_to_google_cloud" {
 
   assert {
     condition = (
-      module.observability.env == { MY_METRICS_EXPORTER = "none", MY_TRACES_EXPORTER = "none", MY_ERRORS_EXPORTER = "none" } &&
+      module.observability.env == { MY_LOGS_EXPORTER = "gcp", MY_METRICS_EXPORTER = "none", MY_TRACES_EXPORTER = "none", MY_ERRORS_EXPORTER = "none" } &&
       module.monitoring != null
     )
     error_message = "every signal must go to Google Cloud's destinations, and the alerts read the metrics there"

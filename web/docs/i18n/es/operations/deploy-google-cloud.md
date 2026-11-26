@@ -274,12 +274,14 @@ de `notification_channels`. La sección no tiene valor predeterminado: nombra a 
 por completo. No se ha aplicado nunca, así que pruébala una vez haciendo fallar una comprobación. Cada ejecución de la comprobación despierta una instancia:
 `uptime_period`, 15 minutos por defecto, es la frecuencia.
 
-<!-- source: traces da2e58dc6a3a -->
+<!-- source: traces b1f84a2f93b9 -->
 ### Trazas
 
 Cloud Trace muestra la traza que Cloud Run registra de cada solicitud, y las líneas de registro del servidor llevan su `trace_id`, ya que el
-módulo confía en el ingress (`MY_TRUSTED_PROXIES`). Las líneas no rellenan el campo de traza que enlaza Cloud Logging
-(`logging.googleapis.com/trace`), y no está verificado si Cloud Run reemplaza siempre el `traceparent` de una solicitud pública.
+módulo confía en el ingress (`MY_TRUSTED_PROXIES`). El módulo establece `logs_exporter = gcp`, así que cada línea también rellena los
+campos de traza que Cloud Logging enlaza con Cloud Trace (`logging.googleapis.com/trace`), y cada línea de acceso se muestra como una solicitud.
+`observability.logs = "settings"` deja `logs_exporter` a `settings`. Sin verificar: que Cloud Logging enlace una línea por el
+ID de traza sin más que escribe, y que Cloud Run reemplace siempre el `traceparent` de una solicitud pública.
 Los spans propios del servidor necesitarían un OpenTelemetry Collector a su lado, que el módulo no ejecuta.
 
 <!-- source: limits 3d4721415f18 -->

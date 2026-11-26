@@ -78,11 +78,11 @@ func TestErrorType(t *testing.T) {
 func TestNopTracerKeepsTheRemoteParentForTheLogs(t *testing.T) {
 	var tr kernel.NopTracer
 	ctx := tr.Continue(t.Context(), "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01")
-	if traceID, spanID := tr.LogIDs(ctx); traceID != "4bf92f3577b34da6a3ce929d0e0e4736" || spanID != "00f067aa0ba902b7" {
-		t.Errorf("LogIDs = %q %q", traceID, spanID)
+	if p := tr.LogIDs(ctx); p.TraceID != "4bf92f3577b34da6a3ce929d0e0e4736" || p.SpanID != "00f067aa0ba902b7" || !p.Sampled {
+		t.Errorf("LogIDs = %+v", p)
 	}
-	if traceID, _ := tr.LogIDs(tr.Linked(ctx, "")); traceID != "" {
-		t.Errorf("LogIDs after Linked = %q, want none", traceID)
+	if p := tr.LogIDs(tr.Linked(ctx, "")); p.TraceID != "" {
+		t.Errorf("LogIDs after Linked = %+v, want none", p)
 	}
 	if !kernel.IsNopTracer(nil) || !kernel.IsNopTracer(tr) || kernel.TracerOrNop(nil) == nil {
 		t.Error("IsNopTracer / TracerOrNop")

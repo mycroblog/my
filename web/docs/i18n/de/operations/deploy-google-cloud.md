@@ -272,12 +272,14 @@ von `notification_channels` benachrichtigen. Der Abschnitt hat keinen Standardwe
 wegzulassen. Er wurde noch nie angewendet, probiere ihn also einmal aus, indem du eine Prüfung fehlschlagen lässt. Jeder Lauf der Prüfung weckt eine Instanz:
 `uptime_period`, standardmäßig 15 Minuten, bestimmt, wie oft.
 
-<!-- source: traces da2e58dc6a3a -->
+<!-- source: traces b1f84a2f93b9 -->
 ### Traces
 
 Cloud Trace zeigt den Trace, den Cloud Run von jeder Anfrage aufzeichnet, und die Logzeilen des Servers tragen seine `trace_id`, da das
-Modul dem Ingress vertraut (`MY_TRUSTED_PROXIES`). Die Zeilen füllen nicht das Trace-Feld, das Cloud Logging verlinkt
-(`logging.googleapis.com/trace`), und ob Cloud Run das `traceparent` einer öffentlichen Anfrage immer ersetzt, ist ungeprüft.
+Modul dem Ingress vertraut (`MY_TRUSTED_PROXIES`). Das Modul setzt `logs_exporter = gcp`, sodass jede Zeile auch die Trace-Felder
+füllt, die Cloud Logging mit Cloud Trace verknüpft (`logging.googleapis.com/trace`), und jede Zugriffszeile als Anfrage erscheint.
+`observability.logs = "settings"` überlässt `logs_exporter` den `settings`. Ungeprüft: dass Cloud Logging eine Zeile über die
+reine Trace-ID verknüpft, die sie schreibt, und dass Cloud Run das `traceparent` einer öffentlichen Anfrage immer ersetzt.
 Die eigenen Spans des Servers bräuchten einen OpenTelemetry Collector daneben, den das Modul nicht betreibt.
 
 <!-- source: limits 3d4721415f18 -->

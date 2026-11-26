@@ -90,7 +90,7 @@ run "the_recommended_setup" {
       "MY_MAIL", "MY_MAIL_FROM", "MY_MAIL_SMTP_HOST", "MY_MAIL_SMTP_PORT", "MY_MAIL_SMTP_USERNAME", "MY_MAIL_SMTP_PASSWORD",
       "MY_KEK",
       "MY_BILLING_SOURCES", "MY_BILLING_GCP_METHOD", "MY_BILLING_GCP_TABLE",
-      "MY_METRICS_EXPORTER", "MY_TRACES_EXPORTER", "MY_ERRORS_EXPORTER",
+      "MY_LOGS_EXPORTER", "MY_METRICS_EXPORTER", "MY_TRACES_EXPORTER", "MY_ERRORS_EXPORTER",
     ], [for name in concat(keys(module.app.env), keys(module.app.secret_env)) : trimsuffix(name, "_FILE")])) == 0
     error_message = "the recommended setup misses a setting of its sections: ${jsonencode(module.app.env)} ${jsonencode(module.app.secret_env)}"
   }
@@ -279,7 +279,7 @@ run "settings_may_set_a_signal_that_observability_leaves_to_them" {
   assert {
     condition = (
       module.app.env["MY_METRICS_EXPORTER"] == "otlp" && module.app.env["MY_ERRORS_EXPORTER"] == "sentry" &&
-      module.app.env["MY_TRACES_EXPORTER"] == "none" && module.app.secret_env["MY_ERRORS_SENTRY_DSN"] == "my-errors-sentry-dsn"
+      module.app.env["MY_TRACES_EXPORTER"] == "none" && module.app.env["MY_LOGS_EXPORTER"] == "gcp" && module.app.secret_env["MY_ERRORS_SENTRY_DSN"] == "my-errors-sentry-dsn"
     )
     error_message = "a signal left to the settings takes them, and the others stay the section's: ${jsonencode(module.app.env)}"
   }

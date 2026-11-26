@@ -261,8 +261,10 @@ out. It has never been applied, so try it once by making a check fail. Each run 
 ### Traces
 
 Cloud Trace shows the trace that Cloud Run records of each request, and the server's log lines carry its `trace_id`, since the
-module trusts the ingress (`MY_TRUSTED_PROXIES`). The lines do not fill the trace field that Cloud Logging links
-(`logging.googleapis.com/trace`), and whether Cloud Run always replaces the `traceparent` of a public request is unverified.
+module trusts the ingress (`MY_TRUSTED_PROXIES`). The module sets `logs_exporter = gcp`, so each line also fills the trace
+fields that Cloud Logging links to Cloud Trace (`logging.googleapis.com/trace`), and each access line shows as a request.
+`observability.logs = "settings"` leaves `logs_exporter` to `settings`. Unverified: that Cloud Logging links a line by the
+bare trace ID it writes, and that Cloud Run always replaces the `traceparent` of a public request.
 The server's own spans would need an OpenTelemetry Collector beside it, which the module does not run.
 
 ## Limits

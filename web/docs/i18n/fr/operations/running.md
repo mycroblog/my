@@ -3,7 +3,7 @@
 
 Comment démarrer et arrêter le serveur, obtenir son image et le surveiller pendant son fonctionnement : métriques, traces, file de tâches et contrôles de santé.
 
-<!-- source: start-the-server 93f89c7d7b66 -->
+<!-- source: start-the-server 3cc6acc9fe88 -->
 ## Démarrer le serveur
 
 ```sh
@@ -39,6 +39,7 @@ Les journaux vont sur l’erreur standard en JSON Lines. Chaque ligne a `level` 
 Les journaux écrits pendant le traitement d’une requête portent un `request_id`, et le même ID est renvoyé dans l’en-tête de réponse `X-Request-Id`.
 Si le `X-Request-Id` de la requête compte au plus 128 caractères parmi les lettres, les chiffres et `-_.:`, il est utilisé tel quel, comme l’ID attribué par un répartiteur de charge.
 Les journaux à l’intérieur d’une trace (requêtes et jobs) portent aussi `trace_id` et `span_id` (voir [Traces](#traces)).
+Avec `logs_exporter = gcp`, pour Cloud Run, les lignes portent aussi les champs de Cloud Logging qui relient une ligne à sa trace dans Cloud Trace, et chaque ligne d’accès sa requête sous `httpRequest` ; les autres champs restent tels quels.
 
 Chaque requête HTTP et chaque exécution de job écrit une ligne à sa fin. La ligne a les mêmes noms et valeurs que les étiquettes des [métriques](#metrics) ci-dessous ;
 avec `metrics_exporter = none`, une plateforme peut donc construire à partir de ces lignes des métriques basées sur les journaux (compteurs et distributions).

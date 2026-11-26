@@ -68,20 +68,20 @@ func TracerContract(t *testing.T, newTracer func(t *testing.T) kernel.Tracer) {
 		if !ok {
 			t.Fatalf("Inject = %q, not a traceparent", got)
 		}
-		if traceID, spanID := tr.LogIDs(ctx); traceID != p.TraceID || spanID != p.SpanID {
-			t.Errorf("LogIDs = %s %s, want those of Inject %q", traceID, spanID, got)
+		if ids := tr.LogIDs(ctx); ids != p {
+			t.Errorf("LogIDs = %+v, want those of Inject %q", ids, got)
 		}
 	})
 	t.Run("ContinuesAValidTraceParent", func(t *testing.T) {
 		tr := newTracer(t)
 		want, _ := kernel.ParseTraceParent(ContractTraceParent)
 		ctx := tr.Continue(t.Context(), ContractTraceParent)
-		if traceID, spanID := tr.LogIDs(ctx); traceID != want.TraceID || spanID != want.SpanID {
-			t.Errorf("LogIDs after Continue = %q %q, want %q %q", traceID, spanID, want.TraceID, want.SpanID)
+		if ids := tr.LogIDs(ctx); ids != want {
+			t.Errorf("LogIDs after Continue = %+v, want %+v", ids, want)
 		}
 		ctx, s := tr.Start(ctx, spec, kernel.Attrs{})
 		defer s.End("")
-		if traceID, _ := tr.LogIDs(ctx); s.Recording() && traceID != want.TraceID {
+		if traceID := tr.LogIDs(ctx).TraceID; s.Recording() && traceID != want.TraceID {
 			t.Errorf("trace ID of the child of a remote parent = %q, want %q", traceID, want.TraceID)
 		}
 	})
@@ -93,8 +93,8 @@ func TracerContract(t *testing.T, newTracer func(t *testing.T) kernel.Tracer) {
 			"00-4BF92F3577B34DA6A3CE929D0E0E4736-00f067aa0ba902b7-01", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01-extra",
 		} {
 			ctx := tr.Continue(t.Context(), v)
-			if traceID, spanID := tr.LogIDs(ctx); traceID != "" || spanID != "" {
-				t.Errorf("LogIDs after Continue(%q) = %q %q, want none", v, traceID, spanID)
+			if ids := tr.LogIDs(ctx); ids != (kernel.TraceParent{}) {
+				t.Errorf("LogIDs after Continue(%q) = %+v, want none", v, ids)
 			}
 		}
 	})
@@ -106,13 +106,13 @@ func TracerContract(t *testing.T, newTracer func(t *testing.T) kernel.Tracer) {
 		defer outer.End("")
 		ctx, s := tr.Start(tr.Linked(ctx, ContractTraceParent), spec.Named("my.contract.job"), kernel.Attrs{})
 		defer s.End("")
-		traceID, _ := tr.LogIDs(ctx)
+		traceID := tr.LogIDs(ctx).TraceID
 		if s.Recording() && (traceID == "" || traceID == parent.TraceID) {
 			t.Errorf("trace ID of a linked span = %q, want a new trace", traceID)
 		}
 		cctx, child := tr.Start(ctx, spec.Named("my.contract.query"), kernel.Attrs{})
 		defer child.End("")
-		if childTrace, _ := tr.LogIDs(cctx); child.Recording() && childTrace != traceID {
+		if childTrace := tr.LogIDs(cctx).TraceID; child.Recording() && childTrace != traceID {
 			t.Errorf("trace ID of the child of a linked span = %q, want %q", childTrace, traceID)
 		}
 	})

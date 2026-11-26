@@ -36,6 +36,14 @@ const (
 	RoleWorker Role = "worker"
 )
 
+// The values of logs_exporter (ADR-0055 §20).
+const (
+	// LogsStderr writes JSON lines on standard error.
+	LogsStderr = "stderr"
+	// LogsGCP writes them in the shape of Cloud Logging's structured logging.
+	LogsGCP = "gcp"
+)
+
 // Config is the validated configuration. Adapter fields hold the adapter name.
 type Config struct {
 	Host          string
@@ -376,6 +384,9 @@ type Config struct {
 	MetricsListen        string
 	MetricsEMFNamespace  string
 	MetricsEMFDimensions []string
+	// LogsExporter is where the log lines go and in which shape (ADR-0055 §20): LogsStderr or
+	// LogsGCP.
+	LogsExporter string
 	// TracesExporter is the Tracer adapter, TracesSampleRatio the share of the root spans that
 	// are recorded, and TracesFlush when the spans are sent (ADR-0055 §17).
 	TracesExporter    string
@@ -611,6 +622,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("metrics_listen", c.MetricsListen),
 		slog.String("metrics_emf_namespace", c.MetricsEMFNamespace),
 		slog.Any("metrics_emf_dimensions", c.MetricsEMFDimensions),
+		slog.String("logs_exporter", c.LogsExporter),
 		slog.String("traces_exporter", c.TracesExporter),
 		slog.Float64("traces_sample_ratio", c.TracesSampleRatio),
 		slog.String("traces_flush", c.TracesFlush),

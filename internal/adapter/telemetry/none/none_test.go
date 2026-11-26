@@ -46,7 +46,7 @@ func TestTracerAllocatesNothing(t *testing.T) {
 		sctx, s := tr.Start(ctx, spanSpec, kernel.NewAttrs(kernel.StringAttr("my.job.type", "federation.deliver"), kernel.IntAttr("my.job.attempt", 1)))
 		s.Set(kernel.StringAttr("my.outcome", "success"))
 		_ = tr.Inject(sctx)
-		_, _ = tr.LogIDs(sctx)
+		_ = tr.LogIDs(sctx)
 		s.End("")
 	})
 	if allocs != 0 {

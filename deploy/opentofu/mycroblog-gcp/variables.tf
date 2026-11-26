@@ -418,8 +418,9 @@ variable "monitoring" {
 }
 
 variable "observability" {
-  description = "Where the metrics, the traces, and the error reports go. The defaults are Google Cloud's own destinations, whose APIs the module enables: metrics = cloud-monitoring (Cloud Run's metrics, and the log-based metrics of monitoring), traces = cloud-trace (the trace Cloud Run records of each request), errors = error-reporting (which reads the error report line). The server exports nothing itself for them. settings leaves a signal to the settings input: errors = settings with errors_exporter = sentry in settings and errors_sentry_dsn in secrets, for one."
+  description = "Where the logs, the metrics, the traces, and the error reports go. The defaults are Google Cloud's own destinations, whose APIs the module enables: logs = cloud-logging (the lines in the shape of Cloud Logging, linked to their traces), metrics = cloud-monitoring (Cloud Run's metrics, and the log-based metrics of monitoring), traces = cloud-trace (the trace Cloud Run records of each request), errors = error-reporting (which reads the error report line). The server exports nothing itself for them. settings leaves a signal to the settings input: errors = settings with errors_exporter = sentry in settings and errors_sentry_dsn in secrets, for one."
   type = object({
+    logs    = optional(string, "cloud-logging")
     metrics = optional(string, "cloud-monitoring")
     traces  = optional(string, "cloud-trace")
     errors  = optional(string, "error-reporting")
@@ -429,11 +430,12 @@ variable "observability" {
 
   validation {
     condition = (
+      contains(["cloud-logging", "settings"], var.observability.logs) &&
       contains(["cloud-monitoring", "settings"], var.observability.metrics) &&
       contains(["cloud-trace", "settings"], var.observability.traces) &&
       contains(["error-reporting", "settings"], var.observability.errors)
     )
-    error_message = "observability.metrics must be cloud-monitoring or settings, traces cloud-trace or settings, and errors error-reporting or settings."
+    error_message = "observability.logs must be cloud-logging or settings, metrics cloud-monitoring or settings, traces cloud-trace or settings, and errors error-reporting or settings."
   }
 }
 

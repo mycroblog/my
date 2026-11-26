@@ -97,6 +97,7 @@
     "kms_dek_cache_*",
     "kms_key_previous",
     "login_provider_allowed_destinations",
+    "logs_exporter",
     "mail_ses_sns_topic_arn",
     "maintenance*",
     "media_audio",

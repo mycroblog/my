@@ -238,6 +238,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`metrics_listen`](#metrics_listen) | `MY_METRICS_LISTEN` | `127.0.0.1:9464` | no | no |
 | [`metrics_emf_namespace`](#metrics_emf_namespace) | `MY_METRICS_EMF_NAMESPACE` | `my` | no | no |
 | [`metrics_emf_dimensions`](#metrics_emf_dimensions) | `MY_METRICS_EMF_DIMENSIONS` | none | no | no |
+| [`logs_exporter`](#logs_exporter) | `MY_LOGS_EXPORTER` | `stderr` | no | no |
 | [`traces_exporter`](#traces_exporter) | `MY_TRACES_EXPORTER` | `none` | no | no |
 | [`traces_sample_ratio`](#traces_sample_ratio) | `MY_TRACES_SAMPLE_RATIO` | `0.01` | no | no |
 | [`traces_flush`](#traces_flush) | `MY_TRACES_FLUSH` | `batch` | no | no |
@@ -2075,6 +2076,19 @@ Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-se
 - Environment variable: `MY_METRICS_EMF_DIMENSIONS`
 - Default: none
 - Required: no
+
+### `logs_exporter`
+
+Where the log lines go, and in which shape. Every line carries `request_id` or `job_id`, and `trace_id` and `span_id` inside a trace, whatever this setting.
+
+- Environment variable: `MY_LOGS_EXPORTER`
+- Default: `stderr`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `stderr` | JSON lines on standard error, which the platform or a log collector of the operator gathers. |
+| `gcp` | The same lines with the fields of Cloud Logging's structured logging, for Cloud Run: the trace fields that link a line to its trace in Cloud Trace (`logging.googleapis.com/trace`, `spanId`, and `trace_sampled`), and the request of each access line as `httpRequest`, without the query, the client IP, or the User-Agent. |
 
 ### `traces_exporter`
 

@@ -274,7 +274,7 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 
 - slog のハンドラー（`requestIDHandler`）は、`Tracer.LogIDs` が返す `trace_id`・`span_id` もログの全行に付ける。`request_id`・`job_id` も残す
 - `traces_exporter = none` でも、信頼した入口（§15）の `traceparent` の trace ID をログに付ける。Cloud Run では自動のトレースとログが同じ trace ID でつながる
-- Cloud Logging がトレースとして結ぶのは `logging.googleapis.com/trace`・`spanId`・`trace_sampled` のフィールドだけなので、`logs_exporter = gcp`（§20）がそこへ書く。trace には trace ID をそのまま書き、プロジェクト ID を持たない（LogEntry の仕様は `projects/<id>/traces/<id>` の形を非推奨とする。2026-11-26 確認。Cloud Run の標準出力から裸の ID で結ばれるかは要検証）
+- Cloud Logging がトレースとして結ぶのは `logging.googleapis.com/trace`・`spanId`・`trace_sampled` のフィールドだけなので、`logs_exporter = gcp`（§20）がそこへ書く。trace には trace ID をそのまま書き、プロジェクト ID を持たない（LogEntry の仕様は `projects/<id>/traces/<id>` の形を非推奨とする。2026-11-26 確認。Cloud Run の標準エラーから裸の ID で結ばれるかは要検証）
 
 ### 19. トレースの依存とライセンス
 
@@ -284,15 +284,15 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 
 ### 20. ログの出口（NFR-OPS-1）
 
-設定は `logs_exporter`（`stdout` | `gcp` | `otlp`）の 1 つで、既定は `stdout`。形式と送り先を別の設定に分けない。`gcp` と `otlp` を同時に使う構成はない（Collector を置くなら Cloud Logging の形への写像は Collector がする）ので、値は排他でよい。
+設定は `logs_exporter`（`stderr` | `gcp` | `otlp`）の 1 つで、既定は `stderr`。形式と送り先を別の設定に分けない。`gcp` と `otlp` を同時に使う構成はない（Collector を置くなら Cloud Logging の形への写像は Collector がする）ので、値は排他でよい。
 
 | 値 | 出し方 | 主なターゲット |
 | --- | --- | --- |
-| `stdout` | 標準出力の JSON の行（§5、§18）。集約は基盤か、運用者のログの収集器が行う | 既定・単一のホスト・ECS（`emf` も同じ行に載る） |
-| `gcp` | 同じ行を Cloud Logging の構造化ログの形にする: §18 の trace のフィールドと、リクエストの終わりの行の `httpRequest` | Cloud Run |
+| `stderr` | 標準エラーの JSON の行（§5、§18）。集約は基盤か、運用者のログの収集器が行う | 既定・単一のホスト・ECS（`emf` も同じ行に載る） |
+| `gcp` | 同じ行に Cloud Logging のフィールドを足す: §18 の trace と、リクエストの終わりの行の `httpRequest`。`msg` などは変えない | Cloud Run |
 | `otlp` | OTLP/HTTP（protobuf、gzip）で受け手へ。宛先は §17 と同じ OTel の標準の環境変数。各レコードは行と同じ属性と、文脈の trace・span を持つ | 複数のホストのログを 1 か所に集める Self-hosted、Collector のサイドカーを置く構成 |
 
-- `otlp` でも、エクスポーターの準備ができる前の行（起動の失敗）と送れなかったレコードは標準出力の JSON の行に出す。受け手が落ちてもログを失わず、普段は二重に出さない
+- `otlp` でも、エクスポーターの準備ができる前の行（起動の失敗）と送れなかったレコードは標準エラーの JSON の行に出す。受け手が落ちてもログを失わず、普段は二重に出さない
 - ログは `my` の中で閉じた出口で、外部プラグイン（ADR-0146）には委譲しない（`採らなかった案`）
 
 ### 覆る条件
@@ -306,7 +306,7 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 - コレクターのサイドカーの資源や起動時間の費用が、想定の規模で無視できない（M6 で計測）なら、アダプタが受け口の認証を持って直接送ることを再検討する
 - OTel の messaging の意味規約が Stable になって、非同期の処理の既定を親子に変えたら、§14 を見直す
 - 記録したリクエストの `unit` の遅れが利用者に見えるほど大きい（M6 で計測）なら、インスタンスベース課金の Cloud Run を `batch` に変える
-- Cloud Run の標準出力から裸の trace ID でトレースが結ばれないなら、`gcp` は起動時にメタデータサーバーからプロジェクト ID を取り、`projects/<id>/traces/<id>` の形で書く
+- Cloud Run の標準エラーから裸の trace ID でトレースが結ばれないなら、`gcp` は起動時にメタデータサーバーからプロジェクト ID を取り、`projects/<id>/traces/<id>` の形で書く
 - `gcp` と `otlp` を同時に要する構成が現れたら、ログの形式と送り先を別の設定に分ける
 
 ## 経緯
@@ -381,6 +381,7 @@ NFR-OPS-1（JSON ログ、リクエスト ID / ジョブ ID の相関）、NFR-O
 
 - ロガーを外部プラグインの kind にする: 運営者が任意の送り先を足せるが、ログはリクエストごとに何行も出るので 1 行ごとの RPC は遅く、溜めればクラッシュの直前の行を失う。失敗を書く先がロガー自身で、ADR-0146 の「標準のプロトコルがないこと」にも反する。任意の送り先は `otlp` と Collector で足りる
 - 形式（`log_format`）と送り先（`logs_exporter`）を別の設定にする: 組み合わせを自由に選べるが、意味のある組み合わせがなく、ログの出し方を決める設定が 2 つになる。`metrics_exporter = emf` が形式を出口の値の 1 つにした前例に合わせた
+- `gcp` で本文を `message` に移す: Logs Explorer の要約に出るが、エラー報告の行の `message`（スタック）と衝突し、`msg` で絞るログベースの指標が壊れる
 - `gcp` でプロジェクト ID を設定かメタデータサーバーから得て資源名の形で書く: 古い文書の形に合うが、LogEntry の仕様が非推奨とし、設定か起動時の問い合わせが増える。覆る条件に残す
 
 `my.surface`:
@@ -415,7 +416,7 @@ NFR-OPS-1（JSON ログ、リクエスト ID / ジョブ ID の相関）、NFR-O
   - `unit` は記録したリクエストの応答を送信の分だけ遅らせる
   - `server.address` は連合先のホスト名を受け手に残す。1 人のサーバーの連合先は利用者の交友を示しうるので、運用者の受け手の扱いに依存する
   - Cloud Run でトレースを有効にすると、コレクターのサイドカーの資源と起動時間が増え、インスタンスベース課金になる
-  - `otlp` のログに使う OTLP のログのエクスポーターと slog の橋渡し（`otlploghttp`、`contrib/bridges/otelslog`）は v0 系で、版を上げるたびに変更がありうる（2026-11-26 確認）
+  - `otlp` のログに使う OTLP のログのエクスポーター（`otlploghttp`）は v0 系で、版を上げるたびに変更がありうる（2026-11-26 確認）
   - `my.surface` の値が 1 つ増え、HTTP の指標の時系列が少し増える。課金が無効なら、この面には要求が来ない
 - 後続で必要になる作業（M6）
   - Cloud Run のログベースの指標・CloudWatch のダッシュボードとアラーム・microk8s の KEDA の `ScaledObject` と Prometheus の設定をデプロイのテンプレートに入れる

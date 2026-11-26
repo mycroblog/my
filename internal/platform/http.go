@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"mime"
@@ -493,8 +494,26 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 			slog.Int64(logResponseBytes, rw.bytes),
 			slog.Float64(logDuration, d.Seconds()),
 		)
+		if a.Config.LogsExporter == config.LogsGCP {
+			attrs = append(attrs, gcpHTTPRequest(r, rw.status, rw.bytes, d))
+		}
 		kernel.LogUnit(r.Context(), a.Logger, level, "http request", a.Meter, attrs, HTTPRequestDuration)
 	})
+}
+
+// gcpHTTPRequest is the request of the access line with logs_exporter = gcp, the httpRequest of
+// Cloud Logging's LogEntry, which Cloud Logging shows as a request: what the line carries
+// already, the path without the query, and never the client IP or the User-Agent. The latency
+// is a Duration of protobuf's JSON, seconds with up to nine fractional digits and an "s".
+func gcpHTTPRequest(r *http.Request, status int, size int64, d time.Duration) slog.Attr {
+	return slog.Group(gcpHTTPRequestKey,
+		slog.String("requestMethod", r.Method),
+		slog.String("requestUrl", r.URL.Path),
+		slog.Int("status", status),
+		slog.String("responseSize", strconv.FormatInt(size, 10)),
+		slog.String("latency", fmt.Sprintf("%d.%09ds", d/time.Second, d%time.Second)),
+		slog.String("protocol", r.Proto),
+	)
 }
 
 // isHealthCheck tells whether path is a health check: a probe of the platform or the endpoint

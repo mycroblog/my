@@ -158,15 +158,15 @@ func (t *Tracer) Linked(ctx context.Context, traceparent string) context.Context
 }
 
 // LogIDs implements kernel.Tracer.
-func (t *Tracer) LogIDs(ctx context.Context) (string, string) {
+func (t *Tracer) LogIDs(ctx context.Context) kernel.TraceParent {
 	if l, ok := ctx.Value(fakeLinkKey{}).(fakeLink); ok && l.active {
-		return "", ""
+		return kernel.TraceParent{}
 	}
 	if s, ok := ctx.Value(fakeSpanKey{}).(*RecordedSpan); ok {
-		return s.TraceID, s.SpanID
+		return kernel.TraceParent{TraceID: s.TraceID, SpanID: s.SpanID, Sampled: true}
 	}
 	p, _ := kernel.RemoteParent(ctx)
-	return p.TraceID, p.SpanID
+	return p
 }
 
 type fakeSpan struct {
