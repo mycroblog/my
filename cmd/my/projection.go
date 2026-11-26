@@ -159,7 +159,8 @@ but not derived, "+" derived but missing), and exits with 1 when any differ. reb
 most 500 rows per transaction, so that readers never see an emptied projection.
 Run rebuild while the instance is quiet: a row that changes during the rebuild
 keeps its new value, and verify reports any drift that is left. <name> is a
-projection or one of its tables. The worker runs the same check and correction
-once a day (projection.verify).
+projection or one of its tables. With projection_verify_interval, the worker
+runs the same check on that schedule (projection.verify) and reports the drift
+without correcting it.
 `)
 }

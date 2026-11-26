@@ -12,7 +12,8 @@
 //     per transaction (ADR-0003), so that readers never see an emptied projection and rows
 //     that are right are not rewritten.
 //
-// The scheduled job JobVerify verifies every projection, one per job, and corrects the ones that drifted.
+// The job JobVerify verifies every projection, one per job, and reports the ones that drifted; it
+// runs on a schedule only when Options.VerifyInterval asks for one.
 package projection
 
 import (
@@ -22,6 +23,7 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -144,6 +146,11 @@ type Options struct {
 	// Jobs queues the next projection of a JobVerify run, outside any transaction; nil ends a
 	// run after its first projection.
 	Jobs queue.JobQueue
+	// VerifyInterval is how often JobVerify runs on a schedule; 0 or less schedules none.
+	VerifyInterval time.Duration
+	// OnDrift is told the name of each projection that JobVerify found drifted, for the metric
+	// of the drifts; nil tells nothing.
+	OnDrift func(ctx context.Context, projection string)
 }
 
 // Service rebuilds and verifies the projections.
@@ -155,6 +162,8 @@ type Service struct {
 	diffLimit   int
 	logger      *slog.Logger
 	jobs        queue.JobQueue
+	interval    time.Duration
+	onDrift     func(ctx context.Context, projection string)
 }
 
 // NewService returns a service of the projections in opts. It panics on a projection without
@@ -191,7 +200,7 @@ func NewService(opts Options) *Service {
 	}
 	return &Service{
 		u: opts.UnitOfWork, store: opts.Store, projections: slices.Clone(opts.Projections), chunk: chunk, diffLimit: diffLimit, logger: logger,
-		jobs: opts.Jobs,
+		jobs: opts.Jobs, interval: opts.VerifyInterval, onDrift: opts.OnDrift,
 	}
 }
 

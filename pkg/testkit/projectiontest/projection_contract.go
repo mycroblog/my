@@ -225,6 +225,24 @@ func projectionServiceDrift(t *testing.T, h ProjectionStoreHarness) {
 		t.Errorf("Verify changed the table: %q, want %q", got, held)
 	}
 
+	// The job reports the drift and corrects nothing; without an interval it is not scheduled.
+	reg := &queue.JobHandlerRegistry{}
+	sched := queue.NewScheduler(&recordingQueue{}, testkit.NewClock(time.Date(2026, 11, 26, 0, 0, 0, 0, time.UTC)), slog.New(slog.DiscardHandler))
+	svc.RegisterJobs(reg, sched)
+	if schedules := sched.Schedules(); len(schedules) != 0 {
+		t.Errorf("schedules without an interval = %+v, want none", schedules)
+	}
+	handler, _, found := reg.Lookup(projection.JobVerify)
+	if !found {
+		t.Fatalf("no handler of %s", projection.JobVerify)
+	}
+	if res := handler(ctx, queue.Job{ID: "run", Type: projection.JobVerify, Attempt: 1}); !res.IsDone() {
+		t.Errorf("%s = %+v, want done", projection.JobVerify, res)
+	}
+	if got := readTallies(t, h, 0, 100); !slices.Equal(got, held) {
+		t.Errorf("%s changed the table: %q, want %q as it was", projection.JobVerify, got, held)
+	}
+
 	r, err = svc.Rebuild(ctx, p)
 	if err != nil {
 		t.Fatalf("Rebuild = %v", err)
@@ -355,7 +373,9 @@ func projectionVerifyChain(t *testing.T, h ProjectionStoreHarness) {
 		{Name: "last", Module: "testkit", Tables: []string{"scheduled_drafts"}, Rebuild: ok("last")},
 	}
 	jobs := &recordingQueue{}
-	svc := projection.NewService(projection.Options{UnitOfWork: h.UnitOfWork, Store: h.Store, Projections: ps, Jobs: jobs, Logger: slog.New(slog.DiscardHandler)})
+	svc := projection.NewService(projection.Options{
+		UnitOfWork: h.UnitOfWork, Store: h.Store, Projections: ps, Jobs: jobs, Logger: slog.New(slog.DiscardHandler), VerifyInterval: 24 * time.Hour,
+	})
 	reg := &queue.JobHandlerRegistry{}
 	sched := queue.NewScheduler(jobs, testkit.NewClock(time.Date(2026, 11, 24, 0, 0, 0, 0, time.UTC)), slog.New(slog.DiscardHandler))
 	svc.RegisterJobs(reg, sched)

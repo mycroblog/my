@@ -18,9 +18,6 @@ import (
 // ones that drifted, one projection per job.
 const JobVerify = "projection.verify"
 
-// DefaultVerifyInterval is how often JobVerify runs.
-const DefaultVerifyInterval = 24 * time.Hour
-
 // verifyMaxAttempts is how many times a JobVerify runs its projection before the run moves on
 // to the next one and the job becomes dead.
 const verifyMaxAttempts = 3
@@ -38,7 +35,10 @@ type verifyPayload struct {
 // RegisterJobs registers the handler of JobVerify on reg and its schedule on sched.
 func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
 	reg.RegisterWithPolicy(JobVerify, s.handleVerify, queue.RetryPolicy{MaxAttempts: verifyMaxAttempts})
-	sched.Add(queue.Schedule{Name: JobVerify, Every: DefaultVerifyInterval, Job: queue.NewJob{Type: JobVerify}})
+	// Without an interval nothing is scheduled; a job already queued still runs.
+	if s.interval > 0 {
+		sched.Add(queue.Schedule{Name: JobVerify, Every: s.interval, Job: queue.NewJob{Type: JobVerify}})
+	}
 }
 
 // handleVerify rebuilds one projection, which writes only what drifted, and logs it when it did;
@@ -68,10 +68,20 @@ func (s *Service) handleVerify(ctx context.Context, j queue.Job) queue.Result {
 		}
 	}
 	p := s.projections[i]
-	r, err := s.Rebuild(ctx, p)
+	r, err := s.Verify(ctx, p)
 	if err == nil && r.Drifted() {
-		s.logger.WarnContext(ctx, "projection drifted from its sources; corrected",
-			slog.String("projection", p.Name), slog.Int64("deleted", r.Deleted), slog.Int64("inserted", r.Inserted))
+		// The job reports the drift and leaves it: a drift is a bug of a projector, which a
+		// correction would hide. The operator corrects it with my projection rebuild.
+		var extra, missing int
+		for _, t := range r.Tables {
+			extra += len(t.Extra)
+			missing += len(t.Missing)
+		}
+		if s.onDrift != nil {
+			s.onDrift(ctx, p.Name)
+		}
+		s.logger.WarnContext(ctx, "projection drifted from its sources; my projection rebuild corrects it",
+			slog.String("projection", p.Name), slog.Int("extra", extra), slog.Int("missing", missing))
 	}
 	if err != nil && j.Attempt < verifyMaxAttempts {
 		return queue.Retry(0, err)

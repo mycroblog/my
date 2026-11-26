@@ -128,6 +128,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`kms_key`](#kms_key) | `MY_KMS_KEY` | none | when `key_manager` is `gcpkms` or `awskms` | no |
 | [`kms_key_previous`](#kms_key_previous) | `MY_KMS_KEY_PREVIOUS` | none | no | no |
 | [`instance_settings_cache_ttl`](#instance_settings_cache_ttl) | `MY_INSTANCE_SETTINGS_CACHE_TTL` | `10s` | no | no |
+| [`projection_verify_interval`](#projection_verify_interval) | `MY_PROJECTION_VERIFY_INTERVAL` | `0` | no | no |
 | [`kms_dek_cache_ttl`](#kms_dek_cache_ttl) | `MY_KMS_DEK_CACHE_TTL` | `10m` | no | no |
 | [`kms_dek_cache_entries`](#kms_dek_cache_entries) | `MY_KMS_DEK_CACHE_ENTRIES` | `1024` | no | no |
 | [`mail`](#mail) | `MY_MAIL` | `none` | no | no |
@@ -1091,6 +1092,14 @@ How long each process keeps the instance settings it read, as a Go duration, so 
 
 - Environment variable: `MY_INSTANCE_SETTINGS_CACHE_TTL`
 - Default: `10s`
+- Required: no
+
+### `projection_verify_interval`
+
+How often the worker verifies every projection against its sources (`projection.verify`), as a Go duration. It reports a drift in the log and the metric `my.projection.drifts` and corrects nothing: `my projection rebuild` does. Each verification derives a projection again inside a transaction, which loads the database. `0` schedules none; `my projection verify` still runs by hand.
+
+- Environment variable: `MY_PROJECTION_VERIFY_INTERVAL`
+- Default: `0`
 - Required: no
 
 ### `kms_dek_cache_ttl`

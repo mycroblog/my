@@ -72,6 +72,7 @@
 | `my.media.stored_bytes` | Gauge・バイト | `my.media.origin`（`local` / `remote_cache`） | メディアの容量。`local` はローカルのアップロードの現在の派生（`media_variants`）と処理待ちの原本（`uploaded_media`）の `file_size` の合計、`remote_cache` はリモートのメディアのキャッシュ（`remote_media_cache`）の合計（§4） |
 | `my.errors.reported` | Counter | `my.error.source`・`my.error.kind` | 報告したエラーの数（ADR-0103 §8） |
 | `my.errors.exported` | Counter | `my.outcome`（`success` / `dropped` / `failed`） | `errors_exporter` のサービスへ送った報告の数 |
+| `my.projection.drifts` | Counter | `my.projection`（投影の名前） | 定期の検証で見つけた投影のずれ |
 | `my.link_card.host_pauses` | Counter | `http.response.status_code`（`429` / `503`） | リンクカードの取得をホストごとに止めた回数（ADR-0062 §11） |
 | `my.billing.imports` | Counter | `my.billing.source`、`my.outcome`、`error.type`（`failed` のとき） | 請求の取り込みの試行（ADR-0068） |
 | `my.voice.turn.credentials` | Counter | `my.voice.turn`、`my.outcome`（`issued` / `reused` / `failed`） | 通話の TURN の資格情報（ADR-0101） |
