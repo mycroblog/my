@@ -55,6 +55,9 @@ type Options struct {
 	// CDN; empty when they are on the server's own origin. The Content-Security-Policy then lets
 	// images and media load from it.
 	MediaOrigin string
+	// ConnectSources are other origins the client's connect-src allows, such as the media
+	// nodes of the voice chat (ADR-0101 §11).
+	ConnectSources []string
 	// AccountDomain is the domain of handles; empty means Host.
 	AccountDomain string
 	// InstanceName returns the instance's display name, the same in every locale, which the
@@ -288,7 +291,7 @@ func New(o Options) (*Handler, error) {
 			auth: entryTags{Script: h.o.DevViteOrigin + "/src/auth.tsx"},
 			pay:  entryTags{Script: h.o.DevViteOrigin + "/src/pay.tsx"},
 		}
-		h.csp = withMediaOrigin(devContentSecurityPolicy(dev), mediaOrigin)
+		h.csp = withConnectSources(withMediaOrigin(devContentSecurityPolicy(dev), mediaOrigin), o.ConnectSources)
 		// A dev server setup is plain HTTP on localhost, unless web_origin names the origin on the host, such as
 		// https://my.localhost behind a TLS proxy.
 		if !onHost {
@@ -301,7 +304,7 @@ func New(o Options) (*Handler, error) {
 		} else if err != nil {
 			return nil, err
 		}
-		h.csp = withMediaOrigin(contentSecurityPolicy, mediaOrigin)
+		h.csp = withConnectSources(withMediaOrigin(contentSecurityPolicy, mediaOrigin), o.ConnectSources)
 		if strings.HasPrefix(apiOrigin, "https://") {
 			h.csp += upgradeInsecureRequests
 		}

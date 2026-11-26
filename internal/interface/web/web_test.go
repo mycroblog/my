@@ -552,6 +552,22 @@ func TestDevViteOrigin(t *testing.T) {
 	}
 }
 
+// TestShellCSPConnectSources checks that the policy lets the client connect to the media nodes
+// of the voice chat on other hosts (ADR-0101 §11), and is unchanged without any.
+func TestShellCSPConnectSources(t *testing.T) {
+	csp := func(o web.Options) string {
+		_, mux := newHandler(t, o)
+		return get(mux, "/", nil).Header().Get("Content-Security-Policy")
+	}
+	if base, got := csp(web.Options{}), csp(web.Options{ConnectSources: nil}); got != base {
+		t.Errorf("no sources: CSP = %q, want %q", got, base)
+	}
+	got := csp(web.Options{ConnectSources: []string{"wss://*.sfu.example", "wss://sfu.example.net"}})
+	if !strings.Contains(got, "connect-src 'self' wss://*.sfu.example wss://sfu.example.net;") {
+		t.Errorf("CSP %q lacks the nodes in connect-src", got)
+	}
+}
+
 // TestShellCSPMediaOrigin checks that the policy lets images and media load from the CDN origin of
 // the media files, and from nowhere else, and that it is unchanged when they are on the server.
 func TestShellCSPMediaOrigin(t *testing.T) {

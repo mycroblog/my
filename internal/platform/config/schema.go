@@ -1447,6 +1447,13 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.VoiceSFUNodeCapacity, _ = strconv.Atoi(v) },
 	},
 	{
+		key:    "voice_sfu_origins",
+		doc:    "Comma-separated `wss:` origins of the media nodes of `voice = sfu` that are not on `host`, such as `wss://*.sfu.example.org`, which the web client may connect to (its Content Security Policy); a host may start with `*.` for every node under a domain. A node on `host` needs none.",
+		defDoc: "none",
+		check:  checkVoiceSFUOrigins,
+		set:    func(c *Config, v string) { c.VoiceSFUOrigins = splitList(v) },
+	},
+	{
 		key:          "voice_livekit_url",
 		doc:          "The `wss:` URL of the LiveKit server of `voice = livekit` that the browsers connect to, such as `wss://livekit.example.org`; `ws:` is accepted for localhost only.",
 		requiredWhen: "when `voice = livekit`",
