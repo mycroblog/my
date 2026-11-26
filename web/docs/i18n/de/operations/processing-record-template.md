@@ -36,7 +36,7 @@ Wenn du einen Server im Auftrag eines anderen betreibst, kannst du für ihn Auft
 | Software | my, Version {{VERSION}} |
 | Zuletzt überprüft | {{DATUM, VON WEM}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### In diesem Verzeichnis verwendete Empfänger
 
 Diese Namen werden unter den Tätigkeiten unten verwendet. Liste jeden auf, den du einsetzt.
@@ -52,7 +52,7 @@ Diese Namen werden unter den Tätigkeiten unten verwendet. Liste jeden auf, den 
 | {{IF payments}} Zahlungsanbieter (Stripe oder PAY.JP) | {{...}} | {{...}} |
 | {{IF error reports}} Fehler-Tracker | {{...}} | {{...}} |
 | {{IF telemetry}} Metrik- und Tracing-Dienst | {{...}} | {{...}} |
-| {{IF voice}} Voice-Media-Server, STUN und TURN | {{...}} | {{...}} |
+| {{IF voice}} STUN- und TURN-Dienst (coturn oder Cloudflare); die Medienknoten von `voice = sfu` gehören zum Hosting | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook-Empfänger | {{...}} | {{...}} |
 | {{IF follow review}} Follow-Prüfdienst | {{...}} | {{...}} |
 | {{IF sign-up review}} Registrierungs-Prüfdienst | {{...}} | {{...}} |
