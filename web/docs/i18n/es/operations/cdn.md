@@ -102,7 +102,7 @@ No sirve cuando es una función de la propia plataforma la que reenvía el tráf
 
 Si no se establece ninguno, no se comprueba nada y el servidor se comporta como si esta sección no existiera.
 
-<!-- source: what-passes-without-the-header b79877bb91a3 -->
+<!-- source: what-passes-without-the-header e5891c904fa1 -->
 ### Qué pasa sin la cabecera
 
 | Solicitud | Por qué |
@@ -111,7 +111,7 @@ Si no se establece ninguno, no se comprueba nada y el servidor se comporta como 
 | `POST` a rutas `/_internal/` | Cloud Tasks y Cloud Scheduler las llaman en la propia URL del servidor. Llevan su propio token firmado |
 
 Todo lo demás necesita la cabecera, también en el modo de mantenimiento: el cliente web y sus recursos, `/media/`, la API de cliente, OAuth y ActivityPub, incluidas las entregas de otros servidores.
-Por tanto, todo lo que llame al servidor directamente por su propia dirección, en lugar de a través de la CDN, se rechaza: un webhook propio, un servidor multimedia de voz, un script. Apúntalo al nombre de host de la CDN.
+Por tanto, todo lo que llame al servidor directamente por su propia dirección, en lugar de a través de la CDN, se rechaza: un webhook propio, un script. Apúntalo al nombre de host de la CDN.
 
 El puerto de métricas (`metrics_listen`) es un listener aparte que no es público y no se comprueba.
 

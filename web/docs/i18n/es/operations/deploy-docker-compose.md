@@ -56,7 +56,7 @@ siguen siendo `https://localhost:8080/...`). Si cambias `MY_HTTP_PORT`, cambia t
 - La cookie de inicio de sesión es `Secure`. Chrome y Firefox la aceptan en `http://localhost`; Safari (WebKit) no, así que usa Chrome o Firefox en local.
 - Los enlaces de etiquetas y menciones en el cuerpo de las publicaciones usan `https://`, ya que son las URL federadas.
 
-<!-- source: going-public a59510155d91 -->
+<!-- source: going-public 8a7149acda33 -->
 ## Salir a producción
 
 - Define `MY_HOST` en `.env` con tu dominio real, elimina `MY_WEB_ORIGIN` (por defecto es `https://{MY_HOST}`) y termina
@@ -66,6 +66,9 @@ siguen siendo `https://localhost:8080/...`). Si cambias `MY_HTTP_PORT`, cambia t
   arranque y no se puede cambiar después.
 - Detrás de un proxy inverso propio, define `MY_TRUSTED_PROXIES` en `.env` para que los límites de tasa, como el del inicio de sesión,
   se apliquen por IP de cliente y no al proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).
+- El chat de voz con el nodo multimedia del propio servidor (`voice = sfu`) es la capa `compose.sfu.yaml`: ejecuta el servidor como
+  `role = web`, un `worker` y un nodo `sfu` sobre PostgreSQL detrás de Caddy, y publica UDP 7882 y TCP 7881
+  ([Chat de voz](voice.md#docker-compose)).
 - Antes de abrir el servidor a los usuarios, repasa la [lista de comprobación de producción](production-checklist.md).
 - `docker compose down` detiene la pila. `down -v` también elimina los volúmenes de datos.
 
