@@ -14,11 +14,12 @@ import (
 	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	domaininstance "github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // setUpInstance registers the instance module's projectors and builds its service, which holds
 // the instance settings and texts.
-func (a *App) setUpInstance(repo instance.Repository) {
+func (a *App) setUpInstance(cfg *config.Config, repo instance.Repository) {
 	instance.RegisterProjectors(a.Projectors, repo)
 	a.Instance = instance.NewService(instance.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
@@ -39,6 +40,8 @@ func (a *App) setUpInstance(repo instance.Repository) {
 		Blobs: instanceBlobs{a},
 		// The secrets of the instance, such as the media proxy's key, are sealed like the actor keys.
 		Sealer: a.Sealer,
+		// The process reads the settings about once per this period (#3532).
+		SettingsTTL: cfg.InstanceSettingsCacheTTL,
 	})
 }
 
