@@ -27,7 +27,7 @@ Du haut du schéma vers le bas :
 - **Les services extérieurs au serveur.** Le CAPTCHA, le chat vocal, les paiements, les plugins et l’import des coûts du cloud restent chacun désactivés
   tant que vous ne les configurez pas, et le serveur appelle alors le service que vous nommez.
 
-<!-- source: parts-you-choose-by-configuration 34d13fdad524 -->
+<!-- source: parts-you-choose-by-configuration 09f4f7287bde -->
 ## Les composants que vous choisissez par la configuration
 
 Chaque composant est un paramètre de la [référence de la configuration](../reference/configuration.md), défini dans un fichier TOML ou comme une
@@ -52,6 +52,7 @@ Lorsqu’un composant conserve des données, choisissez-le avant le premier dém
 | Recherche en texte intégral des publications | [`search`](../reference/configuration.md#search) | `none` ; ou `elasticsearch`, `opensearch` ou `meilisearch` ([moteurs de recherche](search-engines.md)) ; ou `plugin`, un plugin à vous devant un autre moteur | [Recherche en texte intégral](search.md), [un plugin de recherche](plugins.md#searching-posts) |
 | CDN pour les médias | [`media_origin`](../reference/configuration.md#media_origin) | non défini (le serveur sert les médias depuis sa propre origine), ou l’origine de votre CDN | [Servir les médias par un CDN](cdn.md) |
 | Coûts du cloud | [`billing_sources`](../reference/configuration.md#billing_sources) | aucun, ou l’un quelconque de `aws` (AWS Cost Explorer), `gcp` (l’export de facturation ou le budget de Google Cloud), `cloudflare` (les frais d’utilisation de Cloudflare), `plugin` | [Importer les coûts du cloud](billing-import.md) |
+| Journaux | [`logs_exporter`](../reference/configuration.md#logs_exporter) | `stderr` (lignes JSON), `gcp` (les mêmes lignes avec les champs de Cloud Logging) | [Démarrer le serveur](running.md#start-the-server) |
 | Métriques | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`, `prometheus`, `otlp` (OpenTelemetry), `emf` (CloudWatch) | [Métriques](running.md#metrics), [alertes](alerts.md) |
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Signalements d’erreurs | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (la ligne de journal et les groupes d’erreurs seulement), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Signalement des erreurs](error-reporting.md) |
