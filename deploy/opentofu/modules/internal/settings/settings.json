@@ -835,6 +835,10 @@
     "env": "MY_PROFILE",
     "secret": false
   },
+  "projection_verify_interval": {
+    "env": "MY_PROJECTION_VERIFY_INTERVAL",
+    "secret": false
+  },
   "push_allowed_destinations": {
     "env": "MY_PUSH_ALLOWED_DESTINATIONS",
     "secret": false

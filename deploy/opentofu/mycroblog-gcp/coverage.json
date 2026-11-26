@@ -69,6 +69,7 @@
     "payments*",
     "plugin_*",
     "pprof_listen",
+    "projection_verify_interval",
     "push_allowed_destinations",
     "queue_cloudtasks_dispatch_deadline",
     "relay_max_activities_per_hour",

@@ -731,6 +731,13 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.InstanceSettingsCacheTTL, _ = time.ParseDuration(v) },
 	},
 	{
+		key:   "projection_verify_interval",
+		doc:   "How often the worker verifies every projection against its sources (`projection.verify`), as a Go duration. It reports a drift in the log and the metric `my.projection.drifts` and corrects nothing: `my projection rebuild` does. Each verification derives a projection again inside a transaction, which loads the database. `0` schedules none; `my projection verify` still runs by hand.",
+		def:   "0",
+		check: checkNonNegativeDuration,
+		set:   func(c *Config, v string) { c.ProjectionVerifyInterval, _ = time.ParseDuration(v) },
+	},
+	{
 		key:   "kms_dek_cache_ttl",
 		doc:   "How long the server keeps a data-encryption key that the KMS or plugin decrypted, as a Go duration, so that a secret in use reaches it about once per this period and process. `0` disables the cache. Not used when `key_manager = local`.",
 		def:   "10m",
