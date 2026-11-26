@@ -112,7 +112,11 @@ func (r *room) join(ctx context.Context, session, account string, ws *wsConn) st
 	r.setSubscribersLocked()
 	r.mu.Unlock()
 	p.attach(ws)
-	r.applySpeakers()
+	// The slots and the first offer are made apart from the join, so that the session's
+	// WebSocket is read at once: in a burst of joins, each waits its turn for the room's slots,
+	// and an answer left unread behind the others' offers kept the ICE-lite node from answering
+	// the client's connectivity checks, which a client gives up on within seconds.
+	r.node.run("voice.sfu.room_speakers", r.applySpeakers)
 	return ""
 }
 

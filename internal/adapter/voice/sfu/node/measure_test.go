@@ -39,8 +39,6 @@ const (
 	// the CPU is read for.
 	measureWarmup = 3 * time.Second
 	measureWindow = 10 * time.Second
-	// measureBatch is how many clients the child process connects at once.
-	measureBatch = 10
 )
 
 // measuredClient is a client that the child process connects.
@@ -67,26 +65,24 @@ func TestMeasureClients(t *testing.T) {
 	if err := json.Unmarshal(b, &specs); err != nil {
 		t.Fatal(err)
 	}
+	// Every client joins at the same moment, as a burst of joins does.
 	clients := make([]*nodetest.Client, len(specs))
-	for from := 0; from < len(specs); from += measureBatch {
-		batch := specs[from:min(from+measureBatch, len(specs))]
-		var wg sync.WaitGroup
-		for i, s := range batch {
-			wg.Go(func() {
-				c, err := nodetest.Dial(t, s.URL, s.Ticket, s.Session)
-				if err != nil {
-					t.Errorf("%s: %v", s.Session, err)
-					return
-				}
-				clients[from+i] = c
-			})
-		}
-		wg.Wait()
-		if t.Failed() {
-			t.FailNow()
-		}
-		nodetest.WaitConnected(t, clients[from:from+len(batch)]...)
+	var wg sync.WaitGroup
+	for i, s := range specs {
+		wg.Go(func() {
+			c, err := nodetest.Dial(t, s.URL, s.Ticket, s.Session)
+			if err != nil {
+				t.Errorf("%s: %v", s.Session, err)
+				return
+			}
+			clients[i] = c
+		})
 	}
+	wg.Wait()
+	if t.Failed() {
+		t.FailNow()
+	}
+	nodetest.WaitConnected(t, clients...)
 	ctx, stop := context.WithCancel(t.Context())
 	var speaking sync.WaitGroup
 	for i, s := range specs {
