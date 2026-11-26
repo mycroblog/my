@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -125,8 +124,9 @@ type Options struct {
 	Jobs queue.JobQueue
 	// VerifyInterval is how often JobVerify runs on a schedule; 0 or less schedules none.
 	VerifyInterval time.Duration
-	// Meter counts the drifts that JobVerify finds (Drifts); nil counts none.
-	Meter kernel.Meter
+	// OnDrift is told the name of each projection that JobVerify found drifted, for the metric
+	// of the drifts; nil tells nothing.
+	OnDrift func(ctx context.Context, projection string)
 }
 
 // Service rebuilds and verifies the projections.
@@ -138,7 +138,7 @@ type Service struct {
 	logger      *slog.Logger
 	jobs        queue.JobQueue
 	interval    time.Duration
-	drifts      kernel.Counter
+	onDrift     func(ctx context.Context, projection string)
 }
 
 // NewService returns a service of the projections in opts. It panics on a projection without
@@ -171,7 +171,7 @@ func NewService(opts Options) *Service {
 	}
 	return &Service{
 		u: opts.UnitOfWork, store: opts.Store, projections: slices.Clone(opts.Projections), chunk: chunk, logger: logger,
-		jobs: opts.Jobs, interval: opts.VerifyInterval, drifts: kernel.MeterOrNop(opts.Meter).Counter(Drifts),
+		jobs: opts.Jobs, interval: opts.VerifyInterval, onDrift: opts.OnDrift,
 	}
 }
 

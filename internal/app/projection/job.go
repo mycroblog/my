@@ -11,22 +11,12 @@ import (
 	"slices"
 	"time"
 
-	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 )
 
 // JobVerify is the type of the scheduled job that verifies every projection and corrects the
 // ones that drifted, one projection per job.
 const JobVerify = "projection.verify"
-
-// Drifts is the my.projection.drifts metric: the verifications of JobVerify that found a
-// projection drifted from its sources, by projection, which the job reports and leaves as it is.
-var Drifts = kernel.Instrument{
-	Name: "my.projection.drifts", Unit: "{verification}", Description: "Verifications of the scheduled projection.verify that found a projection drifted from its sources, by projection.",
-	LabelKeys: []string{labelProjection},
-}
-
-const labelProjection = "my.projection"
 
 // verifyMaxAttempts is how many times a JobVerify runs its projection before the run moves on
 // to the next one and the job becomes dead.
@@ -87,7 +77,9 @@ func (s *Service) handleVerify(ctx context.Context, j queue.Job) queue.Result {
 			extra += len(t.Extra)
 			missing += len(t.Missing)
 		}
-		s.drifts.Add(ctx, 1, kernel.NewLabels(labelProjection, p.Name))
+		if s.onDrift != nil {
+			s.onDrift(ctx, p.Name)
+		}
 		s.logger.WarnContext(ctx, "projection drifted from its sources; my projection rebuild corrects it",
 			slog.String("projection", p.Name), slog.Int("extra", extra), slog.Int("missing", missing))
 	}
