@@ -30,7 +30,7 @@ Wenn du deine Follower genehmigst, senden Personen, die dir folgen möchten, ein
 
 „Wer deine Listen der Gefolgten und Follower sehen kann“ unter „Profil“ in den Einstellungen legt fest, wer diese beiden Listen öffnen kann: „Alle“ (der Standard), „Follower“ (Personen auf diesem Server, deren Folgen du angenommen hast) oder „Nur du“. Du siehst immer beide Listen, und alle sehen weiterhin, wie viele es sind. Andere Server erhalten nur die Zahlen, es sei denn, du wählst „Alle“. Eine Liste, die du nicht öffnen kannst, sagt das anstelle der Konten.
 
-<!-- source: timelines f7709f12328b -->
+<!-- source: timelines ecf964fa1eb9 -->
 ## Timelines
 
 | Timeline | Was sie zeigt |
@@ -41,6 +41,8 @@ Wenn du deine Follower genehmigst, senden Personen, die dir folgen möchten, ein
 
 Die lokale und die föderierte Timeline sind für alle da, die den Server nutzen, ob du ihnen folgst oder nicht. Die Betreiber eines Servers können jede von beiden ausschalten oder nur für angemeldete Personen zeigen; die Seite sagt das dann.
 „Anzuzeigende Sprachen“ unter „Timelines“ in den Einstellungen unter „Anzeige und Verfassen“ beschränkt jede Timeline auf die Sprachen, die du wählst; Beiträge ohne festgelegte Sprache werden weiterhin angezeigt.
+
+Antworten erscheinen nur dort, wo du dem Gespräch folgen kannst. Die Startseite und deine Listen zeigen eine Antwort, wenn sie dir, jemandem, dem du folgst, oder einem eigenen Beitrag ihres Autors antwortet; die lokale und die föderierte Timeline zeigen eine Antwort nur, wenn sie den eigenen Thread ihres Autors fortsetzt. Öffne einen Beitrag, um alle seine Antworten zu sehen; Hashtag-Seiten und Profile zeigen ebenfalls Antworten.
 
 Eine Hashtag-Seite (zum Beispiel `#cats`) zeigt die öffentlichen Beiträge und die Beiträge für Nachbarn mit diesem Hashtag.
 

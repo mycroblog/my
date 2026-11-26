@@ -30,7 +30,7 @@ Lorsque vous approuvez vos abonnés, les personnes qui souhaitent vous suivre vo
 
 « Qui peut voir vos abonnements et vos abonnés » sous « Profil » dans les paramètres décide qui peut ouvrir ces deux listes : « Tout le monde » (par défaut), « Abonnés » (les personnes de ce serveur dont vous avez accepté l’abonnement) ou « Vous seul ». Vous voyez toujours les deux listes, et tout le monde voit toujours combien elles comptent d’éléments. Les autres serveurs ne reçoivent que les nombres, sauf si vous choisissez « Tout le monde ». Une liste que vous ne pouvez pas ouvrir l’indique à la place des comptes.
 
-<!-- source: timelines f7709f12328b -->
+<!-- source: timelines ecf964fa1eb9 -->
 ## Fils
 
 | Fil | Ce qu’il affiche |
@@ -43,6 +43,8 @@ Les fils Local et Fédéré s’adressent à toutes les personnes qui utilisent 
 opérateurs d’un serveur peuvent désactiver l’un ou l’autre, ou ne l’afficher qu’aux personnes connectées ; la page l’indique alors.
 « Langues à afficher », sous « Fils » dans les paramètres « Affichage et publication », limite chaque fil aux langues
 que vous choisissez ; les publications sans langue définie s’affichent quand même.
+
+Les réponses ne s’affichent que là où vous pouvez suivre la conversation. L’accueil et vos listes affichent une réponse quand elle répond à vous, à une personne que vous suivez ou à une publication de son propre auteur ; les fils Local et Fédéré n’affichent une réponse que si elle poursuit le propre fil de son auteur. Ouvrez une publication pour voir toutes ses réponses ; les pages de hashtag et les profils affichent aussi les réponses.
 
 Une page de hashtag (par exemple `#cats`) affiche les publications publiques et les publications pour les voisins portant ce hashtag.
 

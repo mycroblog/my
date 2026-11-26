@@ -30,7 +30,7 @@ Quando você aprova os seus seguidores, as pessoas que querem seguir você envia
 
 “Quem pode ver quem você segue e seus seguidores”, em “Perfil” nas configurações, decide quem pode abrir essas duas listas: “Todos” (o padrão), “Seguidores” (pessoas deste servidor cujo pedido para seguir você aceitou) ou “Somente você”. Você sempre vê as duas listas, e todos continuam vendo quantas há. Outros servidores recebem apenas os números, a menos que você escolha “Todos”. Uma lista que você não pode abrir informa isso no lugar das contas.
 
-<!-- source: timelines f7709f12328b -->
+<!-- source: timelines ecf964fa1eb9 -->
 ## Linhas do tempo
 
 | Linha do tempo | O que mostra |
@@ -41,6 +41,8 @@ Quando você aprova os seus seguidores, as pessoas que querem seguir você envia
 
 As linhas do tempo Local e Federada são para todos que usam o servidor, quer você as siga ou não. Os operadores de um servidor podem desativar qualquer uma delas, ou mostrá-la somente para pessoas com sessão iniciada; a página informa isso.
 “Idiomas a mostrar”, em “Linhas do tempo” nas configurações de “Exibição e publicação”, limita todas as linhas do tempo aos idiomas que você escolher; as publicações sem idioma definido continuam aparecendo.
+
+As respostas só aparecem onde você consegue acompanhar a conversa. O Início e as suas listas mostram uma resposta quando ela responde a você, a alguém que você segue ou a uma publicação do próprio autor; as linhas do tempo Local e Federada mostram uma resposta só quando ela continua o próprio fio do autor. Abra uma publicação para ver todas as respostas dela; as páginas de hashtag e os perfis também mostram respostas.
 
 A página de uma hashtag (por exemplo `#cats`) mostra as publicações públicas e as publicações para vizinhos com essa tag.
 
