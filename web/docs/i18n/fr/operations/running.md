@@ -3,7 +3,7 @@
 
 Comment démarrer et arrêter le serveur, obtenir son image et le surveiller pendant son fonctionnement : métriques, traces, file de tâches et contrôles de santé.
 
-<!-- source: start-the-server 05b29144056b -->
+<!-- source: start-the-server c19e1ea32f07 -->
 ## Démarrer le serveur
 
 ```sh
@@ -34,6 +34,7 @@ La [liste de contrôle de production](production-checklist.md) liste les vérifi
 | `all` (par défaut) | Toutes les routes | S’exécute |
 | `web` | Toutes les routes | Ne s’exécute pas |
 | `worker` | Vérifications de santé uniquement (pour les sondes de la plateforme) | S’exécute |
+| `sfu` | Vérifications de santé et WebSocket du nœud média de `voice = sfu`, qui reçoit l’audio sur ses propres ports UDP et TCP ([Chat vocal](voice.md#run-media-nodes)) | Ne s’exécute pas |
 
 Les journaux vont sur l’erreur standard en JSON Lines. Chaque ligne a `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`) et `severity`, le même niveau sous la forme que lit Cloud Logging (`DEBUG`, `INFO`, `WARNING`, `ERROR`, et `CRITICAL` pour une erreur qui arrête le processus).
 Les journaux écrits pendant le traitement d’une requête portent un `request_id`, et le même ID est renvoyé dans l’en-tête de réponse `X-Request-Id`.
@@ -117,7 +118,7 @@ Les champs utilisés comme libellés ne prennent leurs valeurs que dans un ensem
 Avec `metrics_exporter = emf`, ces deux lignes sont les lignes EMF elles-mêmes. La ligne `http request` porte la valeur de `http.server.request.duration`, et la ligne `job` porte les valeurs de `my.job.duration` et `my.job.wait` (clés nommées d’après les métriques), plus la directive `_aws`, `service.name`, `service.version`, `my.role` et `service.namespace` (le `host`). Ces trois métriques ne sont écrites sur aucune autre ligne. Les champs que vous choisissez dans `metrics_emf_dimensions` sont écrits sous forme de chaînes, comme l’exige EMF (par exemple la dimension `http.response.status_code` vaut `"200"`).
 Les journaux vont vers la sortie d’erreur standard et les autres lignes EMF vers la sortie standard. Le pilote de journaux `awslogs` d’ECS envoie les deux à CloudWatch Logs ; les métriques sont donc extraites des deux.
 
-<!-- source: docker-compose-files 9f0633524036 -->
+<!-- source: docker-compose-files eab514676a87 -->
 ## Fichiers Docker Compose
 
 `deploy/docker/` contient ce qui déploie une instance. `compose.yaml` s’exécute seul, et les autres fichiers s’empilent par-dessus.
@@ -128,6 +129,7 @@ Les journaux vont vers la sortie d’erreur standard et les autres lignes EMF ve
 | `compose.postgres.yaml` | PostgreSQL dans un conteneur, dans le volume `postgres` | Vous voulez PostgreSQL sur cette machine. Pour un serveur PostgreSQL ailleurs, omettez-le et définissez `MY_DATABASE` et `MY_DATABASE_URL` dans `.env` |
 | `compose.s3.yaml` | Les médias dans un bucket compatible S3 ; avec `COMPOSE_PROFILES=garage` aussi un stockage [Garage](https://garagehq.deuxfleurs.fr/) à un nœud dans le volume `garage` | Les médias dépassent un disque, ou vous les voulez dans un bucket. Sans le profil, le stockage est l’externe défini par les paramètres `MY_BLOB_S3_*` |
 | `compose.caddy.yaml` | Caddy, avec des certificats TLS sur les ports 80 et 443 | `MY_HOST` est un domaine public et rien d’autre ne termine le TLS sur cette machine |
+| `compose.sfu.yaml` | Le chat vocal avec un nœud média : le serveur se scinde en `role = web`, `worker` et `sfu`, et Caddy envoie le WebSocket du nœud au nœud. Demande `compose.postgres.yaml` et `compose.caddy.yaml` | Vous voulez `voice = sfu` ([Chat vocal](voice.md#docker-compose)) |
 | `compose.build.yaml` | Construit l’image à partir d’une copie du dépôt | Vous exécutez votre propre construction |
 
 Choisissez la base de données et le stockage des médias avant le premier démarrage : les données ne se déplacent pas d’elles-mêmes lorsque les fichiers changent
@@ -168,7 +170,7 @@ Le serveur fait confiance au `X-Forwarded-For` des plages d’adresses par défa
 Le service ponctuel `garage-init` prépare le stockage à chaque `up`. Il reste à l’intérieur du réseau Compose, puisque le serveur
 sert lui-même les médias. Un nœud, c’est un disque : sauvegardez le volume `garage` ou le bucket ([Sauvegarder](backup.md#media-in-a-bucket)).
 
-<!-- source: serving-https-from-the-server 45ec9231a41e -->
+<!-- source: serving-https-from-the-server 7b583c946805 -->
 ## Servir le HTTPS depuis le serveur
 
 `my` peut servir lui-même le HTTPS, de sorte qu’une petite machine exécute tout le serveur sous forme d’un seul binaire avec un domaine et les ports 80 et 443,
@@ -198,7 +200,8 @@ MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
 - **Connexions.** TLS 1.2 ou ultérieur avec les suites de chiffrement par défaut de Go, HTTP/2 et HTTP/1.1, au plus 64 KiB d’en-têtes
   de requête, et au plus 100 flux concurrents sur une connexion HTTP/2. Les délais sont ceux du HTTP simple. Le serveur
   ajoute toujours `Strict-Transport-Security` à chaque réponse ([En-têtes de sécurité](#security-headers)).
-- **Rôles.** Seuls les rôles `web` et `all` écoutent avec TLS. Un `worker` sert ses vérifications de santé en HTTP simple sur
+- **Rôles.** Seuls les rôles `web`, `all` et `sfu` écoutent avec TLS. Un nœud média (`role = sfu`) sert l’hôte de
+  `voice_sfu_public_url` au lieu de `host`. Un `worker` sert ses vérifications de santé en HTTP simple sur
   `listen` (`:8080` par défaut) et n’ouvre pas de port 80.
 - **Adresses des clients.** Sans proxy devant, le pair de la connexion est le client : laissez `trusted_proxies` vide.
   Ne le définissez que lorsqu’un CDN placé devant se connecte au serveur en `https`.
@@ -445,7 +448,7 @@ Si vous exécutez une version officielle non modifiée, gardez la valeur par dé
 - Assurez-vous que le filtrage antispam ne supprime pas les demandes.
 - Utilisez une adresse que vous acceptez de rendre publique : n’importe qui peut la voir sur la page d’informations, sur la page d’accueil et dans NodeInfo.
 
-<!-- source: metrics a5fd8092d408 -->
+<!-- source: metrics bb10bda1b8a4 -->
 ## Métriques
 
 Le paramètre `metrics_exporter` (par défaut `none`) exporte les métriques du service. Ses paramètres associés se trouvent dans la [référence de la configuration](../reference/configuration.md).
@@ -490,6 +493,14 @@ Les métriques sont listées ci-dessous. Dans Prometheus, `.` dans un nom devien
 | `my.billing.imports` | Compteur | `my.billing.source` (`aws` / `gcp` / `plugin`), `my.outcome` (`success` / `failed`), `error.type` (uniquement avec `failed` : le type d’échec, comme dans [Importer les frais d’utilisation du cloud](billing-import.md)). Chaque tentative compte, y compris les nouvelles tentatives et les échecs qui attendent l’import quotidien suivant |
 | `my.supporter.tip_checkouts` | Compteur | `my.outcome` (`started` / `rate_limited` / `paid` / `expired`). Un par démarrage d’un pourboire qui a obtenu la page du fournisseur, par démarrage que les limites ont refusé, et par pourboire payé ou terminé sans paiement ; voir [pourboires](supporters.md#tips) pour les alertes qu’il sert |
 | `my.voice.turn.credentials` | Compteur | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). Un par identifiant TURN qu’un participant à un chat vocal a demandé en rejoignant un salon ou en renouvelant sa connexion : `reused` signifie que des identifiants Cloudflare émis plus tôt pour la même connexion ont été renvoyés, et `failed` que Cloudflare n’a pas pu être joint ou a refusé, de sorte que le participant a reçu une erreur et n’a pas pu se connecter |
+| `my.voice.sfu.rooms`, `my.voice.sfu.sessions` | Jauge | Aucune (par nœud média de `voice = sfu` : les salons ayant des connexions sur le nœud et les sessions qui y sont connectées) |
+| `my.voice.sfu.capacity.reserved`, `my.voice.sfu.capacity.connected` | Jauge | Aucune (par nœud média : la somme des maximums des salons placés sur lui et les sessions qui y sont connectées, toutes deux face à `voice_sfu_node_capacity`) |
+| `my.voice.sfu.packets` | Compteur | `my.outcome` (`forwarded`, un par participant auquel un paquet audio a été envoyé ; ou pourquoi un paquet a été abandonné : `silent`, `not_allowed` pour un participant qui n’a pas le droit de parler ou est coupé, `queue_full` pour un participant dont la connexion n’a pas pu suivre) |
+| `my.voice.sfu.bytes` | Compteur, octets | Aucune (l’audio que le nœud média a transmis) |
+| `my.voice.sfu.renegotiations`, `my.voice.sfu.ice_restarts`, `my.voice.sfu.migrations` | Compteur | Aucune (nouvelles offres après la première, parce que les intervenants ont changé ; relances ICE que des clients ont demandées après un changement de réseau ; sessions qu’un nœud en arrêt a envoyées à un autre nœud) |
+| `my.voice.sfu.ticket_refusals` | Compteur | `my.voice.sfu.reason` (`invalid` pour un ticket expiré, déjà utilisé ou inconnu, `other_node` pour un ticket d’un autre nœud) |
+| `my.voice.sfu.client.rtt` | Histogramme, secondes | Aucune (le temps d’aller-retour jusqu’aux participants, d’après leurs rapports RTCP) |
+| `my.voice.sfu.client.packet_loss` | Histogramme, pourcentage | Aucune (la perte sur le chemin vers les participants, d’après leurs rapports RTCP) |
 | `my.errors.exported` | Compteur | `my.outcome` (`success` / `dropped` / `failed` : un par signalement d’erreur pour le service de `errors_exporter`. `dropped` signifie que le signalement n’a pas été envoyé parce que 1 000 signalements attendaient déjà ou que le service a demandé au serveur de ralentir, et le serveur attend aussi longtemps que le service le demande avant de renvoyer ; `failed` signifie que le service n’a pas pu être joint ou a refusé le signalement. Un signalement est envoyé une fois et jamais réessayé, et les signalements encore en attente 2 secondes après le début d’un arrêt sont perdus) |
 | `my.queue.ready` | Jauge | `my.job.type` (le nombre de jobs exécutables dans la file de la base de données) |
 | `my.queue.oldest_ready_age` | Jauge, secondes | `my.job.type` (depuis combien de temps attend le plus ancien job exécutable de chaque type dans la file de la base de données ; un type sans job exécutable n’a pas de valeur) |
@@ -603,7 +614,7 @@ L’écouteur n’a pas d’authentification, un profil montre l’intérieur du
 Le profil du tas ne couvre que le tas Go. La mémoire résidente du processus contient aussi les pages du binaire qui ont été lues, les piles et les propres structures du runtime ; les statistiques de mémoire les donnent.
 Les profils de blocage et de mutex n’échantillonnent que pendant qu’une requête avec `seconds` les prend, et sont vides sans elle.
 
-<!-- source: stop-the-server 37d4c0cc3d97 -->
+<!-- source: stop-the-server 72d71a40815a -->
 ## Arrêter le serveur
 
 Sur SIGTERM ou SIGINT, le serveur s’arrête proprement.
@@ -613,6 +624,11 @@ Sur SIGTERM ou SIGINT, le serveur s’arrête proprement.
 3. Après 25 secondes, il annule le contexte des requêtes et des tâches restantes et ferme les connexions.
    Il laisse ensuite à une tâche annulée jusqu’à 3 secondes de plus pour enregistrer son résultat, et se termine avec le code 1 (28 secondes au plus en tout, dans le délai de grâce par défaut de 30 secondes de Kubernetes et d’ECS).
    Une tâche annulée est retentée. Une tâche qui ne s’arrête pas dans ces 3 secondes, ou qui est tuée en cours de route, est abandonnée et reprise par un worker lorsque son bail expire ; elle peut donc s’exécuter deux fois.
+
+Un processus qui exécute un nœud média de `voice = sfu` (`role = sfu`, ou `all`) le draine d’abord : il cesse de prendre des salons, déplace
+ses salons sur d’autres nœuds et dit à leurs clients de s’y reconnecter, puis attend jusqu’à 20 des 25 secondes qu’ils
+partent avant d’attendre les requêtes. Donnez-lui le même délai de grâce d’au moins 30 secondes (la valeur par défaut de Docker est 10 :
+définissez `stop_grace_period` ou `docker stop -t 30`). Voir [Chat vocal](voice.md#drain-a-node-for-a-deploy).
 
 Une panique dans l’une des tâches d’arrière-plan du serveur déclenche le même arrêt, afin que le serveur ne continue jamais de s’exécuter dans un état défectueux.
 La ligne de journal `serve failed` nomme la tâche, et le processus se termine avec le code 1 pour que la plateforme ou le gestionnaire de processus le redémarre.
@@ -654,7 +670,7 @@ my job types                 # print every job type of this release
 - Un job mort que personne ne relance est supprimé par le nettoyage horaire une fois que `dead_job_retention` (30 jours par défaut ; voir le [paramètre](../reference/configuration.md#dead_job_retention)) s’est écoulé depuis l’échec.
 - Les jobs morts de `queue = inline` vivent dans la mémoire du processus du serveur ; `my job` ne peut donc pas les gérer (code de sortie 1).
 
-<!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
+<!-- source: splitting-workers-by-job-type e3b4c4374dfb -->
 ### Répartir les workers par type de tâche
 
 Par défaut, chaque worker exécute chaque type de tâche, dans l’ordre où les tâches sont arrivées à échéance, une tâche à la fois par processus (consultez [Exécuter plusieurs tâches à la fois](#running-several-jobs-at-once)). Une rafale de remises retarde alors les e-mails et les notifications, et tout worker que vous ajoutez partage son temps entre tous. Avec `queue = db`, vous pouvez donner à certains types leurs propres workers :

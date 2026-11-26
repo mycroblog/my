@@ -102,7 +102,7 @@ Elle ne peut pas aider lorsque c’est une fonctionnalité propre à la platefor
 
 Si aucun n’est défini, rien n’est vérifié et le serveur se comporte comme si cette section n’existait pas.
 
-<!-- source: what-passes-without-the-header b79877bb91a3 -->
+<!-- source: what-passes-without-the-header e5891c904fa1 -->
 ### Ce qui passe sans l’en-tête
 
 | Requête | Pourquoi |
@@ -111,7 +111,7 @@ Si aucun n’est défini, rien n’est vérifié et le serveur se comporte comme
 | `POST` vers les chemins `/_internal/` | Cloud Tasks et Cloud Scheduler les appellent sur l’URL propre du serveur. Ils portent leur propre jeton signé |
 
 Tout le reste exige l’en-tête, y compris en mode de maintenance : le client web et ses ressources, `/media/`, l’API cliente, OAuth et ActivityPub, y compris les envois des autres serveurs.
-Tout ce qui appelle directement le serveur par sa propre adresse, au lieu de passer par le CDN, est donc refusé : un webhook à vous, un serveur média vocal, un script. Faites-le pointer vers le nom d’hôte du CDN.
+Tout ce qui appelle directement le serveur par sa propre adresse, au lieu de passer par le CDN, est donc refusé : un webhook à vous, un script. Faites-le pointer vers le nom d’hôte du CDN.
 
 Le port des métriques (`metrics_listen`) est un écouteur distinct, non public, qui n’est pas vérifié.
 
