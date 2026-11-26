@@ -10,7 +10,6 @@ run-name: Contract (${{ inputs.contract }})
 #   stream    the stream.Bus contracts on broker containers (ADR-0050)
 #   mail      the mail = smtp integration tests on Mailpit
 #   blob      the BlobStore contract of blob = s3 on Garage
-#   voice     the voice.Transport contract of voice = livekit on livekit-server --dev (ADR-0101)
 #   search    the search.Index contracts on the search engines (ADR-0149)
 #   acme      the instance.ACMEClient contract against Pebble, Let's Encrypt's test CA (ADR-0163)
 #
@@ -42,7 +41,7 @@ on:
       contract:
         description: "The contract to run."
         type: choice
-        options: [postgres, stream, mail, blob, voice, search, acme]
+        options: [postgres, stream, mail, blob, search, acme]
         required: true
 
 permissions:

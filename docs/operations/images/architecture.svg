@@ -113,7 +113,7 @@
   <rect class="svc" x="270" y="818" width="220" height="90" rx="8"/>
   <text class="t b" x="380.0" y="846.0" text-anchor="middle">Voice chat</text>
   <text class="m" x="380.0" y="868.0" text-anchor="middle">P2P with STUN and TURN</text>
-  <text class="m" x="380.0" y="890.0" text-anchor="middle">LiveKit · Sora</text>
+  <text class="m" x="380.0" y="890.0" text-anchor="middle">coturn · Cloudflare</text>
   <rect class="svc" x="500" y="818" width="220" height="90" rx="8"/>
   <text class="t b" x="610.0" y="846.0" text-anchor="middle">Payments</text>
   <text class="m" x="610.0" y="868.0" text-anchor="middle">Stripe</text>

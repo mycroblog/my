@@ -697,7 +697,6 @@ Halte diese zusammen, auf Workern mit derselben Einstellung. Jobs mit einem Reih
 | Typen | Was sie in Reihenfolge halten |
 | --- | --- |
 | `federation.fanout`, `federation.deliver` | Die Zustellungen eines Likes und seines Undo |
-| `voice.apply_media_event`, `voice.apply` | Die Ereignisse eines Voice-Raums |
 | `supporters.sync`, `supporters.command` | Die Änderungen eines Abos |
 
 Beim Upgrade:

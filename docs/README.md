@@ -50,7 +50,7 @@ Read the groups in order: start with the overview, then configure the instance b
 - [Translating posts (LibreTranslate, DeepL, Google Cloud Translation, Amazon Translate)](operations/translation.md)
 - [Plugins (destinations, authentication, protocols, `my plugin test`, a plugin with no library)](operations/plugins.md)
 - [Decision hooks](operations/decision-hooks.md): ask a plugin of yours before accepting posts, follows, sign-ups, and media
-- [Voice chat (choosing P2P, LiveKit or Sora, STUN and TURN, deployment, moderation)](operations/voice.md)
+- [Voice chat (choosing P2P or the SFU, STUN and TURN, deployment, moderation)](operations/voice.md)
 - [Full-text search of posts (what the index holds, rebuilding it, the query in URLs and logs, its backups)](operations/search.md)
 - [Search engines (Elasticsearch, OpenSearch, and Meilisearch: setup, sizing, and Japanese)](operations/search-engines.md)
 - [Supporters (paid plans)](operations/supporters.md)

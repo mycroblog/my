@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What every RoomSession keeps, whichever transport carries it (ADR-0101 §7, §15): the package's entry makes the four,
+// What every RoomSession keeps, whichever transport carries it (ADR-0101 §7, §15): the package's entry makes both,
 // the relay policy of a grant, a snapshot that is a new object only when something changed, listeners that unsubscribe,
 // the quality sampled at the interval asked for, and a close that happens once.
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
@@ -21,8 +21,6 @@ import {
   settle,
   statsReport,
 } from "./test/fake";
-import { loadFakeLiveKit, resetFakeLiveKit, room } from "./test/livekit";
-import { loadFakeSora, resetFakeSora, sora } from "./test/sora";
 
 type Transport = {
   /** Joins as s1, with s2 speaking in the room, and lets the session settle. */
@@ -40,7 +38,6 @@ function grantOf(kind: RoomKind): RoomGrant {
     kind,
     url: "wss://sfu.example",
     token: "token-1",
-    options: kind === "sora" ? { channel_id: "room1", role: "recvonly" } : {},
     iceServers: [{ urls: ["stun:stun.example"] }],
     relayOnly: false,
     expiresAt: Date.now() + 60 * 60_000,
@@ -52,7 +49,7 @@ async function started(kind: RoomKind, qualityInterval?: number): Promise<RoomSe
   const session = createRoomSession({
     session: "s1",
     grant: grantOf(kind),
-    environment: fakeEnvironment({ loadLiveKit: loadFakeLiveKit, loadSora: loadFakeSora }),
+    environment: fakeEnvironment(),
     ...(kind === "p2p" ? { signaling: { send: () => Promise.resolve() } } : {}),
     ...(qualityInterval === undefined ? {} : { qualityInterval }),
   });
@@ -89,20 +86,6 @@ const transports: Record<RoomKind, Transport> = {
       for (const pc of FakePeerConnection.all) pc.stats = report;
     },
   },
-  livekit: {
-    start: (qualityInterval) => started("livekit", qualityInterval),
-    roster,
-    stats: (report) => {
-      room().subscribe("s2", "t2", report);
-    },
-  },
-  sora: {
-    start: (qualityInterval) => started("sora", qualityInterval),
-    roster,
-    stats: (report) => {
-      sora(0).stats = report;
-    },
-  },
 };
 
 /** Statistics every transport reads the same quality from: 50 ms, 4 ms of jitter, 1 % lost. */
@@ -116,8 +99,6 @@ const report = () =>
 
 beforeEach(() => {
   resetFakes();
-  resetFakeLiveKit();
-  resetFakeSora();
 });
 
 afterEach(() => {
@@ -133,7 +114,7 @@ test("the grant's ICE servers go into the configuration, through TURN only when 
   expect(rtcConfiguration(grant).iceTransportPolicy).toBe("all");
 });
 
-describe.each(["p2p", "sfu", "livekit", "sora"] as const)("a %s session", (kind) => {
+describe.each(["p2p", "sfu"] as const)("a %s session", (kind) => {
   const transport = transports[kind];
 
   test("is of the grant's kind and of the session it was made for", async () => {

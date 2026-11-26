@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Who is talking, for the kinds that measure it themselves (P2P and Sora; LiveKit reports its active speakers): the
+// Who is talking, for the kinds that measure it themselves (P2P, and the microphone of `sfu`): the
 // level of each remote stream and of the microphone, from a LevelMeter of the environment, sampled every
 // `talkingSample` ms while anything is measured. A stream starts talking when its level reaches `talkingThreshold`,
 // and stops only after it stayed below it for `talkingHold` ms, so that the state does not flicker between words.

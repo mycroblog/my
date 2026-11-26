@@ -13,9 +13,5 @@
   },
   "devDependencies": {
     "@types/bun": "1.4.5"
-  },
-  "dependencies": {
-    "livekit-client": "2.24.1",
-    "sora-js-sdk": "2026.1.1"
   }
 }

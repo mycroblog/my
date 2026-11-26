@@ -698,7 +698,6 @@ Mantenha estes juntos, em workers com a mesma configuração. Os jobs de uma mes
 | Tipos | O que mantêm em ordem |
 | --- | --- |
 | `federation.fanout`, `federation.deliver` | As entregas de um like e do desfazer dele |
-| `voice.apply_media_event`, `voice.apply` | Os eventos de uma sala de voz |
 | `supporters.sync`, `supporters.command` | As mudanças de uma assinatura |
 
 Ao atualizar:

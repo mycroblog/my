@@ -4,56 +4,18 @@ package voice
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"slices"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/internal/app/queue"
-	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/voice"
 )
 
-// The events of a media server and the reconciliation of its media path with the rooms
-// (ADR-0101 §2, ADR-0101 §13). The room domain is the source of truth: the events only make
-// the reconciliation of voice.sweep come sooner, and nothing assumes they arrive.
-
-// JobApplyMediaEvent applies one verified event of a media server (ADR-0101 §13): a session that
-// joined the media path and is not a live session of the room is removed from it, and a live one
-// loses its older connections (SessionDeduplicator) and gets the room's current state; a session of the room that left, and is not connected again
-// with another connection, is taken away and disconnected as by ADR-0100 §6; a media room
-// that finished while the room is open is opened again. Its idempotency key is the event's ID.
-const JobApplyMediaEvent = "voice.apply_media_event"
-
-// MediaWebhookMaxBodyBytes bounds the body of a delivery of a media server's events, read
-// before it is verified.
-const MediaWebhookMaxBodyBytes = 256 << 10
-
-// MediaWebhookIPLimit bounds the deliveries of events from one client IP that do not verify
-// (ADR-0019 §5); MediaConnectIPLimit those of the requests that authorize a connection. Only a
-// request that does not verify counts, so that the traffic of a media server, however busy,
-// never makes it refuse a connection or end a session; a flood of forged requests gets 429.
-var (
-	MediaWebhookIPLimit = kernel.Limit{Name: "voice.webhook.ip", Max: 300, Window: 5 * time.Minute}
-	MediaConnectIPLimit = kernel.Limit{Name: "voice.connect.ip", Max: 300, Window: 5 * time.Minute}
-)
-
-// limitRejected counts a request from ip that did not verify against lim and reports how long
-// the client waits when it sent too many.
-func (s *Service) limitRejected(ctx context.Context, lim kernel.Limit, ip string) (time.Duration, bool, error) {
-	if s.d.RateLimiter == nil {
-		return 0, false, nil
-	}
-	d, err := s.d.RateLimiter.Take(ctx, lim, kernel.ClientKey(ip))
-	if err != nil || d.Allowed {
-		return 0, false, err
-	}
-	return d.RetryAfter, true, nil
-}
+// The reconciliation of the media path of a media server with the rooms (ADR-0101 §2, ADR-0101
+// §13). The room domain is the source of truth: voice.sweep compares what the media path sees
+// with the room and puts it right.
 
 // mediaConnectGrace is how long a session that was given a grant may be missing from the media
 // path before the reconciliation disconnects it: the client connects within the life of the
@@ -63,182 +25,10 @@ const mediaConnectGrace = 2 * time.Minute
 // kvMediaPending keys, by session ID, the sessions within mediaConnectGrace of their grant.
 const kvMediaPending = "voice.media_pending"
 
-// MediaWebhook is one delivery of a media server's events.
-type MediaWebhook struct {
-	// Transport is the method the delivery is for, from the path of its endpoint.
-	Transport string
-	Header    http.Header
-	Body      []byte
-	ClientIP  string
-}
-
-// MediaWebhookOutcome is what became of a delivery.
-type MediaWebhookOutcome string
-
-// The outcomes of a delivery.
-const (
-	// MediaWebhookAccepted: the events were verified and queued (or there were none to queue).
-	MediaWebhookAccepted MediaWebhookOutcome = "accepted"
-	// MediaWebhookNotFound: the voice chat does not run on the delivery's method (404).
-	MediaWebhookNotFound MediaWebhookOutcome = "not_found"
-	// MediaWebhookRejected: the delivery did not verify (400).
-	MediaWebhookRejected MediaWebhookOutcome = "rejected"
-	// MediaWebhookRateLimited: the client IP sent more requests that do not verify than
-	// MediaWebhookIPLimit or MediaConnectIPLimit allow (429).
-	MediaWebhookRateLimited MediaWebhookOutcome = "rate_limited"
-)
-
-// MediaWebhookResult is the outcome of ReceiveMediaEvents.
-type MediaWebhookResult struct {
-	Outcome MediaWebhookOutcome
-	// RetryAfter is how long a rate-limited client waits.
-	RetryAfter time.Duration
-	// Reason is why a delivery was rejected, for the log; it never holds the delivery.
-	Reason error
-}
-
-type mediaPayload struct {
-	Transport string    `json:"transport"`
-	ID        string    `json:"id"`
-	Kind      EventKind `json:"kind"`
-	Room      string    `json:"room"`
-	Session   string    `json:"session,omitempty"`
-	// Connection is the media server's ID of the event's connection.
-	Connection string `json:"connection,omitempty"`
-}
-
-// ReceiveMediaEvents verifies a delivery of the media server of the voice chat's method and
-// queues a JobApplyMediaEvent for each of its events. The events are not recorded otherwise
-// (ADR-0101 §13).
-func (s *Service) ReceiveMediaEvents(ctx context.Context, req MediaWebhook) (MediaWebhookResult, error) {
-	src, ok := s.d.Transport.(EventSource)
-	if !s.Enabled() || !ok || string(s.d.Config.Transport) != req.Transport {
-		return MediaWebhookResult{Outcome: MediaWebhookNotFound}, nil
-	}
-	evs, err := src.ParseEvents(ctx, req.Header, req.Body)
-	if err != nil {
-		wait, limited, lerr := s.limitRejected(ctx, MediaWebhookIPLimit, req.ClientIP)
-		switch {
-		case lerr != nil:
-			return MediaWebhookResult{}, lerr
-		case limited:
-			return MediaWebhookResult{Outcome: MediaWebhookRateLimited, RetryAfter: wait}, nil
-		}
-		return MediaWebhookResult{Outcome: MediaWebhookRejected, Reason: err}, nil
-	}
-	if len(evs) == 0 {
-		return MediaWebhookResult{Outcome: MediaWebhookAccepted}, nil
-	}
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		for _, e := range evs {
-			if e.ID == "" || e.Room.ID == "" {
-				continue
-			}
-			b, err := json.Marshal(mediaPayload{Transport: req.Transport, ID: e.ID, Kind: e.Kind, Room: e.Room.ID, Session: e.Session, Connection: e.Connection})
-			if err != nil {
-				return err
-			}
-			err = s.d.Outbox.EnqueueTx(ctx, tx, queue.NewJob{
-				Type: JobApplyMediaEvent, Payload: b, IdempotencyKey: JobApplyMediaEvent + ":" + req.Transport + ":" + e.ID,
-				OrderingKey: "voice_room:" + e.Room.ID,
-			})
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return MediaWebhookResult{}, err
-	}
-	return MediaWebhookResult{Outcome: MediaWebhookAccepted}, nil
-}
-
-// ApplyMediaEvent runs JobApplyMediaEvent. An event of another method than the voice chat's now,
-// or of a room this instance does not have (a room of another instance that shares the media
-// server), is dropped: it changes nothing and removes no one.
-func (s *Service) ApplyMediaEvent(ctx context.Context, j queue.Job) queue.Result {
-	var p mediaPayload
-	if err := json.Unmarshal(j.Payload, &p); err != nil {
-		return queue.Fail(fmt.Errorf("decode %s: %w", JobApplyMediaEvent, err))
-	}
-	if !s.Enabled() || string(s.d.Config.Transport) != p.Transport {
-		return queue.Done()
-	}
-	room := RoomRef{ID: p.Room}
-	own, err := s.hasRoom(ctx, p.Room)
-	if err != nil {
-		return queue.Retry(0, err)
-	}
-	if !own {
-		return queue.Done()
-	}
-	switch p.Kind {
-	case MediaSessionJoined:
-		err = s.mediaJoined(ctx, room, p.Session)
-	case MediaSessionLeft:
-		err = s.mediaLeft(ctx, room, p.Session, p.Connection)
-	case MediaRoomFinished:
-		err = s.reopen(ctx, room)
-	default:
-		return queue.Done()
-	}
-	if err != nil {
-		return queue.Retry(0, err)
-	}
-	return queue.Done()
-}
-
-// mediaJoined handles a session that joined the media path: one that is not a live session of
-// the room is removed (banned, gone, replaced by another device, or never joined: a
-// self-hosted LiveKit lets a removed participant connect again with its token, ADR-0101 §13);
-// a live one gets the room's current state applied, since its grant may predate a change.
-func (s *Service) mediaJoined(ctx context.Context, room RoomRef, session string) error {
-	p, live, err := s.liveParticipant(ctx, room.ID, session)
-	if err != nil {
-		return err
-	}
-	if !live {
-		return s.d.Transport.Remove(ctx, room, Session{ID: session})
-	}
-	if d, ok := s.d.Transport.(SessionDeduplicator); ok {
-		// A session that connected again, to change its role on Sora, keeps its new
-		// connection (ADR-0101 §12).
-		if err := d.Deduplicate(ctx, room, Session{ID: session, AccountID: p.AccountID}); err != nil {
-			return err
-		}
-	}
-	return s.applyState(ctx, room, p, session)
-}
-
-// mediaLeft handles a session that left the media path. A session that is still connected,
-// with another connection than the one that left (a full reconnect, or the same identity twice),
-// stays. Otherwise the session is taken away (takeAway) and the room evaluated: a participant is
-// disconnected, and a host enters the grace (ADR-0100 §6).
-func (s *Service) mediaLeft(ctx context.Context, room RoomRef, session, connection string) error {
-	p, live, err := s.liveParticipant(ctx, room.ID, session)
-	if err != nil || !live {
-		return err
-	}
-	media, err := s.d.Transport.Sessions(ctx, room)
-	if err != nil {
-		return err
-	}
-	for _, m := range media {
-		if m.ID == session && (connection == "" || m.Connection == "" || m.Connection != connection) {
-			return nil
-		}
-	}
-	if err := s.takeAway(ctx, p, session); err != nil {
-		return err
-	}
-	return s.evaluate(ctx, room.ID, false)
-}
-
 // applyState applies the room's current state of a participant to its session on the media
 // path: whether it may speak. The session is no longer waiting to connect.
 func (s *Service) applyState(ctx context.Context, room RoomRef, p Participant, session string) error {
-	if _, err := s.d.Transport.SetSpeaking(ctx, room, Session{ID: session, AccountID: p.AccountID}, p.Role == voice.RoleSpeaker); err != nil {
+	if err := s.d.Transport.SetSpeaking(ctx, room, Session{ID: session, AccountID: p.AccountID}, p.Role == voice.RoleSpeaker); err != nil {
 		return err
 	}
 	return s.d.Heartbeats.kv.Delete(ctx, kvMediaPending, session)
@@ -271,22 +61,6 @@ func (s *Service) reopen(ctx context.Context, room RoomRef) error {
 	}
 	room.MaxParticipants = rec.Revision.Settings.Capacity(s.d.Config.Capacity)
 	return s.d.Transport.Open(ctx, room)
-}
-
-// hasRoom reports whether a room of the media server is a room of this instance, in any state. A
-// name that is no ID this server generates is a room of another.
-func (s *Service) hasRoom(ctx context.Context, roomID string) (bool, error) {
-	if !kernel.ValidID(roomID) {
-		return false, nil
-	}
-	_, err := s.d.Repository.FindRoom(ctx, nil, roomID)
-	switch {
-	case errors.Is(err, ErrNotFound):
-		return false, nil
-	case err != nil:
-		return false, err
-	}
-	return true, nil
 }
 
 // liveParticipant returns the participant of a room whose current, live session is session.

@@ -5406,22 +5406,16 @@ func (e VoiceEndReason) Valid() bool {
 
 // Defines values for VoiceGrantKind.
 const (
-	VoiceGrantKindLivekit VoiceGrantKind = "livekit"
-	VoiceGrantKindP2p     VoiceGrantKind = "p2p"
-	VoiceGrantKindSfu     VoiceGrantKind = "sfu"
-	VoiceGrantKindSora    VoiceGrantKind = "sora"
+	VoiceGrantKindP2p VoiceGrantKind = "p2p"
+	VoiceGrantKindSfu VoiceGrantKind = "sfu"
 )
 
 // Valid indicates whether the value is a known member of the VoiceGrantKind enum.
 func (e VoiceGrantKind) Valid() bool {
 	switch e {
-	case VoiceGrantKindLivekit:
-		return true
 	case VoiceGrantKindP2p:
 		return true
 	case VoiceGrantKindSfu:
-		return true
-	case VoiceGrantKindSora:
 		return true
 	default:
 		return false
@@ -9998,7 +9992,7 @@ type ClientMeasurement struct {
 	//   `replace`, `none`).
 	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
 	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-	//   call transport (`p2p`, `sfu`, `livekit`, `sora`).
+	//   call transport (`p2p` or `sfu`).
 	Metric UXMetric `json:"metric"`
 
 	// Name The route ID, interaction kind, action ID, or call transport that `metric` names.
@@ -17712,7 +17706,7 @@ type UXMeasurementSummary struct {
 	//   `replace`, `none`).
 	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
 	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-	//   call transport (`p2p`, `sfu`, `livekit`, `sora`).
+	//   call transport (`p2p` or `sfu`).
 	Metric UXMetric `json:"metric"`
 
 	// Name The route ID, interaction kind, action ID, or call transport; `other` for the names past
@@ -17735,7 +17729,7 @@ type UXMeasurementSummary struct {
 //     `replace`, `none`).
 //   - `press`: the time from a press to its response, named by the action ID (`post.reply`).
 //   - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-//     call transport (`p2p`, `sfu`, `livekit`, `sora`).
+//     call transport (`p2p` or `sfu`).
 type UXMetric string
 
 // UpdateBadgeChoiceRequest Whether to show the badge of the role on the authenticated user's profile.
@@ -17966,8 +17960,7 @@ type Visibility string
 type VoiceEndReason string
 
 // VoiceGrant What the client of a session needs to connect to the audio of a room. `kind` is the method
-// of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
-// `expires_at`.
+// of the server (`p2p` or `sfu`); the client asks for a new grant before `expires_at`.
 //
 // With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
 // a ticket for it, which connects once and only within 30 seconds. The client opens a
@@ -17989,18 +17982,13 @@ type VoiceGrant struct {
 	IceServers []VoiceIceServer `json:"ice_servers"`
 	Kind       VoiceGrantKind   `json:"kind"`
 
-	// Options The options of the method for the client; empty for `p2p` and `sfu`.
-	Options map[string]string `json:"options"`
-
 	// RelayOnly Whether the client connects through TURN only (`iceTransportPolicy` `relay`).
 	RelayOnly bool `json:"relay_only"`
 
-	// Token The access token of the media server, the single-use ticket of the media node for `sfu`;
-	// omitted for `p2p`.
+	// Token The single-use ticket of the media node for `sfu`; omitted for `p2p`.
 	Token *string `json:"token,omitempty"`
 
-	// Url The endpoint of the media server, the `wss:` URL of the media node for `sfu`; omitted for
-	// `p2p`.
+	// Url The `wss:` URL of the media node for `sfu`; omitted for `p2p`.
 	Url *string `json:"url,omitempty"`
 }
 
@@ -18207,8 +18195,7 @@ type VoiceRoomInvitationPage struct {
 // client sends the session's heartbeats every 15 seconds.
 type VoiceRoomJoin struct {
 	// Grant What the client of a session needs to connect to the audio of a room. `kind` is the method
-	// of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
-	// `expires_at`.
+	// of the server (`p2p` or `sfu`); the client asks for a new grant before `expires_at`.
 	//
 	// With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
 	// a ticket for it, which connects once and only within 30 seconds. The client opens a
@@ -18571,31 +18558,6 @@ type VoiceStreamEnd struct {
 
 // VoiceStreamEndReason defines model for VoiceStreamEnd.Reason.
 type VoiceStreamEndReason string
-
-// VoiceStreamGrant The data of a `grant` event of a voice chat room stream.
-type VoiceStreamGrant struct {
-	// Grant What the client of a session needs to connect to the audio of a room. `kind` is the method
-	// of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
-	// `expires_at`.
-	//
-	// With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
-	// a ticket for it, which connects once and only within 30 seconds. The client opens a
-	// WebSocket to `url` with the query parameter `ticket` set to `token`
-	// (`GET <url>?ticket=<token>`, an upgrade to the WebSocket protocol; browsers cannot send
-	// headers on a WebSocket, so the ticket travels in the URL). An expired or used ticket, or
-	// one for another node, is refused. Each message is a JSON text frame with a version `v` (1)
-	// and a `type`: the client sends a `VoiceSFUClientMessage` and receives a
-	// `VoiceSFUNodeMessage`. The node always makes the offer, on one `RTCPeerConnection` for the
-	// session: its first `offer` has one transceiver that receives the user's microphone and one
-	// that sends the audio of each speaker, and it offers again only when the speakers change. A
-	// client that changes network sends `restart` and gets an offer that restarts ICE. When the
-	// WebSocket closes while the connection lives, or on `migrate`, the client asks for a new
-	// grant (`POST /voice/rooms/{id}/grant`) and connects to its `url` with the same session.
-	Grant VoiceGrant `json:"grant"`
-
-	// Reconnect Whether the client connects to the audio again with the new grant.
-	Reconnect bool `json:"reconnect"`
-}
 
 // VoiceStreamMic The data of a `mic` event of a voice chat room stream.
 type VoiceStreamMic struct {

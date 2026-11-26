@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The boundary of the audio of a call (ADR-0101 §7): one RoomSession per joined session of a room, whatever carries
-// its audio (P2P, the media nodes' SFU, LiveKit or Sora on the web; a native implementation behind the same interface
-// later). It knows nothing of mycroblog: its caller hands it the grant, the roster of each room state, the signals of
+// its audio (P2P or the media nodes' SFU on the web; a native implementation behind the same interface later). It knows nothing of mycroblog: its caller hands it the grant, the roster of each room state, the signals of
 // P2P and, for the SFU, a way to get a new grant, and hears what it does through its events. It holds no React and no
 // DOM subtree, so a session outlives every screen.
 
 /** What carries the audio of a room (ADR-0101 §1). */
-export type RoomKind = "p2p" | "sfu" | "livekit" | "sora";
+export type RoomKind = "p2p" | "sfu";
 
 /** A STUN or TURN server, as the grant names it (the browser's RTCIceServer). */
 export type IceServer = {
@@ -17,17 +16,12 @@ export type IceServer = {
 
 /** What a session needs to connect to the audio of a room (ADR-0101 §2 `Grant`). */
 export type RoomGrant = {
-  /** What carries the audio: `p2p`, `sfu`, `livekit` or `sora`; any other is refused by `createRoomSession`. */
+  /** What carries the audio: `p2p` or `sfu`; any other is refused by `createRoomSession`. */
   readonly kind: string;
-  /** The SFU's endpoint (`sfu`: the `wss:` URL of the media node that holds the room); absent for P2P. */
+  /** The `wss:` URL of the media node that holds the room (`sfu`); absent for P2P. */
   readonly url?: string | undefined;
-  /**
-   * The SFU's access token (`sfu`: the media node's ticket, which connects once within 30 seconds; Sora: the signed
-   * join value); absent for P2P.
-   */
+  /** The media node's ticket (`sfu`), which connects once within 30 seconds; absent for P2P. */
   readonly token?: string | undefined;
-  /** The options of the kind (ADR-0101 §12): Sora's `role`, `channel_id`, `signaling_urls`, `access_token`. */
-  readonly options: Readonly<Record<string, string>>;
   readonly iceServers: readonly IceServer[];
   /** Whether the connections go through TURN only (`iceTransportPolicy: "relay"`, ADR-0101 §5). */
   readonly relayOnly: boolean;
@@ -74,7 +68,7 @@ export type SignalingPort = { readonly send: (signal: OutgoingSignal) => Promise
 
 /**
  * How the media path stands: `connecting` until it is up, `connected`, `reconnecting` while it recovers by itself (an
- * ICE restart, the SDK's own reconnection), `lost` when it went away and needs a new grant (`reconnect`), and
+ * ICE restart), `lost` when it went away and needs a new grant (`reconnect`), and
  * `closed` once the session closed or failed.
  */
 export type ConnectionState = "connecting" | "connected" | "reconnecting" | "lost" | "closed";
@@ -100,11 +94,10 @@ export type ConnectionQuality = {
 };
 
 /**
- * Why a session ended by itself: `unavailable` when what carries the audio cannot run (its SDK did not load),
- * `removed` when the media server removed the session (LiveKit: removed, replaced by the same identity, or the room
- * deleted). The session is closed after it.
+ * Why a session ended by itself: `unavailable` when what carries the audio cannot run (the media node speaks another
+ * version). The session is closed after it.
  */
-export type RoomFailureReason = "unavailable" | "removed";
+export type RoomFailureReason = "unavailable";
 
 /** The terminal failure of a session. */
 export class RoomSessionFailure extends Error {
@@ -147,7 +140,7 @@ export type RoomSessionCapabilities = {
 
 /**
  * The connection of one joined session to the audio of a room. It reconnects by itself (an ICE restart on a failure
- * or a network change, the SDK's own reconnection) and takes the microphone again when its device goes away; what
+ * or a network change) and takes the microphone again when its device goes away; what
  * it cannot recover from alone it says as `lost` (give it a new grant with `reconnect`) or as `failed`.
  */
 export interface RoomSession {
@@ -167,11 +160,10 @@ export interface RoomSession {
   setOutputDevice(deviceId: string): Promise<void>;
   /**
    * Takes a renewed grant on the live connections (ADR-0101 §5): P2P sets its ICE servers on each connection and
-   * restarts ICE with them; `sfu` sets its ICE servers on its connection; an SFU keeps it, and joins again with it
-   * when its connection went away.
+   * restarts ICE with them; `sfu` sets its ICE servers on its connection.
    */
   renew(grant: RoomGrant): void;
-  /** Connects again with a new grant, for the same session (the server asked for it, or the connection was lost). */
+  /** Connects again with a new grant, for the same session, after the connection was lost. */
   reconnect(grant: RoomGrant): void;
   /** Takes a signal of P2P from another session; other kinds ignore it. */
   receiveSignal(signal: IncomingSignal): void;
@@ -205,10 +197,6 @@ export type LevelMeter = {
   close: () => void;
 };
 
-/** The SDKs, loaded only once a grant names them (ADR-0101 §15). */
-export type LiveKitSdk = typeof import("livekit-client");
-export type SoraSdk = (typeof import("sora-js-sdk"))["default"];
-
 /**
  * What a session takes from where it runs; `browserEnvironment` gives the browser's, and the tests give fakes. A
  * session owns its environment: `close` releases it.
@@ -230,10 +218,6 @@ export type RoomEnvironment = {
   watchDevices?: ((onChange: () => void) => () => void) | undefined;
   /** Calls `onChange` when the network comes back or changes, until the function it returns is called. */
   watchNetwork?: ((onChange: () => void) => () => void) | undefined;
-  /** Loads livekit-client; by default `import("livekit-client")`. */
-  loadLiveKit?: (() => Promise<LiveKitSdk>) | undefined;
-  /** Loads sora-js-sdk; by default `import("sora-js-sdk")`. */
-  loadSora?: (() => Promise<SoraSdk>) | undefined;
   /** Opens the WebSocket to the media node of `sfu`; by default `new WebSocket(url)`. */
   openSocket?: ((url: string) => WebSocket) | undefined;
   /** Releases what the environment holds (its audio context). */
@@ -243,14 +227,14 @@ export type RoomEnvironment = {
 /** What `createRoomSession` takes. */
 export type RoomSessionOptions = {
   readonly grant: RoomGrant;
-  /** This session's ID: P2P's side of each pair, the SFU's identity (LiveKit) and client_id (Sora). */
+  /** This session's ID: P2P's side of each pair, and the session the ticket of `sfu` names. */
   readonly session: string;
-  /** How P2P sends its signals; required for P2P, unused by an SFU. */
+  /** How P2P sends its signals; required for P2P, unused by `sfu`. */
   readonly signaling?: SignalingPort | undefined;
   /**
    * Asks the caller for a new grant of the same session (`POST /voice/rooms/{id}/grant`): `sfu` asks when its node
    * moved the room (`migrate`), refused the ticket, or went away, since each ticket connects once. Rejects when none
-   * can be had now; the session then says `lost` and waits for `reconnect`. Unused by the other kinds; without it,
+   * can be had now; the session then says `lost` and waits for `reconnect`. Unused by P2P; without it,
    * `sfu` says `lost` at once.
    */
   readonly requestGrant?: (() => Promise<RoomGrant>) | undefined;

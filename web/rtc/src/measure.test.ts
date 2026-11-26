@@ -15,14 +15,11 @@ import {
   settle,
   statsReport,
 } from "./test/fake";
-import { loadFakeLiveKit, resetFakeLiveKit, room } from "./test/livekit";
-import { loadFakeSora, resetFakeSora, sora } from "./test/sora";
 
 const grantOf = (kind: RoomKind): RoomGrant => ({
   kind,
   url: "wss://sfu.example",
   token: "token-1",
-  options: kind === "sora" ? { channel_id: "room1", role: "recvonly" } : {},
   iceServers: [{ urls: ["stun:stun.example"] }],
   relayOnly: false,
   expiresAt: Date.now() + 60 * 60_000,
@@ -45,12 +42,6 @@ const statsOf: Record<RoomKind, (stats: RTCStatsReport) => void> = {
   sfu: (stats) => {
     for (const pc of FakePeerConnection.all) pc.stats = stats;
   },
-  livekit: (stats) => {
-    room().subscribe("s2", "t2", stats);
-  },
-  sora: (stats) => {
-    sora(0).stats = stats;
-  },
 };
 
 /** A session of `kind` the package's entry makes, joined as s1 with s2 speaking, sampled each second. */
@@ -58,7 +49,7 @@ async function started(kind: RoomKind): Promise<RoomSession> {
   const session = createRoomSession({
     session: "s1",
     grant: grantOf(kind),
-    environment: fakeEnvironment({ loadLiveKit: loadFakeLiveKit, loadSora: loadFakeSora }),
+    environment: fakeEnvironment(),
     ...(kind === "p2p" ? { signaling: { send: () => Promise.resolve() } } : {}),
     qualityInterval: 1_000,
   });
@@ -94,8 +85,6 @@ let stopHearing: (() => void) | null = null;
 
 beforeEach(() => {
   resetFakes();
-  resetFakeLiveKit();
-  resetFakeSora();
   heard = [];
   stopHearing = measureCallsWith((sample) => heard.push(sample));
 });
@@ -111,14 +100,14 @@ test("a quality gives its round trip and jitter in milliseconds and its loss in 
     { metric: "call_packet_loss", name: "p2p", value: 5 },
     { metric: "call_rtt", name: "p2p", value: 120 },
   ]);
-  expect(callSamples("sora", { rtt: null, jitter: 3, packetLoss: null })).toEqual([
-    { metric: "call_jitter", name: "sora", value: 3 },
+  expect(callSamples("sfu", { rtt: null, jitter: 3, packetLoss: null })).toEqual([
+    { metric: "call_jitter", name: "sfu", value: 3 },
   ]);
-  expect(callSamples("livekit", { rtt: null, jitter: null, packetLoss: null })).toEqual([]);
-  expect(callSamples("livekit", { rtt: 0, jitter: 0, packetLoss: 0 })).toHaveLength(3);
+  expect(callSamples("sfu", { rtt: null, jitter: null, packetLoss: null })).toEqual([]);
+  expect(callSamples("sfu", { rtt: 0, jitter: 0, packetLoss: 0 })).toHaveLength(3);
 });
 
-describe.each(["p2p", "sfu", "livekit", "sora"] as const)("a %s call", (kind) => {
+describe.each(["p2p", "sfu"] as const)("a %s call", (kind) => {
   test("reports its quality by its transport's name, the first sample and then one in twelve", async () => {
     jest.useFakeTimers();
     const session = await started(kind);
@@ -155,13 +144,13 @@ describe.each(["p2p", "sfu", "livekit", "sora"] as const)("a %s call", (kind) =>
 
 test("each session counts its own samples: a second call's first sample is reported too", async () => {
   jest.useFakeTimers();
-  const first = await started("livekit");
+  const first = await started("sfu");
   await sampled(2);
   first.close();
   expect(heard).toHaveLength(3);
 
-  resetFakeLiveKit();
-  const second = await started("livekit");
+  resetFakes();
+  const second = await started("sfu");
   await sampled(1);
   expect(heard).toHaveLength(6);
   second.close();
@@ -178,7 +167,7 @@ test("once the destination stops hearing, a call's quality goes nowhere", async 
 });
 
 // The server's names of a call's quality are its transports' (api/spec/components/schemas/UXMetric.yaml).
-test.each(["p2p", "sfu", "livekit", "sora"] as const)(
+test.each(["p2p", "sfu"] as const)(
   "the samples of a %s call are the server's: its metrics, its names, and values in its range",
   async (kind) => {
     jest.useFakeTimers();
@@ -187,7 +176,7 @@ test.each(["p2p", "sfu", "livekit", "sora"] as const)(
     expect(heard.length).toBeGreaterThan(0);
     for (const sample of heard) {
       expect(["call_rtt", "call_jitter", "call_packet_loss"]).toContain(sample.metric);
-      expect(["p2p", "sfu", "livekit", "sora"]).toContain(sample.name);
+      expect(["p2p", "sfu"]).toContain(sample.name);
       expect(sample.value).toBeGreaterThanOrEqual(0);
     }
     expect(heard.find((sample) => sample.metric === "call_packet_loss")?.value).toBeLessThanOrEqual(100);
@@ -234,14 +223,14 @@ function handMade(kind: RoomKind): { session: RoomSession; say: (rtt: number) =>
 }
 
 test("a session of another making reports through reportQuality as the entry's do", () => {
-  const { session, say } = handMade("sora");
+  const { session, say } = handMade("sfu");
   const reporting = reportQuality(session);
-  expect(reporting.kind).toBe("sora");
+  expect(reporting.kind).toBe("sfu");
   say(10);
   for (let i = 0; i < qualityReportEvery - 1; i++) say(20);
   say(30);
   expect(heard).toEqual([
-    { metric: "call_rtt", name: "sora", value: 10 },
-    { metric: "call_rtt", name: "sora", value: 30 },
+    { metric: "call_rtt", name: "sfu", value: 10 },
+    { metric: "call_rtt", name: "sfu", value: 30 },
   ]);
 });

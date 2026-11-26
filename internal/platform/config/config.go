@@ -379,24 +379,6 @@ type Config struct {
 	// VoiceSFUOrigins are the wss: origins of the media nodes on other hosts that the web
 	// client may connect to (its connect-src); a host may start with "*.".
 	VoiceSFUOrigins []string
-	// The LiveKit server of voice = livekit (ADR-0101 §14); VoiceLiveKitAPIURL defaults to
-	// VoiceLiveKitURL over https (http for ws).
-	VoiceLiveKitURL       string
-	VoiceLiveKitAPIURL    string
-	VoiceLiveKitAPIKey    string
-	VoiceLiveKitAPISecret string
-	// The Sora server of voice = sora (ADR-0101 §14): VoiceSoraMode is "self_hosted" or "cloud",
-	// and VoiceJoinSecret signs the join values that Sora sends back on each connection.
-	VoiceSoraMode            string
-	VoiceSoraSignalingURLs   []string
-	VoiceSoraAPIURL          string
-	VoiceSoraAPIHeaderName   string
-	VoiceSoraAPIHeaderValue  string
-	VoiceSoraWebhookUsername string
-	VoiceSoraWebhookPassword string
-	VoiceSoraCloudProjectID  string
-	VoiceSoraCloudAPIKey     string
-	VoiceJoinSecret          string
 	// DeadJobRetention is how long a dead job is kept after it failed (FR-803).
 	DeadJobRetention time.Duration
 	// JobAttemptRetention is how long the record of a job's run that did not succeed is kept
@@ -634,20 +616,6 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("voice_sfu_public_url", c.VoiceSFUPublicURL),
 		slog.Int("voice_sfu_node_capacity", c.VoiceSFUNodeCapacity),
 		slog.Any("voice_sfu_origins", c.VoiceSFUOrigins),
-		slog.String("voice_livekit_url", c.VoiceLiveKitURL),
-		slog.String("voice_livekit_api_url", c.VoiceLiveKitAPIURL),
-		slog.String("voice_livekit_api_key", c.VoiceLiveKitAPIKey),
-		slog.String("voice_livekit_api_secret", redact(c.VoiceLiveKitAPISecret != "")),
-		slog.String("voice_sora_mode", c.VoiceSoraMode),
-		slog.Any("voice_sora_signaling_urls", c.VoiceSoraSignalingURLs),
-		slog.String("voice_sora_api_url", c.VoiceSoraAPIURL),
-		slog.String("voice_sora_api_header_name", c.VoiceSoraAPIHeaderName),
-		slog.String("voice_sora_api_header_value", redact(c.VoiceSoraAPIHeaderValue != "")),
-		slog.String("voice_sora_webhook_username", c.VoiceSoraWebhookUsername),
-		slog.String("voice_sora_webhook_password", redact(c.VoiceSoraWebhookPassword != "")),
-		slog.String("voice_sora_cloud_project_id", c.VoiceSoraCloudProjectID),
-		slog.String("voice_sora_cloud_api_key", redact(c.VoiceSoraCloudAPIKey != "")),
-		slog.String("voice_sora_join_secret", redact(c.VoiceJoinSecret != "")),
 		slog.Duration("dead_job_retention", c.DeadJobRetention),
 		slog.Duration("job_attempt_retention", c.JobAttemptRetention),
 		slog.Duration("dynamic_client_unredeemed_retention", c.DynamicClientUnredeemedTTL),
@@ -922,9 +890,6 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 		cfg.QueueCloudTasksURL = cmp.Or(cfg.QueueCloudTasksURL, "https://"+cfg.Host)
 		cfg.QueueCloudTasksDispatchDeadline = cmp.Or(cfg.QueueCloudTasksDispatchDeadline, DefaultCloudTasksDispatchDeadline)
 	}
-	if cfg.VoiceLiveKitAPIURL == "" {
-		cfg.VoiceLiveKitAPIURL = voiceAPIURL(cfg.VoiceLiveKitURL)
-	}
 	if len(issues) > 0 {
 		return nil, settings, &ValidationError{Issues: issues}
 	}
@@ -978,6 +943,9 @@ func resolve(f *field, src Source, file map[string]any) (string, Origin, []Issue
 
 func validate(f *field, v string) error {
 	if len(f.choices) > 0 {
+		if err := retiredValueError(f.key, v); err != nil {
+			return err
+		}
 		if !slices.ContainsFunc(f.choices, func(c choice) bool { return c.value == v }) {
 			return fmt.Errorf("unknown value %q; want one of %s", v, strings.Join(allowedValues(f), ", "))
 		}

@@ -32,8 +32,6 @@ get:
       `data` is a `VoiceStreamSignal`.
     - `muted`: the host or a co-host muted the session; turn the microphone off. `data` is a
       `VoiceStreamMuted`.
-    - `grant`: a new grant for the session. `data` is a `VoiceStreamGrant`; when `reconnect` is
-      true, connect to the audio again with it.
     - `removed`, `replaced`, `ended`: the session left the room, the user joined from another
       device, or the room ended. `data` is a `VoiceStreamEnd`, and the stream ends after it.
 
@@ -65,7 +63,6 @@ get:
               - $ref: ../components/schemas/VoiceStreamReaction.yaml
               - $ref: ../components/schemas/VoiceStreamSignal.yaml
               - $ref: ../components/schemas/VoiceStreamMuted.yaml
-              - $ref: ../components/schemas/VoiceStreamGrant.yaml
               - $ref: ../components/schemas/VoiceStreamEnd.yaml
     default:
       $ref: ../components/responses/Problem.yaml

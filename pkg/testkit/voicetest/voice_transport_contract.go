@@ -80,12 +80,8 @@ func VoiceTransportContract(t *testing.T, newHarness func(t *testing.T) VoiceTra
 			h.Connect(t, room, s)
 		}
 		for _, speak := range []bool{true, false} {
-			reconnect, err := h.Transport.SetSpeaking(t.Context(), room, s, speak)
-			if err != nil {
+			if err := h.Transport.SetSpeaking(t.Context(), room, s, speak); err != nil {
 				t.Fatalf("SetSpeaking(%t): %v", speak, err)
-			}
-			if reconnect && !h.Transport.Capabilities().ServerEnforced {
-				t.Errorf("SetSpeaking(%t) asks a reconnect of a transport that does not enforce speaking", speak)
 			}
 		}
 		for range 2 {

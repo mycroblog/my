@@ -28,6 +28,45 @@ type retiredKey struct {
 var retiredKeys = []retiredKey{
 	{key: "voice_p2p_max_participants", renamedTo: "voice_max_participants"},
 	{key: "voice_sfu_max_participants", removed: "set voice_max_participants (2 to 500), the most people a room of any voice method may hold"},
+	{key: "voice_livekit_url", removed: "LiveKit is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_livekit_api_url", removed: "LiveKit is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_livekit_api_key", removed: "LiveKit is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_livekit_api_secret", removed: "LiveKit is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_mode", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_signaling_urls", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_api_url", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_api_header_name", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_api_header_value", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_webhook_username", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_webhook_password", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_cloud_project_id", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_cloud_api_key", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+	{key: "voice_sora_join_secret", removed: "Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+}
+
+// retiredValue is a value of an enumerated setting that a release removed. Setting it is an error
+// that tells what to set instead, rather than the list of the values that the setting takes.
+type retiredValue struct {
+	key, value string
+	// removed tells why the value was removed and what to set instead.
+	removed string
+}
+
+// retiredValues lists the removed values of the settings, oldest first, kept as long as a
+// retiredKeys entry.
+var retiredValues = []retiredValue{
+	{key: "voice", value: "livekit", removed: "LiveKit is no longer supported; set voice = sfu, where the server's own media nodes carry the audio: a process with role = all or sfu runs one, which the browsers reach at voice_sfu_public_url over WebSocket and at voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) for the audio; or set voice = p2p. A room still open on LiveKit ends at the first sweep."},
+	{key: "voice", value: "sora", removed: "Sora is no longer supported; set voice = sfu, where the server's own media nodes carry the audio: a process with role = all or sfu runs one, which the browsers reach at voice_sfu_public_url over WebSocket and at voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) for the audio; or set voice = p2p. A room still open on Sora ends at the first sweep."},
+}
+
+// retiredValueError reports that key = value was removed, or nil when the value was not.
+func retiredValueError(key, value string) error {
+	for _, r := range retiredValues {
+		if r.key == key && r.value == value {
+			return fmt.Errorf("%q was removed: %s", value, r.removed)
+		}
+	}
+	return nil
 }
 
 func (r *retiredKey) env() string { return EnvPrefix + strings.ToUpper(r.key) }

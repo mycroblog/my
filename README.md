@@ -56,7 +56,7 @@
     <td width="50%" valign="top">
       <strong>Voice rooms</strong><br>
       Live audio rooms for the people of your server, with hosts, speakers, invitations and reactions. Peer to peer for
-      small rooms, LiveKit or Sora for large ones.
+      small rooms, the server's own SFU for large ones.
     </td>
   </tr>
   <tr>

@@ -90,19 +90,12 @@ type Signal struct {
 	Candidate string     `json:"candidate,omitempty"`
 }
 
-// GrantMessage is a new grant for a session that has to connect again (ADR-0101 §2).
-type GrantMessage struct {
-	Grant     Grant `json:"grant"`
-	Reconnect bool  `json:"reconnect"`
-}
-
 // Message is a message for one session of a room, which waits in the KeyValueStore for the
-// stream of the session: a signal, or a grant.
+// stream of the session: a signal.
 type Message struct {
-	Room   string        `json:"room"`
-	To     string        `json:"to"`
-	Signal *Signal       `json:"signal,omitempty"`
-	Grant  *GrantMessage `json:"grant,omitempty"`
+	Room   string  `json:"room"`
+	To     string  `json:"to"`
+	Signal *Signal `json:"signal,omitempty"`
 }
 
 // Signal relays a signal of P2P (ADR-0101 §4) from in.Session, the current live session of

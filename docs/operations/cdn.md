@@ -103,7 +103,7 @@ With none of them set, nothing is checked and the server behaves as if this sect
 | `POST` to `/_internal/` paths | Cloud Tasks and Cloud Scheduler call them on the server's own URL. They carry their own signed token |
 
 Everything else needs the header, in the maintenance mode too: the web client and its assets, `/media/`, the client API, OAuth, and ActivityPub, including the deliveries of other servers.
-So anything that calls the server directly by its own address, instead of through the CDN, is refused: a webhook of your own, a voice media server, a script. Point it at the CDN's host name.
+So anything that calls the server directly by its own address, instead of through the CDN, is refused: a webhook of your own, a script. Point it at the CDN's host name.
 
 The metrics port (`metrics_listen`) is a separate listener that is not public and is not checked.
 

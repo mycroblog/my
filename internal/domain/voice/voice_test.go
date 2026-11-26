@@ -296,7 +296,7 @@ func TestValues(t *testing.T) {
 		{"visibility", []func() bool{VisibilityLocal.Valid, VisibilityFollowers.Valid, VisibilityFollowing.Valid, VisibilityMutuals.Valid, VisibilityInvited.Valid}, Visibility("public").Valid},
 		{"speakers", []func() bool{SpeakersEveryone.Valid, SpeakersFollowers.Valid, SpeakersFollowing.Valid, SpeakersMutuals.Valid, SpeakersManual.Valid}, Speakers("all").Valid},
 		{"role", []func() bool{RoleSpeaker.Valid, RoleListener.Valid}, Role("host").Valid},
-		{"transport", []func() bool{TransportP2P.Valid, TransportLiveKit.Valid, TransportSora.Valid}, Transport("off").Valid},
+		{"transport", []func() bool{TransportP2P.Valid, TransportSFU.Valid, TransportLiveKit.Valid, TransportSora.Valid}, Transport("off").Valid},
 		{"end reason", []func() bool{
 			EndHost.Valid, EndEmpty.Valid, EndHostDisconnected.Valid, EndHostIneligible.Valid, EndModerator.Valid, EndTimeLimit.Valid, EndDisabled.Valid,
 			EndHostAbsent.Valid, EndUnattended.Valid,

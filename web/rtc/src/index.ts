@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What carries the audio of a call (ADR-0025 §2, ADR-0101 §7): one RoomSession per joined session of a room, over
-// P2P, my's SFU, LiveKit or Sora. It knows nothing of mycroblog, holds no React and no part of the page, and imports no
+// P2P or my's SFU. It knows nothing of mycroblog, holds no React and no part of the page, and imports no
 // other package of the workspace; the caller gives it the grant, the rosters, the signals of P2P, a way to a new grant
 // and its environment.
 
@@ -9,7 +9,6 @@ export { browserEnvironment, microphoneConstraints, type BrowserMedia } from "./
 export { disconnectWait, offerWait, resendWait } from "./p2p";
 export { qualityInterval } from "./quality";
 export { createRoomSession, UnsupportedRoomKindError } from "./session";
-export { sendWait } from "./sfu";
 export { talkingHold, talkingSample, talkingThreshold } from "./talking";
 export {
   rtcConfiguration,
@@ -19,7 +18,6 @@ export {
   type IceServer,
   type IncomingSignal,
   type LevelMeter,
-  type LiveKitSdk,
   type OutgoingSignal,
   type ParticipantLink,
   type RemoteAudio,
@@ -38,5 +36,4 @@ export {
   type Signal,
   type SignalingPort,
   type SignalKind,
-  type SoraSdk,
 } from "./types";

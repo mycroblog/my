@@ -112,7 +112,6 @@ var jobTypes = []string{
 	"supporters.sync_tip",
 	"translation.purge_cache",
 	"voice.apply",
-	"voice.apply_media_event",
 	"voice.check_account",
 	"voice.check_block",
 	"voice.check_hosts",

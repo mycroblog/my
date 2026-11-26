@@ -7521,8 +7521,6 @@ paths:
           `data` is a `VoiceStreamSignal`.
         - `muted`: the host or a co-host muted the session; turn the microphone off. `data` is a
           `VoiceStreamMuted`.
-        - `grant`: a new grant for the session. `data` is a `VoiceStreamGrant`; when `reconnect` is
-          true, connect to the audio again with it.
         - `removed`, `replaced`, `ended`: the session left the room, the user joined from another
           device, or the room ended. `data` is a `VoiceStreamEnd`, and the stream ends after it.
 
@@ -7555,7 +7553,6 @@ paths:
                   - $ref: '#/components/schemas/VoiceStreamReaction'
                   - $ref: '#/components/schemas/VoiceStreamSignal'
                   - $ref: '#/components/schemas/VoiceStreamMuted'
-                  - $ref: '#/components/schemas/VoiceStreamGrant'
                   - $ref: '#/components/schemas/VoiceStreamEnd'
         default:
           $ref: '#/components/responses/Problem'
@@ -31317,7 +31314,7 @@ components:
           `replace`, `none`).
         - `press`: the time from a press to its response, named by the action ID (`post.reply`).
         - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-          call transport (`p2p`, `sfu`, `livekit`, `sora`).
+          call transport (`p2p` or `sfu`).
       type: string
       enum:
         - lcp
@@ -31363,8 +31360,7 @@ components:
     VoiceGrant:
       description: |
         What the client of a session needs to connect to the audio of a room. `kind` is the method
-        of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
-        `expires_at`.
+        of the server (`p2p` or `sfu`); the client asks for a new grant before `expires_at`.
 
         With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
         a ticket for it, which connects once and only within 30 seconds. The client opens a
@@ -31382,7 +31378,6 @@ components:
       type: object
       required:
         - kind
-        - options
         - ice_servers
         - relay_only
         - expires_at
@@ -31392,23 +31387,12 @@ components:
           enum:
             - p2p
             - sfu
-            - livekit
-            - sora
         url:
-          description: |
-            The endpoint of the media server, the `wss:` URL of the media node for `sfu`; omitted for
-            `p2p`.
+          description: The `wss:` URL of the media node for `sfu`; omitted for `p2p`.
           type: string
         token:
-          description: |
-            The access token of the media server, the single-use ticket of the media node for `sfu`;
-            omitted for `p2p`.
+          description: The single-use ticket of the media node for `sfu`; omitted for `p2p`.
           type: string
-        options:
-          description: The options of the method for the client; empty for `p2p` and `sfu`.
-          type: object
-          additionalProperties:
-            type: string
         ice_servers:
           description: The STUN and TURN servers of the connections.
           type: array
@@ -32157,19 +32141,6 @@ components:
             - disabled
             - host_absent
             - unattended
-    VoiceStreamGrant:
-      title: grant
-      description: The data of a `grant` event of a voice chat room stream.
-      type: object
-      required:
-        - grant
-        - reconnect
-      properties:
-        grant:
-          $ref: '#/components/schemas/VoiceGrant'
-        reconnect:
-          description: Whether the client connects to the audio again with the new grant.
-          type: boolean
     VoiceStreamMic:
       title: mic
       description: The data of a `mic` event of a voice chat room stream.

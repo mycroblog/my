@@ -95,7 +95,6 @@ Each service that receives personal data appears in the policy only if you turne
 | `{{IF payjp}}` | `payments = payjp` | The email address and the plan. The browser loads payjp.js on the server's payment pages, the card goes into PAY.JP's iframe, and the name and email address go to PAY.JP for 3-D Secure ([PAY.JP](payments-payjp.md#card-data-and-pci-dss)). |
 | `{{IF error reports}}` | `errors_exporter` | Scrubbed reports without account, IP address, body, or header. Scrubbing matches patterns, so a fragment of user text can remain ([error reporting](error-reporting.md#what-scrubbing-does-and-does-not-guarantee)). |
 | `{{IF telemetry}}` | `metrics_exporter`, `traces_exporter` | Metrics and spans without accounts or client IP addresses. Spans of outbound requests name the host names of remote servers ([running](running.md)). |
-| `{{IF voice media server}}` | `voice` is `livekit` or `sora` | Participants' IP addresses, their audio while speaking, a session ID, and the room ID. The account's ID is not sent ([voice chat](voice.md)). |
 | `{{IF turn}}` | `voice_stun_urls`, `voice_turn` | STUN and TURN servers see participants' IP addresses, and a TURN server relays their encrypted audio. |
 | `{{IF webhooks}}` | [Server webhooks](webhooks.md) | Your receiver gets event bodies. Some carry an applicant's email address or a report's comment. |
 | `{{IF follow review}}` | `plugin_inbound_follow_address` is set and `hook_inbound_follow_mode` is not `off` | The addresses of the two accounts of each follow from another server, sent by the server when the follow arrives ([decision hooks](decision-hooks.md)). The recorded decision keeps the activity's address and which account sent it. |
@@ -257,7 +256,6 @@ We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHAL
 | {{IF payjp}} PAY.JP | Taking payments for supporter plans | Your email address, cardholder name, and plan. You enter card details in PAY.JP's frame, whose script runs on our payment pages | {{COUNTRY}} | {{LINK}} |
 | {{IF error reports}} {{ERROR TRACKER}} | Fixing faults | Error reports with personal details removed by pattern | {{COUNTRY}} | {{LINK}} |
 | {{IF telemetry}} {{METRICS OR TRACING SERVICE}} | Watching the health of the service | Measurements, and the names of other servers we contact | {{COUNTRY}} | {{LINK}} |
-| {{IF voice media server}} {{VOICE SERVICE}} | Carrying voice chat | Your IP address and audio while you speak in a room, and a session ID. Not your account | {{COUNTRY}} | {{LINK}} |
 | {{IF turn}} {{STUN OR TURN SERVICE}} | Connecting voice chat | Your IP address, and encrypted audio when relayed | {{COUNTRY}} | {{LINK}} |
 
 {{IF peer-to-peer voice}} In voice chat rooms, your browser connects directly to other participants, so they can see your IP address.

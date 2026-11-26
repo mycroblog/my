@@ -16,7 +16,7 @@ import (
 // NewPluginConn returns the connection of the kind's configured plugin, for the adapter of a port or a hook that the
 // settings select. The server builds it only for a selected kind, so one that delegates nothing opens no connection
 // (ADR-0146 §4). A build with the tag no_plugins has neither this nor those adapters: their file there reports
-// config.ExcludedError instead, as newLiveKitTransport does.
+// config.ExcludedError instead, as newSFU does.
 func NewPluginConn(cfg *config.Config, name string, meter kernel.Meter) (*client.Conn, error) {
 	k, ok := kind.ByName(name)
 	if !ok {

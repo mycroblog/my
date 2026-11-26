@@ -31,7 +31,6 @@ export type FakeVoiceEvent =
   | { readonly event: "reaction"; readonly data: Schema<"VoiceStreamReaction"> }
   | { readonly event: "signal"; readonly data: Schema<"VoiceStreamSignal"> }
   | { readonly event: "muted"; readonly data: Schema<"VoiceStreamMuted"> }
-  | { readonly event: "grant"; readonly data: Schema<"VoiceStreamGrant"> }
   | { readonly event: "removed" | "replaced" | "ended"; readonly data: Schema<"VoiceStreamEnd"> };
 
 /** What a test does with the reader's call on the fake. */
@@ -194,7 +193,6 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     }
   const grant = (): Schema<"VoiceGrant"> => ({
     kind: "p2p",
-    options: {},
     ice_servers: [],
     relay_only: false,
     expires_at: new Date(Date.now() + grantLifetime).toISOString(),

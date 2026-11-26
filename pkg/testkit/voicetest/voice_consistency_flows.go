@@ -4,7 +4,6 @@ package voicetest
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
@@ -226,35 +225,4 @@ func roomsClaimedElsewhere(t *testing.T, e *roomsEnv) {
 		t.Fatalf("the first Sweep: %v", err)
 	}
 	e.wantEnded(t, r, voice.EndHostDisconnected)
-}
-
-// roomsNewerMediaSession replaces the session of a participation while the media path reports
-// that the previous one left.
-func roomsNewerMediaSession(t *testing.T, e *roomsEnv) {
-	ctx := t.Context()
-	e.transport.sfu()
-	host, p := e.account(true), e.account(false)
-	hj := e.open(t, host, appvoice.SettingsInput{})
-	r := hj.Room.ID
-	first := e.join(t, p, r)
-	e.transport.connect(r, hj.Session, first.Session)
-
-	var second appvoice.Joined
-	e.transport.mu.Lock()
-	e.transport.onSessions = func() { second = e.join(t, p, r) }
-	e.transport.mu.Unlock()
-	ev := appvoice.Event{ID: "EV_LEFT", Kind: appvoice.MediaSessionLeft, Room: appvoice.RoomRef{ID: r}, Session: first.Session}
-	body, err := json.Marshal([]appvoice.Event{ev})
-	if err != nil {
-		t.Fatal(err)
-	}
-	res, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "livekit", Body: body, ClientIP: "192.0.2.1"})
-	if err != nil || res.Outcome != appvoice.MediaWebhookAccepted {
-		t.Fatalf("delivery = %+v, %v; want accepted", res, err)
-	}
-	if second.Session == "" {
-		t.Fatal("the hook did not run")
-	}
-	e.wantParticipant(t, r, p, true)
-	e.beat(t, p, r, second.Session)
 }

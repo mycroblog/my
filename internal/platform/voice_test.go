@@ -4,10 +4,6 @@ package platform_test
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -145,8 +141,8 @@ func TestAppVoice(t *testing.T) {
 	if off.Enabled() || (platform.Voice{}).Enabled() {
 		t.Error("voice = off is enabled")
 	}
-	if sfu := (platform.Voice{Method: platform.VoiceLiveKit, MaxParticipants: 100}); sfu.RoomCapacity() != 100 {
-		t.Errorf("livekit room capacity = %d, want 100", sfu.RoomCapacity())
+	if sfu := (platform.Voice{Method: platform.VoiceSFU, MaxParticipants: 100}); sfu.RoomCapacity() != 100 {
+		t.Errorf("sfu room capacity = %d, want 100", sfu.RoomCapacity())
 	}
 }
 
@@ -194,11 +190,6 @@ func TestVoiceRoomsThroughAPI(t *testing.T) {
 	}
 	e.want(e.do(http.MethodDelete, room, alice.token, nil, nil), http.StatusNoContent, "end")
 	e.want(e.do(http.MethodGet, room, bob, nil, nil), http.StatusNotFound, "get after the end")
-
-	// The endpoint of LiveKit's events answers 404 with voice = p2p.
-	if code := postWebhook(t, app.Handler(), "", []byte("{}")); code != http.StatusNotFound {
-		t.Errorf("LiveKit webhook with voice = p2p = %d, want 404", code)
-	}
 }
 
 // TestVoiceLeaveWithSession drives the leave of a session (ADR-0101 §6): a stale tab's leave,
@@ -252,70 +243,6 @@ func TestVoiceLeaveWithSession(t *testing.T) {
 	e.want(e.do(http.MethodDelete, room+"/participation", bob, nil, nil), http.StatusNoContent, "leave without a session")
 	count("after the leave without a session", 1)
 	e.want(e.do(http.MethodDelete, room+"/participation", bob, nil, nil), http.StatusNotFound, "leave without a session, out of the room")
-}
-
-// postWebhook posts body to the endpoint of LiveKit's events with the Authorization header auth
-// and returns the status.
-func postWebhook(t *testing.T, h http.Handler, auth string, body []byte) int {
-	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, "/voice/webhooks/livekit", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/webhook+json")
-	if auth != "" {
-		req.Header.Set("Authorization", auth)
-	}
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	return rec.Code
-}
-
-// liveKitWebhookToken signs a token of LiveKit's webhooks for body: HS256 with secret, the API
-// key in iss, and the base64 SHA-256 of body in sha256.
-func liveKitWebhookToken(key, secret string, body []byte) string {
-	enc := base64.RawURLEncoding
-	sum := sha256.Sum256(body)
-	now := time.Now()
-	claims, _ := json.Marshal(map[string]any{
-		"iss": key, "nbf": now.Unix(), "exp": now.Add(5 * time.Minute).Unix(), "sha256": base64.StdEncoding.EncodeToString(sum[:]),
-	})
-	signing := enc.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`)) + "." + enc.EncodeToString(claims)
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(signing))
-	return signing + "." + enc.EncodeToString(mac.Sum(nil))
-}
-
-// TestVoiceLiveKit starts the server with voice = livekit and checks the endpoint of LiveKit's
-// events (ADR-0101 §13): a delivery signed with the API secret is accepted, and one that does not
-// verify, such as a tampered body, is refused.
-func TestVoiceLiveKit(t *testing.T) {
-	t.Parallel()
-	const key, secret = "APIkey", "a-secret-of-the-livekit-api-key"
-	cfg := loadConfig(t, map[string]string{
-		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "livekit", "MY_VOICE_LIVEKIT_URL": "wss://livekit.example.org",
-		"MY_VOICE_LIVEKIT_API_KEY": key, "MY_VOICE_LIVEKIT_API_SECRET": secret,
-	})
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
-	if err != nil {
-		t.Fatalf("NewApp: %v", err)
-	}
-	t.Cleanup(func() { _ = app.Close() })
-	if !app.VoiceRooms.Enabled() {
-		t.Fatal("voice = livekit is not enabled")
-	}
-	body := []byte(`{"event":"participant_left","id":"EV_1","createdAt":"1793000000","room":{"name":"room-1"},"participant":{"identity":"session-1"}}`)
-	token := liveKitWebhookToken(key, secret, body)
-	if code := postWebhook(t, app.Handler(), token, body); code != http.StatusNoContent {
-		t.Errorf("signed delivery = %d, want 204", code)
-	}
-	tampered := bytes.Replace(body, []byte("session-1"), []byte("session-2"), 1)
-	if code := postWebhook(t, app.Handler(), token, tampered); code != http.StatusBadRequest {
-		t.Errorf("tampered delivery = %d, want 400", code)
-	}
-	if code := postWebhook(t, app.Handler(), liveKitWebhookToken(key, "another secret", body), body); code != http.StatusBadRequest {
-		t.Errorf("delivery signed with another secret = %d, want 400", code)
-	}
-	if code := postWebhook(t, app.Handler(), "", body); code != http.StatusBadRequest {
-		t.Errorf("unsigned delivery = %d, want 400", code)
-	}
 }
 
 // TestVoiceParticipantsThroughAPI drives the participant operations of voice = p2p on SQLite
@@ -409,58 +336,6 @@ func TestVoiceParticipantsThroughAPI(t *testing.T) {
 		if p.Account.Id == carol.id {
 			t.Errorf("the removed participant is still in the room: %+v", afterRemoval.Participants)
 		}
-	}
-}
-
-// postSora posts body to an endpoint of Sora's webhooks with Basic authentication and returns
-// the status and the body of the answer.
-func postSora(t *testing.T, h http.Handler, path, user, pass string, body []byte) (int, string) {
-	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(user, pass)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	return rec.Code, rec.Body.String()
-}
-
-// TestVoiceSora starts the server with voice = sora on a self-hosted Sora and checks the
-// endpoints of Sora's webhooks (ADR-0101 §13, §14): with the Basic authentication of the
-// webhooks, the auth webhook answers 200 and refuses a connection without a join value, and
-// the events endpoint answers 200 with a JSON object; without it, both refuse.
-func TestVoiceSora(t *testing.T) {
-	t.Parallel()
-	cfg := loadConfig(t, map[string]string{
-		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "sora", "MY_VOICE_SORA_MODE": "self_hosted",
-		"MY_VOICE_SORA_SIGNALING_URLS": "wss://sora.example.org/signaling", "MY_VOICE_SORA_API_URL": "https://sora-api.example.org",
-		"MY_VOICE_SORA_WEBHOOK_USERNAME": "sora", "MY_VOICE_SORA_WEBHOOK_PASSWORD": "hunter2",
-		"MY_VOICE_SORA_JOIN_SECRET": "a-join-secret-of-at-least-32-bytes!",
-	})
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
-	if err != nil {
-		t.Fatalf("NewApp: %v", err)
-	}
-	t.Cleanup(func() { _ = app.Close() })
-	if !app.VoiceRooms.Enabled() {
-		t.Fatal("voice = sora is not enabled")
-	}
-	auth := []byte(`{"channel_id":"room-1","connection_id":"CONN1","role":"recvonly","metadata":{"join":"forged"}}`)
-	code, body := postSora(t, app.Handler(), "/voice/webhooks/sora/auth", "sora", "hunter2", auth)
-	if code != http.StatusOK || !strings.Contains(body, `"allowed":false`) {
-		t.Errorf("auth webhook = %d %s, want 200 and a refusal", code, body)
-	}
-	if code, _ := postSora(t, app.Handler(), "/voice/webhooks/sora/auth", "sora", "wrong", auth); code != http.StatusUnauthorized {
-		t.Errorf("auth webhook with a wrong password = %d, want 401", code)
-	}
-	event := []byte(`{"type":"connection.destroyed","id":"EV_1","channel_id":"room-1","client_id":"session-1","data":{"reason":"normal"}}`)
-	if code, body := postSora(t, app.Handler(), "/voice/webhooks/sora/events", "sora", "hunter2", event); code != http.StatusOK || body != "{}" {
-		t.Errorf("events webhook = %d %s, want 200 {}", code, body)
-	}
-	if code, _ := postSora(t, app.Handler(), "/voice/webhooks/sora/events", "other", "hunter2", event); code != http.StatusBadRequest {
-		t.Errorf("events webhook with a wrong user = %d, want 400", code)
-	}
-	if code := postWebhook(t, app.Handler(), "", []byte("{}")); code != http.StatusNotFound {
-		t.Errorf("LiveKit webhook with voice = sora = %d, want 404", code)
 	}
 }
 

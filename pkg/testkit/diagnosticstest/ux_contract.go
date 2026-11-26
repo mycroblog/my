@@ -111,7 +111,7 @@ func uxNames(t *testing.T, repo appdiagnostics.UXRepository) {
 		ms[i] = appdiagnostics.UXMeasurement{Metric: diagnostics.UXPress, Name: fmt.Sprintf("action.n%d", i), Value: 10}
 	}
 	u.Record(ctx, ms)
-	u.Record(ctx, []appdiagnostics.UXMeasurement{{Metric: diagnostics.UXCallPacketLoss, Name: "sora", Value: 1.5}})
+	u.Record(ctx, []appdiagnostics.UXMeasurement{{Metric: diagnostics.UXCallPacketLoss, Name: "sfu", Value: 1.5}})
 	if err := u.Close(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func uxNames(t *testing.T, repo appdiagnostics.UXRepository) {
 	if got := len(meter.Measurements("my.ux.duration", map[string]string{"my.ux.name": diagnostics.UXOtherName})); got != 5 {
 		t.Errorf("my.ux.duration of other = %d measurements, want 5", got)
 	}
-	if got := meter.Sum("my.ux.call.packet_loss", map[string]string{"my.ux.name": "sora"}); got != 1.5 {
+	if got := meter.Sum("my.ux.call.packet_loss", map[string]string{"my.ux.name": "sfu"}); got != 1.5 {
 		t.Errorf("my.ux.call.packet_loss = %v, want 1.5", got)
 	}
 	if err := meter.Err(); err != nil {

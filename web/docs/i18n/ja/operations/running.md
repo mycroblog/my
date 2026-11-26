@@ -613,7 +613,6 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 | 種類 | 順序を保つもの |
 | --- | --- |
 | `federation.fanout`、`federation.deliver` | いいねとその取り消しの配送 |
-| `voice.apply_media_event`、`voice.apply` | 1 つの通話のルームのイベント |
 | `supporters.sync`、`supporters.command` | 1 つのサブスクリプションの変更 |
 
 アップグレードするとき:

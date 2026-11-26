@@ -126,7 +126,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        contract: [postgres, stream, mail, blob, voice, search, acme]
+        contract: [postgres, stream, mail, blob, search, acme]
     uses: ./.github/workflows/contract.yml
     with:
       contract: ${{ matrix.contract }}

@@ -8,8 +8,7 @@
 //   went through for 45 seconds (the server's TTL, past which it dropped the session), ends the call as `lost`.
 // - The room's stream runs on the same session for the whole call (app-data's runVoiceStream opens it again whenever it
 //   drops), and its events go on: `state` to the cache and the audio's roster, `signal` to the audio, `mic` and
-//   `reaction` to the state, `muted` turns the microphone off, `grant` renews or reconnects the audio, and `removed`,
-//   `replaced` and `ended` end the call. A stream the server refuses (a 404: it holds the session no more) ends it as
+//   `reaction` to the state, `muted` turns the microphone off, and `removed`, `replaced` and `ended` end the call. A stream the server refuses (a 404: it holds the session no more) ends it as
 //   `lost`.
 // - 10 minutes before a P2P grant expires (halfway through a shorter lifetime, counted from the server's time of the
 //   answer, and never within 30 seconds of the last) the call asks for a new one and gives it to the audio (`renew`:
@@ -168,7 +167,6 @@ export function roomGrant(grant: VoiceGrant): RoomGrant {
     kind: grant.kind,
     url: grant.url,
     token: grant.token,
-    options: grant.options,
     iceServers: grant.ice_servers,
     relayOnly: grant.relay_only,
     expiresAt: Date.parse(grant.expires_at),
@@ -476,13 +474,6 @@ export class VoiceCall {
         this.#micHeard = false;
         this.#set({ mutedBy: event.by });
         this.#changeMicrophone(false).catch(() => undefined);
-        return;
-      case "grant":
-        this.#grant = roomGrant(event.grant);
-        this.#grantTimes(event.grant, null);
-        if (event.reconnect) this.#audio.reconnect(this.#grant);
-        else this.#audio.renew(this.#grant);
-        this.#scheduleRenewal();
         return;
       case "removed":
       case "replaced":

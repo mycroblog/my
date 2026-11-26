@@ -100,7 +100,6 @@
 | `{{IF payjp}}` | `payments = payjp` | 电子邮件地址和方案。浏览器在服务器的付款页面上加载 payjp.js，银行卡信息输入到 PAY.JP 的 iframe 中，姓名和电子邮件地址为 3-D Secure 发送给 PAY.JP（[PAY.JP](payments-payjp.md#card-data-and-pci-dss)）。 |
 | `{{IF error reports}}` | `errors_exporter` | 经过清洗、不含账号、IP 地址、正文或请求头的报告。清洗按模式匹配，因此可能残留用户文本的片段（[错误报告](error-reporting.md#what-scrubbing-does-and-does-not-guarantee)）。 |
 | `{{IF telemetry}}` | `metrics_exporter`、`traces_exporter` | 不含账号或客户端 IP 地址的指标和 span。出站请求的 span 会写明远程服务器的主机名（[运行](running.md)）。 |
-| `{{IF voice media server}}` | `voice` 为 `livekit` 或 `sora` | 参与者的 IP 地址、发言时的音频、会话 ID 和房间 ID。不会发送账号的 ID（[语音聊天](voice.md)）。 |
 | `{{IF turn}}` | `voice_stun_urls`、`voice_turn` | STUN 和 TURN 服务器能看到参与者的 IP 地址，TURN 服务器还会中继他们经过加密的音频。 |
 | `{{IF webhooks}}` | [服务器 webhook](webhooks.md) | 你的接收端会收到事件正文。其中一些包含申请人的电子邮件地址或举报的说明。 |
 | `{{IF follow review}}` | 设置了 `plugin_inbound_follow_address`，且 `hook_inbound_follow_mode` 不为 `off` | 来自其他服务器的每个关注所涉及的两个账号的地址，在关注到达时由服务器发送（[决策钩子](decision-hooks.md)）。记录的决定会保留该活动的地址以及发送它的账号。 |
@@ -263,7 +262,6 @@ We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHAL
 | {{IF payjp}} PAY.JP | Taking payments for supporter plans | Your email address, cardholder name, and plan. You enter card details in PAY.JP's frame, whose script runs on our payment pages | {{COUNTRY}} | {{LINK}} |
 | {{IF error reports}} {{ERROR TRACKER}} | Fixing faults | Error reports with personal details removed by pattern | {{COUNTRY}} | {{LINK}} |
 | {{IF telemetry}} {{METRICS OR TRACING SERVICE}} | Watching the health of the service | Measurements, and the names of other servers we contact | {{COUNTRY}} | {{LINK}} |
-| {{IF voice media server}} {{VOICE SERVICE}} | Carrying voice chat | Your IP address and audio while you speak in a room, and a session ID. Not your account | {{COUNTRY}} | {{LINK}} |
 | {{IF turn}} {{STUN OR TURN SERVICE}} | Connecting voice chat | Your IP address, and encrypted audio when relayed | {{COUNTRY}} | {{LINK}} |
 
 {{IF peer-to-peer voice}} In voice chat rooms, your browser connects directly to other participants, so they can see your IP address.
