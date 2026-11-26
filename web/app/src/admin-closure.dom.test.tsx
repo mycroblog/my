@@ -214,12 +214,17 @@ test("once the closing date passed, the screen says so, offers Check and close f
 });
 
 test("the closing date passing while the screen is open turns it to Check and close without a reload", async () => {
-  const soon = new Date(Date.now() + 1200).toISOString();
+  // The closing date is set when the screen first reads it, not before the app starts, so that a slow start
+  // under load cannot pass it before the first render.
+  let soon: string | undefined;
+  const closesAt = () => (soon ??= new Date(Date.now() + 2000).toISOString());
   const on = fakeApp({ viewer: "hana", closure: "announced" });
-  on.fake.script("GET /admin/closure", { change: (closure) => ({ ...closure, closes_at: soon }) });
+  on.fake.script("GET /admin/closure", { change: (closure) => ({ ...closure, closes_at: closesAt() }) });
   on.fake.script("GET /instance", {
     change: (instance) =>
-      instance.closure === undefined ? instance : { ...instance, closure: { ...instance.closure, closes_at: soon } },
+      instance.closure === undefined
+        ? instance
+        : { ...instance, closure: { ...instance.closure, closes_at: closesAt() } },
   });
   await atClosure("/admin/closure", {}, on);
   expect(words(section("Announcement"))).toContain("StateAnnounced");
@@ -229,7 +234,7 @@ test("the closing date passing while the screen is open turns it to Check and cl
     () => {
       expect(main().getAllByRole("link", { name: "Check and close" })).toHaveLength(1);
     },
-    { timeout: 3000 },
+    { timeout: 5000 },
   );
   expect(words(section("Announcement"))).toContain("StateClosing date passed");
   await waitFor(() => {
