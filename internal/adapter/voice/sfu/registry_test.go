@@ -117,3 +117,31 @@ func TestConsumeOnce(t *testing.T) {
 		t.Errorf("Consume of an expired ticket = %v, want ErrInvalidTicket", err)
 	}
 }
+
+// TestResize grows a room's reservation only while its node has room, and shrinks it always.
+func TestResize(t *testing.T) {
+	reg, _ := newRegistry(t, sfu.NodeLease{ID: "a", URL: "wss://a", Capacity: 25})
+	for _, room := range []string{"r1", "r2"} {
+		if _, err := reg.Place(t.Context(), room, 10, ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := reg.Resize(t.Context(), "r1", 15); err != nil {
+		t.Errorf("Resize to the capacity: %v", err)
+	}
+	if err := reg.Resize(t.Context(), "r2", 11); !errors.Is(err, sfu.ErrNoCapacity) {
+		t.Errorf("Resize past the capacity = %v, want ErrNoCapacity", err)
+	}
+	if err := reg.Resize(t.Context(), "r1", 5); err != nil {
+		t.Errorf("Resize down: %v", err)
+	}
+	if err := reg.Resize(t.Context(), "r2", 20); err != nil {
+		t.Errorf("Resize into the freed room: %v", err)
+	}
+	if a, _, _ := reg.Assignment(t.Context(), "r2"); a.Max != 20 {
+		t.Errorf("Assignment max = %d, want 20", a.Max)
+	}
+	if _, err := reg.Place(t.Context(), "r3", 1, ""); !errors.Is(err, sfu.ErrNoCapacity) {
+		t.Errorf("Place on a full node = %v, want ErrNoCapacity", err)
+	}
+}

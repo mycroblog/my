@@ -176,8 +176,8 @@ func (n *Node) takeSession() bool {
 
 func (n *Node) releaseSession() { n.sessions.Add(-1) }
 
-// keepLeases renews the leases every sfu.LeaseRenewal, and checks once a minute that the rooms
-// placed on the node without connections are still open.
+// keepLeases renews the leases every sfu.LeaseRenewal, and checks the rooms placed on the node once
+// a minute (checkHeld).
 func (n *Node) keepLeases() {
 	t := time.NewTicker(sfu.LeaseRenewal)
 	defer t.Stop()
@@ -192,7 +192,7 @@ func (n *Node) keepLeases() {
 				n.o.Logger.Warn("a voice chat media node could not renew its lease", "error", err)
 			}
 		case <-check.C:
-			n.releaseEnded(n.base)
+			n.checkHeld(n.base)
 		}
 	}
 }
@@ -225,24 +225,25 @@ func (n *Node) renew(ctx context.Context) error {
 	return nil
 }
 
-// releaseEnded releases the rooms placed on the node that have no connection and ended, which a
-// Close of the transport that never ran would leave reserved.
-func (n *Node) releaseEnded(ctx context.Context) {
+// checkHeld reads the rooms placed on the node: it releases those that ended, which a Close of the
+// transport that never ran would leave reserved, and lowers the reservation of those whose maximum
+// went down (a rise is reserved before it commits, voice.MaximumReserver).
+func (n *Node) checkHeld(ctx context.Context) {
 	n.mu.Lock()
-	var idle []string
-	for _, h := range n.held {
-		if n.rooms[h.ID] == nil {
-			idle = append(idle, h.ID)
-		}
-	}
+	held := append([]sfu.HeldRoom(nil), n.held...)
 	n.mu.Unlock()
-	for _, id := range idle {
-		st, err := n.o.Rooms.MediaRoom(ctx, id)
-		if err != nil || st.Open {
+	for _, h := range held {
+		st, err := n.o.Rooms.MediaRoom(ctx, h.ID)
+		switch {
+		case err != nil:
 			continue
+		case !st.Open:
+			err = n.o.Registry.Release(ctx, h.ID)
+		case st.MaxParticipants > 0 && st.MaxParticipants < h.Max:
+			err = n.o.Registry.Resize(ctx, h.ID, st.MaxParticipants)
 		}
-		if err := n.o.Registry.Release(ctx, id); err != nil {
-			n.o.Logger.WarnContext(ctx, "a voice chat media node could not release a room that ended", "error", err)
+		if err != nil {
+			n.o.Logger.WarnContext(ctx, "a voice chat media node could not update the reservation of a room", "error", err)
 		}
 	}
 }

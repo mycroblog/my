@@ -42,7 +42,10 @@ type Transport struct {
 	credentials kernel.Counter
 }
 
-var _ voice.Transport = (*Transport)(nil)
+var (
+	_ voice.Transport       = (*Transport)(nil)
+	_ voice.MaximumReserver = (*Transport)(nil)
+)
 
 // New returns the Transport of o.
 func New(o Options) *Transport {
@@ -111,6 +114,12 @@ func (t *Transport) Grant(ctx context.Context, room voice.RoomRef, session voice
 
 func (t *Transport) count(ctx context.Context, outcome string) {
 	t.credentials.Add(ctx, 1, kernel.NewLabels("my.voice.turn", t.o.TURN.Name(), "my.outcome", outcome))
+}
+
+// ReserveMaximum implements voice.MaximumReserver: the room's node reserves its larger maximum, or
+// the call fails with ErrNoCapacity and the maximum does not change (Registry.Resize).
+func (t *Transport) ReserveMaximum(ctx context.Context, room voice.RoomRef) error {
+	return t.o.Registry.Resize(ctx, room.ID, t.max(room))
 }
 
 // SetSpeaking implements voice.Transport; the node reads the room again and applies it.

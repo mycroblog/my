@@ -108,3 +108,46 @@ func freePort(t *testing.T, network string) int {
 	defer l.Close()
 	return l.Addr().(*net.TCPAddr).Port
 }
+
+// TestVoiceSFURaisingTheMaximum raises a room's maximum through the client API with voice = sfu
+// (ADR-0101 §14): a rise that the room's node has room for is reserved and commits; one it has no
+// room for is a 503 and the maximum stays; lowering it always commits.
+func TestVoiceSFURaisingTheMaximum(t *testing.T) {
+	t.Parallel()
+	udp, tcp := freePort(t, "udp"), freePort(t, "tcp")
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_VOICE": "sfu",
+		"MY_VOICE_MAX_PARTICIPANTS": "50", "MY_VOICE_SFU_NODE_CAPACITY": "15",
+		"MY_VOICE_SFU_UDP_PORT": strconv.Itoa(udp), "MY_VOICE_SFU_TCP_PORT": strconv.Itoa(tcp),
+	})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	if err := app.VoiceNode.Start(t.Context()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	t.Cleanup(func() { _ = app.VoiceNode.Close(context.Background()) })
+	e := &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}
+	host := e.user("alice")
+	var joined clientapi.VoiceRoomJoin
+	e.want(e.do(http.MethodPost, "/voice/rooms", host.token, map[string]any{"name": "Talk", "max_participants": 10}, &joined), http.StatusCreated, "open with 10")
+	room := "/voice/rooms/" + joined.Room.Id
+	if p := e.want(e.do(http.MethodPatch, room, host.token, map[string]any{"max_participants": 20}, nil), http.StatusServiceUnavailable, "raise past the node"); p != clientapi.ProblemTypeVoiceUnavailable {
+		t.Errorf("raise past the node = %s, want %s", p, clientapi.ProblemTypeVoiceUnavailable)
+	}
+	var got clientapi.VoiceRoom
+	e.want(e.do(http.MethodGet, room, host.token, nil, &got), http.StatusOK, "get")
+	if got.MaxParticipants != 10 {
+		t.Errorf("max_participants after a refused rise = %d, want 10", got.MaxParticipants)
+	}
+	e.want(e.do(http.MethodPatch, room, host.token, map[string]any{"max_participants": 15}, &got), http.StatusOK, "raise to the node's capacity")
+	if got.MaxParticipants != 15 {
+		t.Errorf("max_participants = %d, want 15", got.MaxParticipants)
+	}
+	e.want(e.do(http.MethodPatch, room, host.token, map[string]any{"max_participants": 5}, &got), http.StatusOK, "lower")
+	if got.MaxParticipants != 5 {
+		t.Errorf("max_participants = %d, want 5", got.MaxParticipants)
+	}
+}

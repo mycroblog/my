@@ -501,6 +501,64 @@ func (r *Registry) candidates(ctx context.Context, avoid string) ([]NodeLease, e
 	return nodes, nil
 }
 
+// Resize changes the maximum that a room reserves on its node to maximum: a larger one only when
+// the node still has room for it, ErrNoCapacity otherwise, and a smaller one always. A room on no
+// live node has nothing to change; its next placement reserves the maximum it is given.
+func (r *Registry) Resize(ctx context.Context, room string, maximum int) error {
+	a, ok, err := r.Assignment(ctx, room)
+	if err != nil || !ok {
+		return err
+	}
+	l, live, err := r.Lease(ctx, a.Node)
+	if err != nil || !live {
+		return err
+	}
+	fit := true
+	err = r.update(ctx, NamespaceReserved, a.Node, LeaseTTL, func(old []byte) ([]byte, bool, error) {
+		rs, err := decodeReservations(old)
+		if err != nil {
+			return nil, false, err
+		}
+		res, held := rs[room]
+		if held && res.Max == maximum {
+			return nil, false, nil
+		}
+		sum := 0
+		for id, other := range rs {
+			if id != room {
+				sum += other.Max
+			}
+		}
+		if (!held || maximum > res.Max) && sum+maximum > l.Capacity {
+			fit = false
+			return nil, false, nil
+		}
+		if !held {
+			res.At = r.clock.Now()
+		}
+		res.Max = maximum
+		rs[room] = res
+		next, err := json.Marshal(rs)
+		return next, true, err
+	})
+	if err != nil {
+		return err
+	}
+	if !fit {
+		return ErrNoCapacity
+	}
+	// The assignment shows the reservation too; a node that renews it meanwhile keeps its own.
+	return r.update(ctx, NamespaceRoom, room, LeaseTTL, func(old []byte) ([]byte, bool, error) {
+		cur, ok, err := decodeAssignment(old)
+		if err != nil || !ok || cur.Node != a.Node || cur.Max == maximum {
+			return nil, false, err
+		}
+		cur.Max = maximum
+		next, err := json.Marshal(cur)
+		return next, true, err
+	})
+}
+
 // Release removes the assignment of a room and its reservation.
 func (r *Registry) Release(ctx context.Context, room string) error {
 	var node string

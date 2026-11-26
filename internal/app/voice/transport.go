@@ -88,6 +88,15 @@ type ICEServer struct {
 	Credential string
 }
 
+// MaximumReserver is implemented by a transport that reserves the maximum of each room on its
+// media servers (sfu, ADR-0101 §14), so that a server never holds more people than its capacity.
+// Update calls ReserveMaximum with the larger maximum (room.MaxParticipants, 0 for none) before a
+// change that raises it commits, and refuses the change with ErrTransportUnavailable when it
+// fails; a lower maximum is left for the transport to notice on its own.
+type MaximumReserver interface {
+	ReserveMaximum(ctx context.Context, room RoomRef) error
+}
+
 // ConnectAuthorizer is implemented by a transport whose media server asks before every
 // connect; decide applies the room domain (bans, roles, one room per account). The status and
 // the response are the answer to the media server; err reports a request that did not
