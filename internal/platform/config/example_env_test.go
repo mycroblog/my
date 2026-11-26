@@ -52,11 +52,14 @@ MY_VERSION=
 # MY_HTTP_PORT=8080
 
 # The layers, so that every docker compose command takes them without -f options (: is ; on Windows). Any of
-# compose.postgres.yaml, compose.s3.yaml, and compose.caddy.yaml; see the header of each.
+# compose.postgres.yaml, compose.s3.yaml, compose.caddy.yaml, and compose.sfu.yaml; see the header of each.
 # COMPOSE_FILE=compose.yaml:compose.postgres.yaml:compose.s3.yaml:compose.caddy.yaml
 
 # compose.postgres.yaml: the password of the database, letters and digits only (openssl rand -hex 32).
 # POSTGRES_PASSWORD=
+
+# compose.sfu.yaml, which needs compose.postgres.yaml and compose.caddy.yaml: under "Voice chat" below, set
+# MY_VOICE_SFU_PUBLIC_IP to the public address of this machine.
 
 # compose.s3.yaml with the bundled Garage: the profile, and two secrets of Garage (each from openssl rand -hex 32). Under
 # "Media storage" below, also set these settings:

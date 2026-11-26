@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Layer on compose.yaml, compose.postgres.yaml and compose.caddy.yaml, in that order: voice chat with the server's own
+# media node (voice = sfu, docs/operations/voice.md). The server splits into three processes that share the database:
+#
+#   my      role = web: the HTTP server, which places the rooms on the media nodes
+#   worker  role = worker: the jobs, which role = web does not run
+#   sfu     role = sfu: the media node, which takes the audio on UDP and TCP ports of this machine
+#
+# The processes pass the rooms' signals to each other through PostgreSQL (stream = postgres), so this file needs
+# compose.postgres.yaml. Caddy sends the node's WebSocket (/voice/sfu, the default voice_sfu_public_url) to the node and
+# every other request to the server. Set MY_VOICE_SFU_PUBLIC_IP in .env to the public address of this machine: the
+# container's own address is private, and the browsers send the audio to the address the node gives them. Open the UDP
+# port MY_VOICE_SFU_UDP_PORT (7882) and the TCP port MY_VOICE_SFU_TCP_PORT (7881) to the internet.
+#
+#   docker compose -f compose.yaml -f compose.postgres.yaml -f compose.caddy.yaml -f compose.sfu.yaml up -d
+#
+# worker and sfu run the published image of MY_VERSION: compose.build.yaml builds only the image of compose.yaml's
+# services.
+
+# What the three processes set over .env.
+x-voice: &voice
+  MY_HOST: ${MY_HOST:?set MY_HOST in .env}
+  MY_DATABASE: postgres
+  MY_DATABASE_URL: postgres://my:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/my?sslmode=disable
+  MY_BLOB_FS_DIR: ${MY_BLOB_FS_DIR:-/data/blobs}
+  MY_KEK_FILE: /run/secrets/my_kek
+  MY_MAINTENANCE: ${MY_MAINTENANCE:-false}
+  MY_MAINTENANCE_MESSAGE: ${MY_MAINTENANCE_MESSAGE:-}
+  MY_MAINTENANCE_UNTIL: ${MY_MAINTENANCE_UNTIL:-}
+  MY_TRUSTED_PROXIES: ${MY_TRUSTED_PROXIES:-172.16.0.0/12,192.168.0.0/16}
+  MY_VOICE: sfu
+  MY_STREAM: postgres
+
+# The server image, as compose.yaml runs it, for the processes that this file adds.
+x-process: &process
+  image: ghcr.io/mycroblog/my:${MY_VERSION:?set MY_VERSION in .env to a version such as 0.1.0; there is no latest}
+  env_file: .env
+  depends_on:
+    upgrade:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+  secrets:
+    - my_kek
+  volumes:
+    - data:/data
+  restart: unless-stopped
+
+services:
+  my:
+    environment:
+      <<: *voice
+      MY_ROLE: web
+
+  worker:
+    <<: *process
+    environment:
+      <<: *voice
+      MY_ROLE: worker
+
+  sfu:
+    <<: *process
+    environment:
+      <<: *voice
+      MY_ROLE: sfu
+      MY_VOICE_SFU_PUBLIC_IP: ${MY_VOICE_SFU_PUBLIC_IP:?set MY_VOICE_SFU_PUBLIC_IP in .env to the public address of this machine}
+    ports:
+      # The same port outside and inside: the node gives the browsers voice_sfu_udp_port and voice_sfu_tcp_port.
+      - "${MY_VOICE_SFU_UDP_PORT:-7882}:${MY_VOICE_SFU_UDP_PORT:-7882}/udp"
+      - "${MY_VOICE_SFU_TCP_PORT:-7881}:${MY_VOICE_SFU_TCP_PORT:-7881}/tcp"
+    # On SIGTERM the node moves its rooms to another node and waits up to 20 seconds for its clients to leave, and the
+    # server exits within 28 seconds: Docker's default of 10 seconds would cut that short.
+    stop_grace_period: 30s
+
+  caddy:
+    depends_on:
+      sfu:
+        condition: service_started
+
+configs:
+  caddyfile:
+    content: |
+      ${MY_HOST:?set MY_HOST in .env} {
+        handle /voice/sfu {
+          reverse_proxy sfu:8080
+        }
+        handle {
+          reverse_proxy my:8080
+        }
+      }

@@ -32,6 +32,7 @@ The [production checklist](production-checklist.md) lists the checks and what to
 | `all` (default) | All routes | Runs |
 | `web` | All routes | Does not run |
 | `worker` | Health checks only (for platform probes) | Runs |
+| `sfu` | Health checks and the WebSocket of the media node of `voice = sfu`, which takes the audio on its own UDP and TCP ports ([Voice chat](voice.md#run-media-nodes)) | Does not run |
 
 Logs go to standard error as JSON Lines. Every line has `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`) and `severity`, the same level in the form Cloud Logging reads (`DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL` for an error that stops the process).
 Logs written while handling a request carry a `request_id`, and the same ID is returned in the `X-Request-Id` response header.
@@ -125,6 +126,7 @@ Logs go to standard error and the other EMF lines go to standard output. The `aw
 | `compose.postgres.yaml` | PostgreSQL in a container, in the volume `postgres` | You want PostgreSQL on this machine. For a PostgreSQL server elsewhere, leave it out and set `MY_DATABASE` and `MY_DATABASE_URL` in `.env` |
 | `compose.s3.yaml` | Media in an S3-compatible bucket; with `COMPOSE_PROFILES=garage` also a one-node [Garage](https://garagehq.deuxfleurs.fr/) store in the volume `garage` | Media outgrow one disk, or you want them in a bucket. Without the profile, the store is the external one of the `MY_BLOB_S3_*` settings |
 | `compose.caddy.yaml` | Caddy, with TLS certificates on ports 80 and 443 | `MY_HOST` is a public domain and nothing else terminates TLS on this machine |
+| `compose.sfu.yaml` | Voice chat with a media node: the server splits into `role = web`, `worker` and `sfu`, and Caddy sends the node's WebSocket to the node. Needs `compose.postgres.yaml` and `compose.caddy.yaml` | You want `voice = sfu` ([Voice chat](voice.md#docker-compose)) |
 | `compose.build.yaml` | Builds the image from a checkout | You run your own build |
 
 Choose the database and the media store before the first start: the data does not move by itself when the files change
@@ -194,8 +196,9 @@ MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
 - **Connections.** TLS 1.2 or later with Go's default cipher suites, HTTP/2 and HTTP/1.1, at most 64 KiB of request
   headers, and at most 100 concurrent streams on an HTTP/2 connection. The timeouts are those of plain HTTP. The server
   still adds `Strict-Transport-Security` to every response ([Security headers](#security-headers)).
-- **Roles.** Only the `web` and `all` roles listen with TLS. A `worker` serves its health checks in plain HTTP on
-  `listen` (`:8080` by default) and opens no port 80.
+- **Roles.** Only the `web`, `all` and `sfu` roles listen with TLS. A media node (`role = sfu`) serves the host of
+  `voice_sfu_public_url` instead of `host`. A `worker` serves its health checks in plain HTTP on `listen` (`:8080` by
+  default) and opens no port 80.
 - **Client addresses.** Without a proxy in front, the connection's peer is the client: leave `trusted_proxies` empty.
   Set it only when a CDN in front connects to the server over `https`.
 - **Maintenance mode.** `my serve -maintenance` reads neither `tls` nor the certificates and answers in plain HTTP on
@@ -608,6 +611,11 @@ On SIGTERM or SIGINT the server shuts down gracefully.
 3. After 25 seconds it cancels the context of the remaining requests and jobs and closes connections.
    It then gives a cancelled job up to 3 more seconds to record its result, and exits with code 1 (at most 28 seconds in all, within the default 30-second grace period of Kubernetes and ECS).
    A cancelled job is retried. A job that does not stop within those 3 seconds, or that is killed midway, is abandoned and picked up again by a worker when its lease expires, so it may run twice.
+
+A process that runs a media node of `voice = sfu` (`role = sfu`, or `all`) first drains it: it stops taking rooms, moves
+its rooms to other nodes and tells their clients to reconnect there, and waits up to 20 of the 25 seconds for them to
+leave before it waits for the requests. Give it the same grace period of at least 30 seconds (Docker's default is 10:
+set `stop_grace_period` or `docker stop -t 30`). See [Voice chat](voice.md#drain-a-node-for-a-deploy).
 
 A panic in one of the server's background tasks starts the same shutdown, so that the server never keeps running in a broken state.
 The `serve failed` log line names the task, and the process exits with code 1 for the platform or the process manager to restart it.

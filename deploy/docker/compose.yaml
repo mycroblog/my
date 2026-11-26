@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # The deployment of one `my serve` process with role = all, on a SQLite file and media files in a named volume.
-# compose.postgres.yaml, compose.s3.yaml, and compose.caddy.yaml layer on top of it (docs/operations/running.md,
-# "Docker Compose files"). `docker compose up -d` runs three one-off services in this order before the server, each only
-# after the previous one succeeded, so a failure leaves the server stopped (docs/operations/database.md, "Upgrading"):
+# compose.postgres.yaml, compose.s3.yaml, compose.caddy.yaml, and compose.sfu.yaml layer on top of it
+# (docs/operations/running.md, "Docker Compose files"). `docker compose up -d` runs three one-off services in this order
+# before the server, each only after the previous one succeeded, so a failure leaves the server stopped
+# (docs/operations/database.md, "Upgrading"):
 #
 #   upgrade-check  my db upgrade -check: stops before the schema would drop data that is not carried over yet
 #   schema         my schema apply: brings the database to this release's schema, which the server image holds
