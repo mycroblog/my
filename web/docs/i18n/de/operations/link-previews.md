@@ -219,7 +219,7 @@ Die Anfragen senden keine Cookies und keinen `Referer`, und nichts sagt, welches
 Sie sagt, was dieser Server tut, anhand von `link_cards` und `link_cards_ignore_robots_txt`, und sie zeigt den Kontakt des Servers (`contact_account`, `contact_email`). Setze einen Kontakt, damit eine Seite eine Anlaufstelle für Fragen hat: Ohne einen sagt die Seite, dass dieser Server keinen veröffentlicht.
 Bei eingeschaltetem `link_cards_ignore_robots_txt` sagt die Seite, dass eine Seite diesen Server nicht in `robots.txt` ablehnen kann.
 
-<!-- source: robotstxt e8d2deaef93d -->
+<!-- source: robotstxt 8646f54fafaf -->
 ### robots.txt
 
 Der Name in `robots.txt` ist `my-linkcard`, in beliebiger Schreibweise. Ohne eine Gruppe dieses Namens gilt die Gruppe `*`, wie RFC 9309 es vorsieht. `Allow`, `Disallow`, `*` und `$` werden gelesen, wobei die längste Übereinstimmung gewinnt und bei Gleichstand `Allow`; `Crawl-delay` und andere Einträge werden nicht gelesen.
@@ -233,7 +233,7 @@ Der Name in `robots.txt` ist `my-linkcard`, in beliebiger Schreibweise. Ohne ein
 | Mehr als 5 Weiterleitungen | Keine Datei: ruft ab | 24 Stunden |
 
 - Die URL der Seite wird geprüft, bevor sie angefragt wird, egal welche Sichtbarkeit der Beitrag hat. Das gilt auch für jede URL, auf die sie weiterleitet, gegen die `robots.txt` der Origin dieser URL, und eine Weiterleitung auf eine abgelehnte URL endet dort: Der Server fragt sie nicht an und erzeugt keine Karte.
-- Eine URL, die `robots.txt` verbietet, wird 24 Stunden lang nicht erneut abgerufen, wie jeder andere Fehlschlag einer Seite. Wenn die Datei nur nicht gelesen werden konnte, versucht der Server die Seite eine Stunde später erneut, bis zum Limit der Versuche des Jobs.
+- Eine URL, die `robots.txt` verbietet, wird 24 Stunden lang nicht erneut abgerufen, wie jeder andere Fehlschlag einer Seite. Wenn die Datei nur nicht gelesen werden konnte, versucht der Server die Seite eine Stunde später erneut, bis zum Limit der Versuche des Jobs, und lässt den Beitrag dann ohne Karte. Der Fehler des Jobs nennt den Status oder den Netzwerkfehler.
 - Ein Bild wird auf dieselbe Weise gegen seine eigene Origin geprüft. Ein verbotenes Bild hinterlässt eine Karte ohne Bild. Wenn die Datei nur nicht gelesen werden konnte, bleibt ein früher aufgezeichnetes Bild erhalten, und ein neues Bild wird bis zum nächsten erneuten Abruf weggelassen.
 - Ein erneuter Abruf, den ein Beitrag 14 Tage nach dem letzten Abruf auslösen kann, entfernt die Karte, wenn `robots.txt` ihre URL verbietet. Wenn die Datei nur nicht gelesen werden konnte, bleibt die Karte.
 - Der Server geht seine Karten nicht durch, um sie erneut zu prüfen, sodass eine Seite, die ihre Regeln ändert, eine Karte beim nächsten erneuten Abruf dieser Karte verliert.

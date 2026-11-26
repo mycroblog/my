@@ -213,20 +213,20 @@ O banco de dados nomeia os arquivos de mídia que usa, e a cópia da mídia é f
 A outra ordem é pior: todo arquivo enviado entre o backup da mídia e o backup do banco de dados estaria ausente depois de uma restauração,
 inclusive a mídia das publicações novas. Fazer ambos em modo de manutenção evita qualquer das duas lacunas.
 
-<!-- source: on-the-opentofu-targets 9862430f808c -->
-### Nos alvos OpenTofu
+<!-- source: on-the-opentofu-targets a0188744140f -->
+### Nos destinos do OpenTofu
 
-Os módulos não mantêm nenhum backup próprio além do que o provedor oferece: o PostgreSQL gerenciado do Cloud SQL e do RDS tem backups automáticos
-com uma retenção que você define, enquanto um banco de dados com apenas o histórico do provedor (Neon) só pode voltar até onde esse histórico alcança.
-Agende o seguinte por conta própria, com credenciais que a instância não tem:
+Os módulos não mantêm backup próprio além do que o provedor oferece: o PostgreSQL gerenciado do
+[Cloud SQL](deploy-google-cloud.md#cloud-sql) e do [RDS](deploy-aws.md#2-choose-the-database) tem backups automáticos com uma retenção que você define, enquanto um banco de dados com apenas o histórico do provedor (Neon) só pode voltar até onde esse histórico alcança.
+Agende isto por conta própria, com credenciais que a instância não tem:
 
-1. **O banco de dados, todos os dias.** Execute `pg_dump` no PostgreSQL da instância a partir de uma máquina ou de um job agendado fora do provedor que hospeda o
+1. **O banco de dados, todos os dias.** Execute `pg_dump` contra o PostgreSQL da instância a partir de uma máquina ou de uma tarefa agendada fora do provedor que hospeda o
    banco de dados (veja [PostgreSQL](#postgresql)), criptografe o dump e grave-o em um bucket de outra conta ou de outro provedor. Mantenha as gerações de
-   [Com que frequência e onde](#how-often-and-where). O job precisa da `database_url` e de nada mais; ele não pode ter a KEK.
-2. **A mídia, logo depois.** Com `versioning = true` no módulo do bucket, as versões são a cópia durante os últimos `noncurrent_version_days`;
+   [Com que frequência e onde](#how-often-and-where). A tarefa precisa de `database_url` e de mais nada; ela não deve ter a KEK.
+2. **A mídia, logo em seguida.** Com `versioning = true` no módulo do bucket, as versões são a cópia durante `noncurrent_version_days`;
    para o caso de perder a conta, execute também `rclone copy` do bucket da instância para um bucket em outro lugar, como em
-   [Mídia em um bucket](#media-in-a-bucket), no cronograma do dump do banco de dados.
-3. **A KEK e a configuração** não fazem parte do cronograma: faça o backup delas quando mudarem ([A KEK e a configuração](#the-kek-and-the-configuration)).
+   [Mídia em um bucket](#media-in-a-bucket), no mesmo agendamento do dump do banco de dados.
+3. **A KEK e a configuração** não fazem parte do agendamento: faça backup delas quando mudarem ([A KEK e a configuração](#the-kek-and-the-configuration)).
 
 <!-- source: the-kek-and-the-configuration b3d65ec5edb5 -->
 ### A KEK e a configuração

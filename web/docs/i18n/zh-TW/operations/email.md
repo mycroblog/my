@@ -153,7 +153,7 @@ my plugin test --kind mailer --mail-to you@example.com --mail-from noreply@socia
 
 第一個指令只確認外掛有回應，不會寄送任何郵件。第二個指令會寄送一則真正的訊息到 `--mail-to`，並向外掛送出一個沒有收件者的請求，外掛必須拒絕它。外掛收到訊息後伺服器就看不到它了，因此請查看實際送達的郵件：它的標頭必須包含 `Message-ID`、`Date` 和 `Auto-Submitted: auto-generated`。請參閱[測試外掛](plugins.md#test-a-plugin)。
 
-<!-- source: receive-ses-notifications-sns e21b650ab5fe -->
+<!-- source: receive-ses-notifications-sns aa8911000390 -->
 ### 接收 SES 通知（SNS）
 
 SES 的退信和投訴會送到 SNS 主題，再由該主題上的 HTTPS 訂閱送到伺服器的 `POST /mail/events/ses`。只有在設定了 `mail_ses_sns_topic_arn` 時，這個端點才會開放；否則它會回應 `404`。
@@ -200,7 +200,7 @@ aws sns subscribe --region ap-northeast-1 \
 | --- | --- |
 | `bounceType` 為 `Permanent` 的退信（任何子類型，例如 `General`、`NoEmail`、`Suppressed` 或 `OnAccountSuppressionList`） | `hard_bounce` |
 | 投訴（`complaintFeedbackType` 為 `not-spam` 者除外） | `complaint` |
-| `Transient` 或 `Undetermined` 的退信，以及投遞或寄送等其他通知 | 不記錄（回應 `200`） |
+| `Transient` 或 `Undetermined` 的退信、投遞或寄送等其他通知，以及 `mail.source` 不是 `mail_from` 位址的任何通知（共用同一個主題或 configuration set 的另一個實例所寄出的郵件） | 不記錄（回應 `200`） |
 
 SES 的 `feedbackId` 是紀錄的唯一鍵，因此不論 SNS 送了幾次相同的通知，都只會有一筆紀錄。
 

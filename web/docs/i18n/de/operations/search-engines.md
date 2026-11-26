@@ -8,7 +8,7 @@ Wie du jede Suchmaschine betreibst, die die Volltextsuche in Beiträgen nutzen k
 
 `search = elasticsearch` hält den Index in einem Elasticsearch-Cluster der Version 8 oder neuer, selbst verwaltet oder auf Elastic Cloud Hosted. Er wurde gegen Elasticsearch 9.5 und 8.19 geprüft. Der Server besitzt die Felder des Index, auf denen er schreibt, filtert, sortiert und blättert. Die Einstellungen darfst du besitzen: die Analyse, die Shards und die Replikate. Ohne eigene Einstellungen brauchen die eingebauten kein Plugin und finden Japanisch wie [unten beschrieben](#how-the-built-in-analysis-finds-japanese).
 
-<!-- source: setting-it-up 3e02c35ff319 -->
+<!-- source: setting-it-up bf8c46897990 -->
 ### Einrichten
 
 1. Betreibe Elasticsearch. Ein einzelner Knoten reicht für die meisten Server. Für einen schnellen Start auf demselben Host:
@@ -299,7 +299,7 @@ docker run -d --name meilisearch --restart unless-stopped \
 
 `MEILI_ENV=production` weigert sich, ohne Master Key zu starten, und schaltet die eingebaute Such-Vorschau aus. Meilisearch spricht einfaches HTTP: Setze es hinter TLS oder halte es in einem privaten Netzwerk, wenn `my` es über etwas anderes als eine lokale oder private Verbindung erreicht.
 
-<!-- source: settings 74547d71e962 -->
+<!-- source: settings 1ae3d39c472d -->
 ### Einstellungen
 
 ```toml
@@ -349,7 +349,7 @@ Um Meilisearch selbst zu upgraden, folge seiner Upgrade-Anleitung (ein Dump oder
 
 Die Abfrage einer Suche ist fest, was auch immer die Einstellungsdatei sagt: `matchingStrategy: all`, damit ein Beitrag jedes Wort haben muss; `sort: status_id:desc`, neueste zuerst; ein `filter` auf die Beitrags-ID für die nächste Seite; ein `limit` von Seite plus eins; `attributesToRetrieve` der Beitrags-ID; und `showMatchesPosition`, was eine Suchanfrage ohne Wort erkennt. Die doppelten Anführungszeichen einer Phrase und das Minuszeichen vor einem Wort, die Meilisearch als Operatoren läse, werden verworfen, sodass eine Suchanfrage immer aus einfachen Wörtern besteht.
 
-<!-- source: tuning-meilisearch df827448e06c -->
+<!-- source: tuning-meilisearch bc54de1bbf95 -->
 ### Meilisearch anpassen
 
 Passe die Engine mit einer JSON-Datei mit [Meilisearch-Index-Einstellungen](https://www.meilisearch.com/docs/reference/api/settings) an, die `search_meilisearch_index_settings_file` nennt. Der Server prüft sie beim Start, wenn `search = meilisearch`: Sie muss existieren und ein JSON-Objekt sein, darf die vier Einstellungen, die der Server selbst setzt, nicht setzen, und ihre `rankingRules`, falls sie welche hat, müssen mit `sort` beginnen, was die Ergebnisse neueste zuerst hält. Meilisearch prüft die Werte, wenn der Server sie sendet. Der Server protokolliert nie den Inhalt der Datei.

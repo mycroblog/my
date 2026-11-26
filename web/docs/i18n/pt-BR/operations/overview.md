@@ -61,42 +61,57 @@ O binário e a imagem de contêiner publicados trazem todos os adaptadores da ta
 `my config check` relata todos os problemas da configuração de uma vez, antes de você iniciar o servidor
 ([lista de verificação de produção](production-checklist.md)).
 
-<!-- source: from-a-small-server-to-a-large-one 2f46b66f047c -->
+<!-- source: from-a-small-server-to-a-large-one ed28f8cf5385 -->
 ## De um servidor pequeno a um grande
 
 ![Três etapas de um servidor pequeno a um grande: um processo com SQLite e o sistema de arquivos, depois PostgreSQL e armazenamento de objetos atrás de uma CDN, depois processos web e worker separados com um broker de streams. A lista abaixo descreve cada etapa.](images/growth.svg)
 
 1. **Comece pequeno.** Um processo com `role = all`, em SQLite, com a mídia no sistema de arquivos e os padrões para o
-   restante: a fila e o armazenamento chave-valor no banco de dados, e o fluxo em tempo real dentro do processo. Os arquivos do
-   Docker Compose em `deploy/docker` iniciam essa configuração em uma máquina ([implantando com Docker Compose](deploy-docker-compose.md)).
-   Ela serve a um servidor pessoal ou pequeno. `stream = hub` alcança apenas o processo em que roda, então essa configuração fica em um
-   processo.
+   resto: a fila e o armazenamento chave-valor no banco de dados, e o stream em tempo real dentro do processo. Os arquivos do Docker
+   Compose em `deploy/docker` iniciam essa configuração em uma máquina ([implantar com o Docker Compose](deploy-docker-compose.md)).
+   Ela serve para um servidor pessoal ou pequeno. `stream = hub` alcança apenas o processo em que executa, então essa configuração fica em um
+   único processo.
 2. **Tire os dados de lá.** PostgreSQL para o banco de dados, um bucket compatível com S3 ou o Google Cloud Storage para a mídia
    e uma CDN na frente da mídia. O servidor ainda é um processo, mas não depende mais de um disco, e os
-   processos da etapa seguinte podem compartilhar os dados. Decida isso antes da primeira inicialização, se puder: mover os dados
+   processos da próxima etapa podem compartilhar os dados. Decida isso antes da primeira inicialização, se puder: mover os dados
    do SQLite e do sistema de arquivos depois é um trabalho à parte ([o que incluir no backup](backup.md#what-to-back-up) lista
    o que precisa ser movido).
 3. **Escale.** Execute processos com `role = web` para as requisições e `role = worker` para os jobs, quantos cada um
-   precisar, e divida os workers por tipo de job ([dividindo workers](running.md#splitting-workers-by-job-type)).
-   Com mais de um processo, o fluxo em tempo real precisa de um broker que alcance todos os processos (`postgres`, `valkey`,
-   `sns` ou `pubsub`), e o armazenamento chave-valor deve ser compartilhado (`db` ou `valkey`), já que `memory` mantém os limites de taxa
-   e as respostas a escritas reenviadas de cada processo separados. A fila de jobs continua no
+   precisar, e divida os workers por tipo de job ([dividir os workers](running.md#splitting-workers-by-job-type)).
+   Com mais de um processo, o stream em tempo real precisa de um broker que alcance todos os processos (`postgres`, `valkey`,
+   `sns` ou `pubsub`), e o armazenamento chave-valor deve ser compartilhado (`db` ou `valkey`), já que `memory` mantém separados em cada processo os limites
+   de taxa e as respostas a gravações reenviadas. A fila de jobs continua no
    PostgreSQL, ou passa para o Google Cloud Tasks ([Cloud Tasks](running.md#cloud-tasks)).
 
-A [implantação no Cloud Run](deploy-google-cloud.md) é um exemplo de configuração entre a segunda e a terceira etapa:
-`role = all` no Cloud Run, PostgreSQL no Neon, mídia no Cloud Storage, Cloud Tasks para os jobs e Pub/Sub para o
-fluxo, sem nenhuma instância em execução enquanto ninguém usa o servidor.
+<!-- source: ways-to-deploy eeb6d182d4dc -->
+## Formas de implantar
 
-<!-- source: where-to-go-next 2f1d25c01f8a -->
-## Onde ir em seguida
+- **[Docker Compose](deploy-docker-compose.md)** em uma máquina: a primeira etapa, ou a segunda com PostgreSQL e um bucket.
+- **[Google Cloud](deploy-google-cloud.md)**: `role = all` no Cloud Run, PostgreSQL como o Neon, mídia no Cloud Storage, Cloud
+  Tasks para os jobs e Pub/Sub para o stream, sem nenhuma instância em execução enquanto ninguém usa o servidor.
+- **[AWS](deploy-aws.md)**: `role = all` no ECS Fargate, PostgreSQL como o Neon, mídia no S3, os jobs no banco de dados e o SNS
+  para o stream.
+
+Nas duas nuvens, um módulo do OpenTofu cria a implantação inteira: [Implantar com o OpenTofu](deploy-opentofu.md) tem os passos que elas compartilham.
+
+<!-- source: where-to-go-next 48f37c91b820 -->
+## Para onde ir em seguida
 
 Leia os guias do operador nesta ordem:
 
-1. **Começar:** [rode o servidor](running.md) ou [implante no Cloud Run](deploy-google-cloud.md), e depois passe pelo [checklist de produção](production-checklist.md) antes de abri-lo para os usuários.
-2. **Configurar a instância:** suas [configurações](instance-settings.md), o [cadastro](registration.md), os [provedores de login externos](login-providers.md), o [e-mail](email.md), o [CAPTCHA](captcha.md), [o CDN](cdn.md), as [pré-visualizações de links](link-previews.md) e [mecanismos de busca e rastreadores de IA](crawlers.md).
-3. **Ativar recursos:** a [moderação](moderation.md), os [relays](relays.md), os [webhooks](webhooks.md), os [plugins](plugins.md) e os [ganchos de decisão](decision-hooks.md), o [chat de voz](voice.md), a [busca de texto completo](search.md), os [apoiadores](supporters.md) e seus pagamentos, e a [importação de custos de nuvem](billing-import.md).
-4. **Operar no dia a dia:** o [monitoramento](monitoring.md), os [alertas](alerts.md), os [relatórios de erro](error-reporting.md), a [manutenção](maintenance.md), o [backup](backup.md), [o banco de dados](database.md), [a chave de cifragem de chaves](key-management.md) e [administradores e funções](admin-cli.md).
-5. **Jurídico e encerramento:** os modelos de [política de privacidade](privacy-policy-template.md) e de [registro de tratamento](processing-record-template.md), e [encerrando o serviço](service-closure.md).
+1. **Comece:** [execute o servidor](running.md) e [implante-o](#ways-to-deploy), depois percorra a
+   [lista de verificação de produção](production-checklist.md) antes de abri-lo aos usuários.
+2. **Configure a instância:** as [configurações](instance-settings.md), o [cadastro](registration.md),
+   os [provedores de login externos](login-providers.md), o [e-mail](email.md), o [CAPTCHA](captcha.md), [a CDN](cdn.md),
+   as [prévias de links](link-previews.md) e os [mecanismos de busca e crawlers de IA](crawlers.md).
+3. **Ative recursos:** a [moderação](moderation.md), os [relays](relays.md), os [webhooks](webhooks.md),
+   os [plugins](plugins.md) e os [hooks de decisão](decision-hooks.md), o [chat de voz](voice.md), a [busca de texto completo](search.md),
+   os [apoiadores](supporters.md) e os pagamentos deles, e a [importação de custos de nuvem](billing-import.md).
+4. **Opere no dia a dia:** o [monitoramento](monitoring.md), os [alertas](alerts.md), o [relatório de erros](error-reporting.md),
+   a [manutenção](maintenance.md), o [backup](backup.md), [o banco de dados](database.md),
+   [a chave de criptografia de chaves](key-management.md) e [administradores e papéis](admin-cli.md).
+5. **Jurídico e encerramento:** os modelos de [política de privacidade](privacy-policy-template.md) e de
+   [registro de tratamento](processing-record-template.md), e o [encerramento do serviço](service-closure.md).
 
-A [referência de configuração](../reference/configuration.md) lista cada configuração, e a [referência de jobs](../reference/jobs.md)
-lista cada job que os workers executam.
+A [referência de configuração](../reference/configuration.md) lista todas as configurações, e a [referência de jobs](../reference/jobs.md)
+todos os jobs que os workers executam.

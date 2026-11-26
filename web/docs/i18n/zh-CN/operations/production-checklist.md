@@ -127,12 +127,12 @@ my config check -instance  # also the instance settings in the database
   - 只有需要的人才拥有 `admin` 角色；审核员拥有 `moderator` 角色，或者只包含他们所用权限的角色。用 `my admin role` 列出他们，并在管理页面上进行审查。
 - **详情**：[管理员和角色](admin-cli.md)，[审核](moderation.md)（权限和登录恢复）。
 
-<!-- source: operations aac00b13fc38 -->
+<!-- source: operations cdf72295a7bb -->
 ## 运维
 
 - **备份和恢复**：数据库、blob 存储（`blob_fs_dir` 或存储桶）和 KEK 按计划备份到与服务器分开的地方，并且已经演练过恢复到一台全新的服务器：恢复后的服务器能够启动，账号可以登录和发帖。从未恢复过的备份，无法确定它是否可用。数据库和媒体不能放在临时目录中；放在那里时，`my config check` 会发出警告。请参阅[密钥管理](key-management.md)（备份 KEK）和[数据库](database.md)。
 - **监控和告警**：外部监控检查 `/health/live`，并向能够采取行动的人发出告警，同时监视任务队列中的死任务。请参阅[监控](monitoring.md)和[运行服务器](running.md)（健康检查、指标和任务队列）。
-- **镜像**：实例运行的是按摘要固定的已发布镜像（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，来自该版本的发布说明），而不是重启时会变化的镜像，并且[其来源已经验证](running.md#verify-an-image)。没有 `latest` 标签。升级会有意更改该版本，并遵循[升级](database.md#upgrading)，一次一个小版本。
+- **镜像**：实例运行的是按摘要固定的已发布镜像（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，来自该版本的发布说明，或在使用 OpenTofu 时来自 [`image.digest`](deploy-opentofu.md#pinning-the-image-by-digest)），而不是重启时会变化的镜像，并且[其来源已经验证](running.md#verify-an-image)。没有 `latest` 标签。升级会有意更改该版本，并遵循[升级](database.md#upgrading)，一次一个小版本。
 - **源代码（AGPL-3.0）**：服务器必须向每一位使用它的人提供它的源代码。对于未修改的发布版本，请保持 [`source_url`](../reference/configuration.md#source_url) 为默认值；当你运行分支或修改过的版本时，请让它指向你自己的源代码。请在 `/about` 上验证该链接。请参阅[运行服务器](running.md)（发布源代码）。
 - **维护**：在需要之前就了解如何让服务器进入维护模式。请参阅[维护](maintenance.md)。
 

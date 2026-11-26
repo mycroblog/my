@@ -154,12 +154,12 @@ In einem Raum dürfen nur manche Teilnehmer sprechen: die Hosts und die Zuhörer
 Das hält gewöhnliche Nutzer und den offiziellen Web-Client auf, ist aber keine vollständige Verteidigung. **Zwei Teilnehmer mit veränderten Clients, die zusammenarbeiten, können trotzdem Audio austauschen**: Ein veränderter Client von jemandem, der nicht sprechen darf, kann es senden, und ein veränderter Client eines Empfängers kann es abspielen, und der Server kann nicht in die verschlüsselten Medien hineinsehen.
 Wenn du garantieren musst, wer spricht, zum Beispiel bei moderierten öffentlichen Veranstaltungen, nutze `livekit` oder `sora`, wo der Medienserver selbst das Audio von jedem ohne Erlaubnis verwirft.
 
-<!-- source: deployment-notes b0f03da306b7 -->
+<!-- source: deployment-notes 9daf6e4d8d98 -->
 ## Hinweise zum Deployment
 
 - **Zwei Streams pro Nutzer**: Während eines Anrufs hält ein Teilnehmer zusätzlich zu dem Stream, den die App immer öffnet, den eigenen Ereignisstrom des Raums (Server-Sent Events). Dimensioniere die Verbindungslimits für zwei langlebige Anfragen pro Nutzer in einem Anruf.
 - **Mehrere Prozesse**: Nutze einen gemeinsamen Stream-Adapter (`stream` auf `postgres`, `valkey`, `sns` oder `pubsub` gesetzt), wie beim Rest der App. Bei `stream = hub` und einer `role` außer `all` warnt der Server beim Start, dass der Sprachchat nicht über Prozesse hinweg funktioniert.
-- **Cloud Run**: Ein Stream ist eine Anfrage, und CPU wird zugewiesen, solange sie offen ist. Wenn das Anfrage-Timeout sie abschneidet, verbindet sich der Client neu. Setze das Timeout so lang wie möglich.
+- **Cloud Run**: Ein Stream ist eine Anfrage, und CPU wird zugewiesen, solange sie offen ist. Wenn das Anfrage-Timeout sie abschneidet, verbindet sich der Client neu. Setze das Timeout so lang wie möglich: `service.request_timeout_seconds` unter [Auf Google Cloud bereitstellen](deploy-google-cloud.md#limits).
 - **Medienserver brauchen eine VM**: LiveKit und Sora nehmen Audio über UDP in einem dauerhaft laufenden Prozess entgegen. Cloud Run akzeptiert nur HTTP-Anfragen und kann sie daher nicht hosten. Betreibe sie (und coturn) auf einer VM oder nutze LiveKit Cloud, Sora Cloud oder Cloudflare TURN.
 
 <!-- source: livekit b16c1d192419 -->

@@ -207,10 +207,10 @@ As requisições não enviam cookies nem `Referer`, e nada diz qual conta ou pub
 Ela diz o que este servidor faz, a partir de `link_cards` e `link_cards_ignore_robots_txt`, e mostra o contato da instância (`contact_account`, `contact_email`). Defina um contato, para que um site tenha a quem pedir: sem um, a página diz que este servidor não publica nenhum.
 Com `link_cards_ignore_robots_txt` ativado, a página diz que um site não pode recusar este servidor no `robots.txt`.
 
-<!-- source: robotstxt e8d2deaef93d -->
+<!-- source: robotstxt 8646f54fafaf -->
 ### robots.txt
 
-O nome no `robots.txt` é `my-linkcard`, em qualquer caixa. Sem um grupo com esse nome, o grupo `*` se aplica, como diz a RFC 9309. `Allow`, `Disallow`, `*` e `$` são lidos, vencendo a correspondência mais longa e, em caso de empate, `Allow`; `Crawl-delay` e outros registros não são lidos.
+O nome em `robots.txt` é `my-linkcard`, em qualquer caixa. Sem um grupo com esse nome, o grupo `*` se aplica, como diz a RFC 9309. `Allow`, `Disallow`, `*` e `$` são lidos, com a correspondência mais longa vencendo e `Allow` vencendo um empate; `Crawl-delay` e outros registros não são lidos.
 O `robots.txt` é lido até 512 KiB em 10 segundos, e o que foi lido de um arquivo maior é usado. O servidor guarda apenas as regras de `my-linkcard`, por origem (esquema, host e porta).
 
 | Resposta para `robots.txt` | O que o servidor faz | Guardado por |
@@ -220,13 +220,13 @@ O `robots.txt` é lido até 512 KiB em 10 segundos, e o que foi lido de um arqui
 | 429, 5xx, uma falha de rede ou um redirecionamento que o servidor recusa | Não busca nada da origem | 1 hora |
 | Mais de 5 redirecionamentos | Sem arquivo: busca | 24 horas |
 
-- A URL da página é verificada antes de ser requisitada, seja qual for a visibilidade da publicação. O mesmo vale para cada URL para a qual ela redireciona, contra o `robots.txt` da origem dessa URL, e um redirecionamento para uma URL recusada termina ali: o servidor não a requisita e não cria cartão.
-- Uma URL que o `robots.txt` proíbe não é buscada de novo por 24 horas, como qualquer outra falha de uma página. Quando o arquivo apenas não pôde ser lido, o servidor tenta a página de novo uma hora depois, até o limite de tentativas do job.
-- Uma imagem é verificada da mesma forma contra a própria origem. Uma imagem proibida deixa um cartão sem imagem. Quando o arquivo apenas não pôde ser lido, uma imagem registrada antes permanece, e uma imagem nova fica de fora até a próxima nova busca.
-- Uma nova busca, que uma publicação pode causar 14 dias após a última busca, remove o cartão quando o `robots.txt` proíbe a URL dele. Quando o arquivo apenas não pôde ser lido, o cartão permanece.
-- O servidor não percorre os cartões para verificá-los de novo, então um site que muda suas regras perde um cartão na próxima nova busca desse cartão.
+- A URL da página é verificada antes de ser requisitada, qualquer que seja a visibilidade da publicação. O mesmo vale para cada URL para a qual ela redireciona, contra o `robots.txt` da origem dessa URL, e um redirecionamento para uma URL recusada termina ali: o servidor não a requisita e não cria cartão.
+- Uma URL que o `robots.txt` proíbe não é buscada de novo por 24 horas, como qualquer outra falha de uma página. Quando o arquivo apenas não pôde ser lido, o servidor tenta a página de novo uma hora depois, até o limite de tentativas do job, e então deixa a publicação sem cartão. O erro do job informa o status ou a falha de rede.
+- Uma imagem é verificada do mesmo modo contra a sua própria origem. Uma imagem proibida deixa um cartão sem imagem. Quando o arquivo apenas não pôde ser lido, uma imagem registrada antes permanece, e uma imagem nova fica de fora até a próxima nova busca.
+- Uma nova busca, que uma publicação pode causar 14 dias depois da última busca, remove o cartão quando o `robots.txt` proíbe a URL dele. Quando o arquivo apenas não pôde ser lido, o cartão permanece.
+- O servidor não percorre os seus cartões para verificá-los de novo, então um site que muda as suas regras perde um cartão na próxima nova busca desse cartão.
 
-`link_cards_ignore_robots_txt` ([configurações da instância](instance-settings.md#settings-one-key-one-value)) desativa tudo isso: o servidor não busca nem usa o `robots.txt`. Ele ainda se identifica como `my-linkcard`, e os sites vinculados então não podem recusar as buscas com o `robots.txt`: restam apenas as diretivas das páginas deles e um pedido a você de uma [regra no domínio deles](instance-settings.md#link-card-domains), como [a página para operadores de sites](#the-page-for-site-operators) informa.
+`link_cards_ignore_robots_txt` ([configurações da instância](instance-settings.md#settings-one-key-one-value)) desativa tudo isso: o servidor não busca nem usa o `robots.txt`. Ele continua se identificando como `my-linkcard`, e os sites com link então não podem recusar as buscas com `robots.txt`: restam apenas as diretivas das suas páginas e um pedido a você de uma [regra no domínio deles](instance-settings.md#link-card-domains), como [a página para operadores de sites](#the-page-for-site-operators) informa a eles.
 
 <!-- source: directives-of-a-page a854ef2ae8ea -->
 ### Diretivas de uma página

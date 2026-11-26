@@ -192,26 +192,26 @@ Les requêtes n’envoient ni cookies ni `Referer`, et rien n’indique quel com
 Elle indique ce que fait ce serveur, d’après `link_cards` et `link_cards_ignore_robots_txt`, et elle présente le contact de l’instance (`contact_account`, `contact_email`). Définissez un contact, afin qu’un site ait un endroit où écrire : sans contact, la page indique que ce serveur n’en publie aucun.
 Lorsque `link_cards_ignore_robots_txt` est activé, la page indique qu’un site ne peut pas refuser ce serveur dans `robots.txt`.
 
-<!-- source: robotstxt e8d2deaef93d -->
+<!-- source: robotstxt 8646f54fafaf -->
 ### robots.txt
 
 Le nom dans `robots.txt` est `my-linkcard`, quelle que soit la casse. Sans groupe de ce nom, le groupe `*` s’applique, comme le dit la RFC 9309. `Allow`, `Disallow`, `*` et `$` sont lus, la correspondance la plus longue l’emportant et `Allow` l’emportant en cas d’égalité ; `Crawl-delay` et les autres enregistrements ne sont pas lus.
-`robots.txt` est lu jusqu’à 512 Kio en 10 secondes, et ce qui a été lu d’un fichier plus volumineux est utilisé. Le serveur ne conserve que les règles pour `my-linkcard`, par origine (schéma, hôte et port).
+`robots.txt` est lu jusqu’à 512 Kio en 10 secondes, et ce qui a été lu d’un fichier plus gros est utilisé. Le serveur ne conserve que les règles de `my-linkcard`, par origine (schéma, hôte et port).
 
-| Réponse pour `robots.txt` | Ce que fait le serveur | Conservé pendant |
+| Réponse pour `robots.txt` | Ce que fait le serveur | Conservée pendant |
 | --- | --- | --- |
 | 200 | Respecte le fichier | 24 heures |
 | 4xx autre que 429 | Pas de fichier : récupère | 24 heures |
-| 429, 5xx, un échec réseau ou une redirection que le serveur refuse | Ne récupère rien depuis l’origine | 1 heure |
+| 429, 5xx, une défaillance réseau ou une redirection que le serveur refuse | Ne récupère rien auprès de l’origine | 1 heure |
 | Plus de 5 redirections | Pas de fichier : récupère | 24 heures |
 
-- L’URL de la page est vérifiée avant d’être demandée, quelle que soit la visibilité de la publication. Il en va de même pour chaque URL vers laquelle elle redirige, d’après le `robots.txt` de l’origine de cette URL, et une redirection vers une URL refusée s’arrête là : le serveur ne la demande pas et ne crée aucune carte.
-- Une URL que `robots.txt` interdit n’est pas récupérée de nouveau pendant 24 heures, comme tout autre échec d’une page. Lorsque le fichier n’a simplement pas pu être lu, le serveur réessaie la page une heure plus tard, jusqu’à la limite des tentatives de la tâche.
-- Une image est vérifiée de la même façon d’après sa propre origine. Une image interdite laisse une carte sans image. Lorsque le fichier n’a simplement pas pu être lu, une image enregistrée précédemment reste, et une nouvelle image est omise jusqu’à la prochaine récupération.
+- L’URL de la page est vérifiée avant d’être demandée, quelle que soit la visibilité de la publication. Il en va de même pour chaque URL vers laquelle elle redirige, au regard du `robots.txt` de l’origine de cette URL, et une redirection vers une URL refusée s’arrête là : le serveur ne la demande pas et ne fait aucune carte.
+- Une URL que `robots.txt` interdit n’est pas récupérée de nouveau pendant 24 heures, comme tout autre échec d’une page. Lorsque le fichier n’a simplement pas pu être lu, le serveur réessaie la page une heure plus tard, dans la limite des tentatives du job, puis laisse la publication sans carte. L’erreur du job nomme le statut ou la défaillance réseau.
+- Une image est vérifiée de la même façon au regard de sa propre origine. Une image interdite laisse une carte sans image. Lorsque le fichier n’a simplement pas pu être lu, une image enregistrée plus tôt reste, et une nouvelle image est écartée jusqu’à la prochaine récupération.
 - Une nouvelle récupération, qu’une publication peut provoquer 14 jours après la dernière, supprime la carte lorsque `robots.txt` interdit son URL. Lorsque le fichier n’a simplement pas pu être lu, la carte reste.
 - Le serveur ne parcourt pas ses cartes pour les revérifier : un site qui change ses règles perd donc une carte à la prochaine récupération de cette carte.
 
-`link_cards_ignore_robots_txt` ([paramètres de l’instance](instance-settings.md#settings-one-key-one-value)) désactive tout cela : le serveur ne récupère ni n’utilise `robots.txt`. Il se nomme toujours `my-linkcard`, et les sites liés ne peuvent alors pas refuser les récupérations avec `robots.txt` : il ne reste que les directives de leurs pages et une demande qui vous est adressée pour une [règle sur leur domaine](instance-settings.md#link-card-domains), comme [la page destinée aux exploitants de sites](#the-page-for-site-operators) le leur indique.
+`link_cards_ignore_robots_txt` ([réglages d’instance](instance-settings.md#settings-one-key-one-value)) désactive tout cela : le serveur ne récupère ni n’utilise `robots.txt`. Il continue de se nommer `my-linkcard`, et les sites liés ne peuvent alors pas refuser les récupérations avec `robots.txt` : il ne leur reste que les directives de leurs pages et une demande qui vous est adressée pour une [règle sur leur domaine](instance-settings.md#link-card-domains), comme [la page pour les exploitants de sites](#the-page-for-site-operators) le leur explique.
 
 <!-- source: directives-of-a-page a854ef2ae8ea -->
 ### Directives d’une page

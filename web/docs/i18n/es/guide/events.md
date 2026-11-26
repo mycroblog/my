@@ -50,7 +50,7 @@ no pudo abrirse, la página explica el motivo.
 Los enlaces a mapas, a reuniones en línea y los enlaces de una descripción se abren en una pestaña nueva e indican el sitio al que llevan: salen
 de este servidor, que nunca los comprueba.
 
-<!-- source: organizing-an-event d6a7b15b234f -->
+<!-- source: organizing-an-event e8a2d468ac33 -->
 ## Organizar un evento
 
 Elige «Nuevo evento» en la lista de eventos. El editor pide:
@@ -65,15 +65,27 @@ Elige «Nuevo evento» en la lista de eventos. El editor pide:
   hablar sin pedirlo**.
 - **Quién ve el evento**: todos en este servidor, los seguidores del organizador, las personas a las que sigue el organizador, los seguimientos
   mutuos del organizador o solo las personas invitadas. Las personas que invitas y las que han respondido siempre lo ven.
+- **Quién puede escribir en el tablón**: solo tú, tú y los coorganizadores (lo predeterminado) o todos los que leen el tablón.
 - **Aforo**, cuántas personas pueden responder «Asistiré»; déjalo vacío para no poner límite.
 
 En la página del evento, el organizador y los coorganizadores aprueban asistentes («Aprobar» y «Revocar aprobación»), invitan
 a personas de este servidor en «Invitaciones» y modifican el evento con «Editar evento». Solo el organizador cambia quién
-ve el evento, nombra hasta tres «Coorganizadores» y cancela el evento con «Cancelar evento», opcionalmente con un motivo
+ve el evento y quién puede escribir en el tablón, nombra hasta tres «Coorganizadores» y cancela el evento con «Cancelar evento», opcionalmente con un motivo
 que el evento muestra a continuación. Un evento cancelado sigue siendo legible, pero ya no acepta respuestas.
 
 Los moderadores del servidor también pueden cancelar un evento; su página lo indica entonces, con el motivo. Algunos servidores permiten que solo algunas
 personas creen eventos: cuando no puedes, al intentar crear uno aparece «No puedes crear eventos en este servidor.».
 
 Si respondiste «Asistiré» o «Quizá», recibes recordatorios un día y una hora antes de que empiece el evento. Para ver todas las
-notificaciones de eventos (invitaciones, cambios, cancelaciones y recordatorios), consulta [Notificaciones](notifications.md).
+notificaciones de eventos (invitaciones, cambios, cancelaciones, recordatorios y publicaciones nuevas en el tablón), consulta [Notificaciones](notifications.md).
+
+<!-- source: the-board 074b939b2717 -->
+## El tablón
+
+Cada evento tiene un tablón para lo que las personas necesitan saber antes y durante el evento. El organizador, los coorganizadores y las
+personas que respondieron «Asistiré» o «Quizá» ven la página del evento como dos pestañas, «Detalles» y «Tablón»; el resto no ve
+ningún tablón. En el tablón, «Escribir en el tablón» abre el editor, y la publicación va solo al tablón: nunca se
+muestra en una cronología, un perfil ni una búsqueda, nunca se envía a otros servidores y no se puede impulsar ni citar. Las publicaciones del
+tablón se editan, se eliminan, se responden, se marcan como favoritas y se reaccionan como cualquier publicación. Quién puede escribir lo decide el organizador;
+cuando no puedes, el tablón indica quién puede. Cuando el evento se cancela, o 7 días después de que termine, el tablón pasa a ser de solo lectura.
+Una publicación nueva en el tablón notifica a sus lectores, y la notificación abre el tablón.

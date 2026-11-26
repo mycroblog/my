@@ -130,7 +130,7 @@ Web 客户端会把它响应速度的样本发送到你自己服务器上的 `PO
 
 关注计数器 `my.errors.exported`：`my.outcome` 为 `success`、`dropped`（超出限制、队列已满，或服务要求降速）或 `failed`（无法连接服务，或服务拒绝了报告）（[运行服务器](running.md#metrics)）。
 
-<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
+<!-- source: sentry-glitchtip-and-datadog 81bdd8389ace -->
 ### Sentry、GlitchTip 和 Datadog
 
 ```sh
@@ -146,7 +146,7 @@ MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; t
   secrets       = ["errors_sentry_dsn"]
 ```
 
-服务器自己实现了 Sentry 协议，因此不涉及 Sentry SDK，也不会读取任何 `SENTRY_*` 环境变量。它会设置指纹，让服务按指纹分组，并设置标签 `service`（`my`）、`my.role`、`my.error.where` 和 `error.fingerprint`。版本（release）是服务器的版本，环境是 `errors_environment`。
+服务器自己实现了 Sentry 协议，因此不涉及 Sentry SDK，也不会读取任何 `SENTRY_*` 环境变量。它会设置指纹，让服务按指纹分组，并设置标签 `service`（`my`）、`service.namespace`（即 `host`）、`my.role`、`my.error.where` 和 `error.fingerprint`。版本（release）是服务器的版本，环境是 `errors_environment`。
 
 - **Sentry**（托管或自托管）：从项目的客户端密钥中复制 DSN。
 - **GlitchTip**：复制项目的 DSN。它是开源的，可以在小型服务器上运行。请确认你所用的版本为新出现和再次出现的问题提供了哪些告警规则。

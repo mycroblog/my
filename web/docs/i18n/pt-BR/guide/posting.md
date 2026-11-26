@@ -1,7 +1,7 @@
 <!-- source: posting-and-choosing-who-sees-a-post 5c4adb3025f6 -->
 # Publicar e escolher quem vê uma publicação
 
-<!-- source: writing-a-post 5f24a2f4b092 -->
+<!-- source: writing-a-post a7aea00e3d00 -->
 ## Escrevendo uma publicação
 
 Escolha “Escrever uma publicação” para abrir o formulário “Nova publicação”. Digite em “Sua publicação” e escolha “Publicar”. O formulário mostra quantos
@@ -15,7 +15,8 @@ caracteres restam. Além de texto, você pode:
 - Responder a uma publicação (“Responder”) ou citar uma (“Citar”).
 
 Uma publicação que não pôde ser enviada fica em “Publicações sendo enviadas”, onde você pode “Enviar de novo”, “Editar” ou “Descartar” ela.
-Um servidor pode recusar uma publicação após uma análise automática. Quando a recusa pode ser contestada, a publicação oferece “Contestar”.
+Um servidor pode recusar uma publicação após uma análise automática. Quando a recusa pode ser contestada, a publicação oferece “Contestar”,
+que envia o texto dela aos moderadores, com o que você escrever para eles em “O que os moderadores devem saber”.
 
 <!-- source: drafts-and-scheduled-posts 9cee5f0d17b2 -->
 ## Rascunhos e publicações agendadas
@@ -93,50 +94,50 @@ aprovação” permite que todos os demais peçam, em vez de serem recusados.
 - Os pedidos que aguardam você são listados em “Aguardando aprovação”, aberto pela linha no topo das notificações. “Aprovar” adiciona a resposta, o impulso ou a citação à sua publicação, e a conversa sob ela mostra na hora uma resposta aprovada; “Recusar” a mantém de fora.
 - Na publicação de outra pessoa, “Responder” não aparece e “Impulsionar” não pode ser pressionado quando o autor não permite. Quando o autor os aprova manualmente, o formulário avisa antes de você responder, e depois de você impulsionar, a publicação diz “Impulso aguardando aprovação”.
 
-<!-- source: after-posting e11fd06a76e8 -->
+<!-- source: after-posting a9f5b9c75fb4 -->
 ## Depois de publicar
 
 Sob uma publicação você encontra “Responder”, “Impulsionar”, “Citar”, “Favoritar”, “Reagir” e “Mais”. “Mais” tem “Copiar link”, “Abrir
 página original” (para uma publicação de outro servidor), “Compartilhar” e “Salvar”; seus itens salvos ficam na página “Itens salvos”,
-e só você os vê. Na sua própria publicação ele também tem “Editar” (não para uma publicação com enquete), “Excluir e reescrever…” e
-“Excluir…”. As duas exclusões pedem confirmação antes. “Excluir…” remove a publicação para todos, junto com seus impulsos e favoritos;
-“Excluir e reescrever…” faz o mesmo e abre o formulário com o texto, as imagens e a enquete dela como uma nova publicação.
+e só você os vê; as publicações que você favoritou ficam na página “Favoritos”. Na sua própria publicação, “Mais” também tem “Editar”
+(não para uma publicação com enquete), “Excluir e reescrever…” e “Excluir…”. As duas exclusões perguntam antes. “Excluir…” remove a
+publicação para todos, junto com seus impulsos e favoritos; “Excluir e reescrever…” faz o mesmo e abre o formulário com
+o texto, as imagens e a enquete dela como uma nova publicação.
 
-Uma publicação editada mostra “· editada” depois do horário; escolha-o para abrir “Histórico de edições”, com a versão mais recente primeiro e as
-mudanças marcadas.
+Uma publicação editada mostra “· editada” depois do horário; escolha-o para abrir o “Histórico de edições”, com a versão mais recente primeiro e as
+alterações marcadas.
 
-Uma enquete aceita um voto, ou vários quando o autor permite: escolha e depois “Votar”. Os resultados aparecem depois que você votou ou
-a enquete terminou, e para o autor a qualquer momento. “Reagir” abre um seletor de emoji (busca, categorias, tom de pele e os emoji personalizados
-deste servidor); cada pessoa dá a uma publicação um favorito ou uma reação. Na página da própria publicação, um emoji lista
+Uma enquete aceita um voto, ou vários quando o autor permite: escolha e depois “Votar”. Os resultados aparecem depois que você votou ou que a
+enquete terminou, e para o autor a qualquer momento. “Reagir” abre um seletor de emoji (busca, categorias, tom de pele e os emoji personalizados deste
+servidor); cada pessoa dá a uma publicação um favorito ou uma reação. Na página da própria publicação, um emoji lista
 quem reagiu com ele. O formulário também tem um botão “Adicionar emoji”.
 
-Uma publicação em outro idioma que não o seu tem “Traduzir” quando o servidor tem um serviço de tradução ou seu navegador pode
-traduzir; “Mostrar original” volta. Atrás de um aviso de conteúdo, a linha fica na faixa do aviso. Se o servidor envia
-o texto das publicações a um serviço de tradução, “Quem pode ver” informa para quais opções.
+Uma publicação em outro idioma que não o seu tem “Traduzir” quando o servidor tem um serviço de tradução ou o seu navegador pode
+traduzir; “Mostrar original” volta ao texto. Atrás de um aviso de conteúdo, a linha fica na faixa do aviso. Se o servidor envia
+o texto das publicações a um serviço de tradução, “Quem pode ver” diz para quais escolhas isso acontece.
 
-Imagens, GIFs, vídeo e áudio aparecem na publicação. Escolha uma imagem para abrir o visualizador: deslize ou use as setas, dê zoom e
-leia a descrição dela. A mídia marcada como sensível fica oculta sob uma linha como “Imagem sensível”, até você escolher “Mostrar”. Um link em uma
+Imagens, GIFs, vídeo e áudio aparecem na publicação. Escolha uma imagem para abrir o visualizador: deslize ou use as setas, aplique zoom e
+leia a descrição. A mídia marcada como sensível fica oculta sob uma linha como “Imagem sensível”, até você escolher “Mostrar”. Um link em uma
 publicação aparece como um cartão.
 
-<!-- source: writing-an-article 3bc498986329 -->
+<!-- source: writing-an-article 7abd5d8b1ffd -->
 ## Escrevendo um artigo
 
 “Escrever um artigo”, sob o formulário de nova publicação, abre o editor de artigos, uma página própria. Dê ao artigo um título, um
-resumo se quiser (deixado vazio, ele é feito a partir do início do corpo), uma imagem de capa com a descrição dela e o
-corpo, escrito em Markdown: `#` inicia um título, `**text**` é negrito, e “Negrito” e “Link” acima do corpo fazem o mesmo para
-o texto que você seleciona (Ctrl+B e Ctrl+K, ou Cmd em um Mac). Solte ou cole imagens no corpo, ou escolha-as com “Adicionar
-imagens”: cada uma é enviada e entra onde está o cursor como `![](media:…)`; escreva a descrição dela entre os colchetes.
-Só as imagens que você envia aparecem em um artigo; uma imagem de outro endereço vira um link com a descrição dela.
+resumo se quiser (se ficar vazio, ele é feito a partir do início do corpo), uma imagem de capa com a descrição dela e o
+corpo, escrito em Markdown: `#` inicia um título, `**text**` é negrito, e “Negrito” e “Link”, acima do corpo, fazem o mesmo com
+o texto selecionado (Ctrl+B e Ctrl+K, ou Cmd em um Mac). Solte ou cole imagens no corpo, ou escolha-as com “Adicionar
+imagens”: cada uma é enviada e entra onde está o cursor como `![](media:…)`; escreva a descrição dela entre os colchetes. Só as imagens que você envia aparecem em um artigo; uma imagem de outro endereço vira um link com a descrição dela.
 
-- As hashtags vão em um campo próprio, separadas por espaços; o artigo é listado nelas, e um `#` no corpo continua sendo texto. As menções no corpo levam às pessoas, mas não as notificam.
+- As hashtags vão em um campo próprio, separadas por espaços; o artigo é listado sob elas, e um `#` no corpo continua sendo texto. As menções no corpo levam às pessoas, mas não as notificam.
 - “Pré-visualizar” mostra o artigo como os leitores o verão, renderizado pelo servidor exatamente como será publicado, com o tamanho do corpo e o número de imagens em relação aos limites deste servidor.
-- “Marcar como sensível” mostra aos leitores o título e o resumo primeiro e recolhe a capa e o corpo. Um artigo não pode ser “Direta”.
-- Enquanto você escreve, o artigo é salvo como rascunho toda vez que você faz uma pausa (“Rascunho salvo”), e assim ele abre em qualquer dispositivo em “Rascunhos e publicações agendadas”, onde “Editar” o traz de volta ao editor. Se o rascunho foi alterado em outro dispositivo nesse meio tempo, nada é sobrescrito: seu texto continua no editor, e “Salvar como novo rascunho” o mantém como outro rascunho.
-- “Publicar” publica o artigo agora e abre a página dele; “Agendar” o publica no horário que você escolher, como em uma publicação.
-- Para alterar um artigo que você publicou, escolha “Editar” no menu “Mais ações” dele. O editor abre com o que você escreveu; “Salvar alterações” o substitui, e a versão anterior continua no “Histórico de edições”. Quem pode ver um artigo não muda.
+- “Marcar como sensível” mostra aos leitores primeiro o título e o resumo e recolhe a capa e o corpo. Um artigo não pode ser “Direta”.
+- Enquanto você escreve, o artigo é salvo como rascunho a cada pausa (“Rascunho salvo”), então ele abre em qualquer dispositivo em “Rascunhos e publicações agendadas”, onde “Editar” o traz de volta ao editor. Se o rascunho foi alterado em outro dispositivo nesse meio-tempo, nada é sobrescrito: seu texto continua no editor, e “Salvar como novo rascunho” o guarda como outro rascunho.
+- “Publicar” publica o artigo agora e abre a página dele; “Agendar” o publica no horário que você escolher, como em uma publicação. Um artigo recusado pela análise automática oferece “Contestar” como uma publicação, e envia o corpo dele, não o título nem o resumo.
+- Para alterar um artigo que você publicou, escolha “Editar” no menu “Mais ações” dele. O editor abre com o que você escreveu; “Salvar alterações” o substitui, e a versão anterior fica no “Histórico de edições” dele. Quem pode ver um artigo não muda.
 
-Um servidor pode permitir que apenas algumas pessoas escrevam novos artigos; então “Escrever um artigo” não aparece para as demais, que ainda podem
-editar os artigos que publicaram.
+Um servidor pode permitir que apenas algumas pessoas escrevam novos artigos; então “Escrever um artigo” não é mostrado aos demais, que ainda
+podem editar os artigos que publicaram.
 
 <!-- source: reading-articles f2811fffd462 -->
 ## Ler artigos

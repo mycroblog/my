@@ -206,10 +206,10 @@ kubectl rollout status deployment/my
 
 若 Job 失敗，`kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check`（或 `-c schema`、`-c upgrade`）會顯示原因，而 Deployment 會維持在舊的映像檔。若在磁碟區上使用 SQLite，請在 Job 中掛載同一個磁碟區，並先停止 Deployment 的 Pod：SQLite 只接受一個寫入者。
 
-<!-- source: cloud-run 9e7486b6a4af -->
+<!-- source: cloud-run 4cd76d9b85b5 -->
 ### Cloud Run
 
-使用 OpenTofu 模組時，升級就是套用新版本：它會在服務換用新映像檔之前，於遷移任務中執行 `my upgrade`，失敗時就停在那裡：請參閱[在 Cloud Run 上部署](deploy-opentofu.md#upgrading)。手動進行時：
+使用 OpenTofu 模組時，升級就是套用新版本：它會在服務換用新映像檔之前，於遷移任務中執行 `my upgrade`，失敗時就停在那裡：請參閱[以 OpenTofu 部署](deploy-opentofu.md#upgrading)。手動進行時：
 
 Cloud Run 任務各自只執行一個容器，因此請為每個步驟建立一個任務，並以 `--wait` 依序執行，任務失敗時它也會失敗。請給這些任務與服務相同的環境變數與密鑰。
 
@@ -266,19 +266,19 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
 
 若要跨越一個以上的次要版本，請依序經過每個次要版本的最新修補版本升級，每次都執行完整的程序。例如從 `v0.1.3` 到 `v0.4.0`：先升到最新的 `v0.1.x`，再到最新的 `v0.2.x`，再到最新的 `v0.3.x`，最後到 `v0.4.0`。`my db upgrade -check` 會阻止會遺失資料的跳躍，並指出必須經過的版本；在那個時間點，什麼都還沒有變更。
 
-<!-- source: checking-and-rebuilding-projections 40b848afd40d -->
+<!-- source: checking-and-rebuilding-projections df54e4ad696f -->
 ## 檢查與重建投影
 
-有些資料表是投影：伺服器從其模組的事件與資源推導出它們（例如從帳號的審核處分推導出該帳號的限制）。worker 每天會檢查每個投影一次，並修正找到的任何差異。若要手動檢查或修正：
+有些資料表是投影：伺服器從其模組的事件與資源推導出它們（例如從帳號的審核處分推導出該帳號的限制）。設定了 `projection_verify_interval` 時，worker 會依該排程檢查每個投影，並記錄找到的任何差異（以 `my.projection.drifts` 計數），但不會修正；預設不會檢查。若要手動檢查或修正：
 
 ```sh
 my projection list              # each projection with its module and tables
-my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection verify [<name>]   # derive every projection, or the one named, into temporary copies and print the rows that differ
 my projection rebuild [<name>]  # derive them the same way and write the difference
 ```
 
 - `<name>` 是投影或其資料表之一。
-- `verify` 會印出資料表中有、但來源推導不出來的列（`-`），以及來源推導得出、但資料表中沒有的列（`+`），只要有任何差異就以 `1` 結束。
+- `verify` 會印出資料表中有、但來源推導不出來的列（`-`），以及來源推導得出、但資料表中沒有的列（`+`），每個資料表每個方向最多各 1,000 列，只要有任何差異就以 `1` 結束。它不會鎖定任何列，因此可以在實例運作時執行。
 - `rebuild` 每個交易最多寫入 500 列，因此讀取者絕不會看到被清空的投影。請在實例較空閒時執行：在重建期間變更的列會保留新的值，之後的 `verify` 會回報任何剩下的差異。
 
 <!-- source: recreating-erasing-every-row 9ff993b99448 -->

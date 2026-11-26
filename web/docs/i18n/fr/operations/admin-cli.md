@@ -10,24 +10,24 @@ Comment créer le premier administrateur, gérer les rôles en ligne de commande
 - Le schéma est appliqué à la base de données (`my schema apply` ; consultez [database.md](database.md)).
 - `host` et `account_domain` sont définitifs. La première commande qui utilise la base de données les enregistre, et toute commande ultérieure refuse de s’exécuter lorsque la configuration diffère (consultez [Paramètres que vous ne pouvez plus modifier ensuite](production-checklist.md#settings-you-cannot-change-later)).
 
-<!-- source: creating-an-administrator 9be8b2ee8d85 -->
+<!-- source: creating-an-administrator fb4f4b92bb01 -->
 ## Créer un administrateur
 
 ```sh
 my admin create -username alice -email alice@example.com
 ```
 
-- Depuis un terminal, la commande demande deux fois le mot de passe, sans l’afficher.
+- Depuis un terminal, la commande demande le mot de passe deux fois, sans l’afficher.
 - Lorsque l’entrée standard n’est pas un terminal, la première ligne de l’entrée standard est le mot de passe (par exemple `my admin create ... < password.txt`).
-  Le mot de passe ne peut pas être donné comme argument de ligne de commande ni comme variable d’environnement, car ceux-ci se retrouvent dans les listes de processus et dans l’historique du shell.
-- Lorsqu’une commande ponctuelle n’a ni terminal ni entrée standard, comme un [job Cloud Run](deploy-opentofu.md#5-create-the-first-administrator), ajoutez `-password-link`. La commande ne lit alors aucun mot de passe : elle en définit un aléatoire que personne ne connaît et affiche un lien après la ligne `created admin`, qui définit le mot de passe une seule fois, pendant une heure, comme `my admin account password-reset-link` (le journal d’audit l’enregistre sous `password_reset_link_issued`).
+  Le mot de passe ne peut pas être donné en argument de ligne de commande ni par une variable d’environnement, car ceux-ci finissent dans les listes de processus et l’historique du shell.
+- Lorsqu’une commande ponctuelle n’a ni terminal ni entrée standard, comme [la console d’un déploiement OpenTofu](deploy-opentofu.md#5-create-the-first-administrator), ajoutez `-password-link`. La commande ne lit alors aucun mot de passe : elle en définit un aléatoire que personne ne connaît et affiche, après la ligne `created admin`, un lien qui définit le mot de passe une seule fois, pendant une heure, comme `my admin account password-reset-link` (le journal d’audit l’enregistre sous `password_reset_link_issued`).
   Quiconque peut lire la sortie de la commande peut utiliser le lien, et sur une telle plateforme cette sortie reste dans les journaux de la plateforme jusqu’à ce que le lien soit utilisé ou expire. Ouvrez le lien immédiatement. S’il expire, émettez-en un autre avec `my admin account password-reset-link @alice`. Si l’émission du lien échoue, l’administrateur existe déjà : la commande le dit et se termine avec le code 1, et la même commande donne un nouveau lien.
 - Un mot de passe compte de 8 à 128 caractères. Il n’apparaît jamais dans la sortie, les journaux ni un message d’erreur.
-- Une seule transaction crée l’utilisateur, le mot de passe, l’adresse e-mail principale, le compte local (avec ses clés) et l’attribution du rôle `admin` (sans attributeur, ce qui désigne la CLI).
+- Une seule transaction crée l’utilisateur, le mot de passe, l’adresse e-mail principale, le compte local (avec ses clés) et l’attribution du rôle `admin` (sans attribuant, ce qui signifie la CLI).
   Les rôles intégrés sont d’abord créés s’ils manquent.
 - En cas de succès, la commande affiche `created admin @alice@<account_domain> (user <id>, account <id>)` et se termine avec le code 0.
 - Sur un [serveur d’une seule personne](instance-settings.md#one-person-server), la commande ne crée aucun compte et se termine avec le code 1.
-  Tant que [la connexion est limitée aux fournisseurs de connexion](login-providers.md#limit-sign-in-to-login-providers), elle avertit aussi que le mot de passe ne peut pas servir à se connecter avant la fin de cette limite.
+  Tant que [la connexion est limitée aux fournisseurs de connexion](login-providers.md#limit-sign-in-to-login-providers), elle avertit aussi que le mot de passe ne permet pas de se connecter avant la fin de la limite.
 
 <!-- source: running-it-again 197692f7f103 -->
 ## Relancer la commande

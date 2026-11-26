@@ -144,7 +144,7 @@ gRPC). Um plugin pode ignorar esse cabeçalho: o servidor para de esperar de qua
 tipos que uma requisição pode ficar esperando (`key_manager`, `translator`, `search`, `signup.check`, `media.check`, `local.status`, `inbound.actor` e `local.profile`), e
 abaixo de 5 minutos, quanto um job pode durar, para os demais.
 
-<!-- source: test-a-plugin 5d8195bb27f5 -->
+<!-- source: test-a-plugin f954dc9b5d3e -->
 ## Testar um plugin
 
 `my plugin test` executa o contrato de um tipo contra um plugin em execução e informa cada caso. Ele não lê nenhuma configuração,
@@ -163,7 +163,7 @@ FAIL echo_empty: the outcome is OUTCOME_UNSPECIFIED, not OUTCOME_OK
 ```
 
 O código de saída é 1 quando um caso falha. As flags significam o mesmo que as configurações: `--protocol`, `--token-file`, `--tls-ca-file`,
-`--tls-cert-file`, `--tls-key-file` e `--timeout`. Ele aplica as mesmas regras do servidor, então `--kind mailer` recusa um
+`--tls-cert-file`, `--tls-key-file` e `--timeout`; `--instance` é o `host` enviado no cabeçalho `My-Instance` (padrão `my.test`). Ele aplica as mesmas regras do servidor, então `--kind mailer` recusa um
 endereço `http://`. O plugin testado pode ser um real, então um caso que faz mais do que a própria chamada só roda quando
 uma flag o pede. Um tipo cujo contrato a versão ainda não tem informa `reachable` e um `SKIP`.
 
@@ -405,7 +405,7 @@ Um `outcome` ausente ou desconhecido, uma chamada que falhou e uma página que q
 dessa página é mostrado. Uma chamada dura no máximo `plugin_search_timeout` (10 segundos por padrão), e 10 segundos seja qual for o valor dessa
 configuração.
 
-<!-- source: converting-media 36df3dbdb21b -->
+<!-- source: converting-media 14a4c14a3699 -->
 ## Converter mídia
 
 Um plugin de mídia faz a parte pesada do processamento de envios, para que possa rodar em outra máquina. Há três tipos,
@@ -417,7 +417,7 @@ e você escolhe cada um separadamente:
 
 O servidor ainda faz o resto por conta própria. Ele detecta o formato de cada envio, distingue vídeos de arquivos de áudio, verifica cada
 envio contra os limites quando chega e cria as prévias de mídia remota. Um tipo cuja configuração continua `native` é
-processado no servidor.
+processado no servidor. Um plugin `media_image` também pode receber envios AVIF, HEIC e APNG, que o servidor nunca decodifica: ele aceita os que o plugin declara, depois de ler as dimensões e os quadros a partir dos cabeçalhos deles.
 
 ```sh
 # Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
@@ -445,11 +445,13 @@ assumir mais de um tipo: dê a ele o mesmo endereço para cada um. Cada tipo exe
   ação que precisa da imagem de um emoji personalizado na hora, como copiar um emoji remoto ou aceitar um pedido de emoji, falha
   enquanto o plugin falhar.
 
-<!-- source: the-contract-2 812c987c276c -->
+<!-- source: the-contract-2 480cea98aa91 -->
 ### O contrato
 
-O serviço é `my.plugin.media.v1.MediaService`, com os RPCs `Process` para uma imagem e `Remux` para um arquivo de vídeo ou áudio.
-Os dois transmitem nos dois sentidos, então o plugin precisa de uma biblioteca Connect ou gRPC e de HTTP/2: `proto` ou `grpc`, sobre TLS com ALPN
+O serviço é `my.plugin.media.v1.MediaService`, com os RPCs `Process` para uma imagem e `Remux` para um arquivo de vídeo ou áudio,
+e `Describe`, que declara os formatos além de JPEG, PNG, GIF e WebP que `Process` aceita. O servidor chama
+`Describe` na inicialização e a cada 5 minutos; um plugin sem ele recebe apenas esses quatro, e um APNG como um PNG estático. Os dois
+outros transmitem nos dois sentidos, então o plugin precisa de uma biblioteca Connect ou gRPC e de HTTP/2: `proto` ou `grpc`, sobre TLS com ALPN
 `h2`, ou sobre HTTP/2 em texto simples (h2c) em um socket Unix ou TCP simples.
 
 Uma chamada é half-duplex:
@@ -461,8 +463,8 @@ Uma chamada é half-duplex:
 3. Para cada saída, o plugin envia um `part`, que nomeia a saída e declara seu formato, dimensões e tamanho,
    seguido de mensagens `chunk` de no máximo 1 MiB.
 
-`Process` retorna as saídas estáticas pequena, média e grande, e as três animadas de uma imagem com mais de um
-quadro. As saídas pequena e média são WebP; a saída estática grande é um JPEG ou um PNG (sempre um PNG para um emoji personalizado),
+`Process` retorna as saídas estáticas pequena, média e grande, e pode retornar as três animadas de uma imagem com mais de um
+quadro; cada saída animada deve ter pelo menos dois quadros. As saídas pequena e média são WebP; a saída estática grande é um JPEG ou um PNG (sempre um PNG para um emoji personalizado),
 e a animada grande, um GIF. `Remux` retorna o arquivo em seu próprio contêiner sem metadados, e a imagem de capa que ele
 embute, se houver. O servidor lê no máximo o dobro do limite de imagem de `Process` e, de `Remux`, o limite de vídeo para o
 arquivo e o limite de imagem para a capa.

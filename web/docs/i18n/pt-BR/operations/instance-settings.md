@@ -28,7 +28,7 @@ idioma padrão, quem pode ver as timelines, o nome da instância, a descrição,
 <!-- source: keys ae25d36239c2 -->
 ## Chaves
 
-<!-- source: settings-one-key-one-value d7de299cd54d -->
+<!-- source: settings-one-key-one-value 50097b9aa7e6 -->
 ### Configurações (uma chave, um valor)
 
 | Chave | Tipo | Padrão | Descrição |
@@ -118,7 +118,7 @@ idioma padrão, quem pode ver as timelines, o nome da instância, a descrição,
 | `translation_server_monthly_characters` | inteiro 0-1000000000000 | `500000` | Quantos caracteres o servidor inteiro pode enviar a provedores de tradução em um mês UTC. Com `0`, nada é enviado. Não há valor ilimitado: defina um número grande |
 | `translation_retention_days` | inteiro 1-3650 (dias) | `30` | Quantos dias uma tradução é mantida depois de feita. Lê-la não estende esse prazo, e ela vai embora com a publicação |
 | `translation_reports_to_server` | booleano | `false` | Se os moderadores podem enviar o texto de uma denúncia, as publicações denunciadas e o comentário de quem denunciou, aos provedores no servidor. Cada provedor ainda recebe apenas as visibilidades que `translation_provider_visibilities` permite a ele, seja quem for que peça: uma publicação direta denunciada vai apenas a um provedor autorizado para `direct`, e o comentário conta como `private`. A tradução do comentário nunca é mantida, nem a de uma publicação excluída, e os caracteres contam apenas para `translation_server_monthly_characters`. Quando `false`, nada de uma denúncia chega a um provedor |
-| `event_records_retention_days` | inteiro 30-3650 (dias) | `90` | Por quantos dias depois que um evento terminou ou foi cancelado manter quem o respondeu, quem foi aprovado, quem foi convidado e quem votou nas datas candidatas dele. Um evento cuja data nunca foi fixada termina com a última data candidata. O evento em si (suas configurações, lugares, data e datas candidatas, e o cancelamento) é mantido. Os registros de um evento denunciado são mantidos enquanto durar a denúncia, e as retenções valem como para os outros registros ([retenção de registros](moderation.md#record-retention-and-holds)) |
+| `event_records_retention_days` | inteiro 30-3650 (dias) | `90` | Por quantos dias depois que um evento terminou ou foi cancelado manter quem o respondeu, quem foi aprovado, quem foi convidado, quem votou nas datas candidatas dele e as publicações do mural dele. Um evento cuja data nunca foi fixada termina com a última data candidata. O evento em si (suas configurações, lugares, data e datas candidatas, e o cancelamento) é mantido. Os registros de um evento denunciado são mantidos enquanto durar a denúncia, e as retenções valem como para os outros registros ([retenção de registros](moderation.md#record-retention-and-holds)) |
 | `voice_participants_retention_days` | inteiro 30-3650 (dias) | `90` | Quantos dias depois do fim de uma sala de chat de voz manter os registros de quem participou: as participações, os oradores e ouvintes, as mãos levantadas, os convites e as remoções. A sala em si (nome, descrição, anfitriões e como terminou) é mantida. Os registros de uma sala denunciada são mantidos pelo tempo da denúncia, e as retenções se aplicam como aos outros registros |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode`, `hook_inbound_actor_mode`, `hook_local_profile_mode` | `off`, `observe`, `enforce` | `observe` | Até onde cada [hook de decisão](decision-hooks.md#modes) age enquanto tem um plugin. `off` só chega a `enforce` passando por `observe`. |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure`, `hook_inbound_actor_on_failure` | `pass`, `retry` | `pass` | O que o hook faz quando aplica a decisão e seu plugin falha ([detalhes](decision-hooks.md#when-the-plugin-fails)). |
@@ -234,7 +234,7 @@ Um artigo é uma publicação longa com título, resumo e imagem de capa, cujo c
 - A exclusão automática de publicações antigas mantém os artigos, a menos que o usuário desative isso (`auto_delete_default_keep_articles` para contas novas, `auto_delete_max_allow_articles` sob um máximo).
 - `GET /api/v1/instance` retorna os limites em `limits.articles` e a configuração de autoria em `article_authoring`. Defina-os com `my instance set`, por exemplo `my instance set article_authoring permission`.
 
-<!-- source: events 07dccecf6936 -->
+<!-- source: events b51d3b629557 -->
 ### Eventos
 
 Os usuários locais planejam eventos com uma data, um fuso horário e até três lugares: uma sala de chat de voz deste servidor, um lugar para encontro presencial e um link. Em vez de uma data, um organizador pode oferecer até 20 datas candidatas: os usuários que veem o evento respondem a cada uma com sim, talvez ou não, e o organizador ou um coorganizador então confirma uma, o que fixa a data. Até lá, ninguém responde se vai. Os eventos são apenas para os usuários deste servidor: eles nunca são federados, e usuários remotos e visitantes sem sessão iniciada não veem nenhum.
@@ -246,7 +246,7 @@ Os usuários locais planejam eventos com uma data, um fuso horário e até três
 - O endereço e o link de um evento são mostrados apenas aos participantes que o organizador ou um coorganizador aprovou, a menos que o organizador os mostre a todos que veem o evento. Os links devem ser `http` ou `https`, e o servidor nunca os abre.
 - Um usuário que vê um evento pode salvá-lo como um arquivo iCalendar (`.ics`) para adicionar ao próprio calendário. O arquivo nomeia apenas os lugares que esse usuário vê, então um endereço mantido para os participantes aprovados nunca aparece nele. Não há endereço de assinatura de calendário.
 - Um usuário cria no máximo 10 eventos por hora, e um evento envia no máximo 100 convites por hora.
-- Os usuários podem denunciar um evento, e os moderadores podem cancelar um; suspender ou excluir um organizador cancela os eventos dele que não começaram ([moderação](moderation.md#events)). Quem respondeu e quem foi convidado é mantido por `event_records_retention_days` depois do evento, assim como os votos nas datas candidatas dele.
+- Os usuários podem denunciar um evento, e os moderadores podem cancelar um; suspender ou excluir um organizador cancela os eventos dele que não começaram ([moderação](moderation.md#events)). Quem respondeu e quem foi convidado é mantido por `event_records_retention_days` depois do evento, assim como os votos nas datas candidatas dele e as publicações do mural dele.
 
 <!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### Textos (uma chave, um valor)

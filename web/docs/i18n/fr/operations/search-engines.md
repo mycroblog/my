@@ -8,10 +8,10 @@ Comment exploiter chaque moteur de recherche que la recherche plein texte des pu
 
 `search = elasticsearch` conserve l’index dans un cluster Elasticsearch de version 8 ou ultérieure, autogéré ou sur Elastic Cloud Hosted. Il a été vérifié avec Elasticsearch 9.5 et 8.19. Le serveur possède les champs de l’index, qu’il écrit, filtre, trie et pagine. Vous pouvez posséder ses réglages : l’analyse, les shards et les réplicas. Sans réglages de votre part, les réglages intégrés n’exigent aucun plugin et trouvent le japonais comme [décrit plus bas](#how-the-built-in-analysis-finds-japanese).
 
-<!-- source: setting-it-up 3e02c35ff319 -->
+<!-- source: setting-it-up bf8c46897990 -->
 ### Mise en place
 
-1. Lancez Elasticsearch. Un seul nœud suffit pour la plupart des serveurs. Pour un démarrage rapide sur le même hôte :
+1. Exécutez Elasticsearch. Un seul nœud suffit pour la plupart des serveurs. Pour un démarrage rapide sur le même hôte :
 
    ```sh
    docker run -d --name elasticsearch -p 127.0.0.1:9200:9200 \
@@ -21,13 +21,13 @@ Comment exploiter chaque moteur de recherche que la recherche plein texte des pu
      elasticsearch:9.5.3
    ```
 
-   Avec la sécurité activée, ce qui est le cas par défaut, Elasticsearch sert du HTTPS avec un certificat de sa propre autorité. Copiez cette autorité hors du conteneur pour `search_elasticsearch_tls_ca_file` :
+   Avec la sécurité activée, ce qui est la valeur par défaut, Elasticsearch sert en HTTPS avec un certificat de sa propre autorité. Copiez cette autorité hors du conteneur pour `search_elasticsearch_tls_ca_file` :
 
    ```sh
    docker cp elasticsearch:/usr/share/elasticsearch/config/certs/http_ca.crt /etc/my/elasticsearch-ca.crt
    ```
 
-2. Créez une clé d’API qui ne peut gérer que les index du serveur. `manage`, `read` et `write` sur l’alias et les index qui le sous-tendent sont tout ce dont elle a besoin :
+2. Créez une clé d’API qui ne peut gérer que les index du serveur. `manage`, `read` et `write` sur l’alias et les index qui s’y rattachent sont tout ce dont elle a besoin :
 
    ```sh
    curl --cacert /etc/my/elasticsearch-ca.crt -u elastic:change-me -X POST https://localhost:9200/_security/api_key \
@@ -48,20 +48,20 @@ Comment exploiter chaque moteur de recherche que la recherche plein texte des pu
    MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE=/etc/my/elasticsearch-ca.crt
    ```
 
-4. Exécutez `my search rebuild` pour ajouter les publications existantes, comme dans [l’activation](search.md#turning-it-on).
+4. Exécutez `my search rebuild` pour ajouter les publications existantes, comme dans [l’activer](search.md#turning-it-on).
 
-Les paramètres :
+Les réglages :
 
-| Paramètre | Ce qu’il fait |
+| Réglage | Ce qu’il fait |
 | --- | --- |
-| [`search_elasticsearch_url`](../reference/configuration.md#search_elasticsearch_url) | L’URL de l’API REST. Utilisez `https:` dès que les requêtes traversent un réseau que d’autres partagent ; `http:` est accepté pour un réseau privé ou un cluster dont la sécurité est désactivée. |
+| [`search_elasticsearch_url`](../reference/configuration.md#search_elasticsearch_url) | L’URL de l’API REST. Utilisez `https:` chaque fois que les requêtes traversent un réseau que d’autres partagent ; `http:` est accepté pour un réseau privé ou un cluster sans sécurité. |
 | [`search_elasticsearch_api_key`](../reference/configuration.md#search_elasticsearch_api_key) | La clé d’API, qui est le meilleur choix. |
-| [`search_elasticsearch_username`](../reference/configuration.md#search_elasticsearch_username), [`search_elasticsearch_password`](../reference/configuration.md#search_elasticsearch_password) | Un utilisateur et un mot de passe pour l’authentification basique à la place d’une clé. |
+| [`search_elasticsearch_username`](../reference/configuration.md#search_elasticsearch_username), [`search_elasticsearch_password`](../reference/configuration.md#search_elasticsearch_password) | Un utilisateur et un mot de passe pour l’authentification basique, à la place d’une clé. |
 | [`search_elasticsearch_index`](../reference/configuration.md#search_elasticsearch_index) | Le nom de l’alias, `my-statuses` par défaut. Donnez à chaque serveur qui partage un cluster son propre nom, et accordez à sa clé ce nom suivi de `*`. |
-| [`search_elasticsearch_index_settings_file`](../reference/configuration.md#search_elasticsearch_index_settings_file) | Un fichier JSON de vos propres réglages de l’index, comme dans [ajuster l’analyse](#tuning-the-analysis-of-elasticsearch). |
-| [`search_elasticsearch_tls_ca_file`](../reference/configuration.md#search_elasticsearch_tls_ca_file) | L’autorité de certification d’un cluster HTTPS dont le certificat n’est pas approuvé par le système. |
+| [`search_elasticsearch_index_settings_file`](../reference/configuration.md#search_elasticsearch_index_settings_file) | Un fichier JSON de vos propres réglages de l’index, comme dans [régler l’analyse](#tuning-the-analysis-of-elasticsearch). |
+| [`search_elasticsearch_tls_ca_file`](../reference/configuration.md#search_elasticsearch_tls_ca_file) | L’autorité de certification d’un cluster HTTPS dont le système ne fait pas confiance au certificat. |
 
-Les identifiants sont lus uniquement depuis l’environnement, comme des secrets, et n’apparaissent jamais dans les journaux ni les erreurs du serveur. Une erreur du cluster atteint les journaux sous la forme du chemin de la requête, de son statut et du type de l’erreur, comme `index_not_found_exception`, jamais avec le texte d’une publication ou d’une requête. Ce n’est que lorsque le cluster refuse de créer l’index que l’erreur cite sa raison, qui ne nomme que les réglages et les champs.
+Les identifiants ne sont lus que dans l’environnement, comme des secrets, et n’apparaissent jamais dans les journaux ni les erreurs du serveur. Une erreur du cluster parvient aux journaux sous la forme du chemin de la requête, de son statut et du type de l’erreur, comme `index_not_found_exception`, jamais avec le texte d’une publication ou d’une requête. Ce n’est que lorsque le cluster refuse de créer l’index que l’erreur cite son motif, qui ne nomme que les réglages et les champs.
 
 <!-- source: the-index-and-its-upgrades 319d3f3a4bd2 -->
 ### L’index et ses mises à niveau
@@ -298,8 +298,8 @@ docker run -d --name meilisearch --restart unless-stopped \
 
 `MEILI_ENV=production` refuse de démarrer sans clé maîtresse et désactive l’aperçu de recherche intégré. Meilisearch parle en HTTP simple : placez-le derrière TLS, ou gardez-le sur un réseau privé, lorsque `my` l’atteint par autre chose qu’une liaison locale ou privée.
 
-<!-- source: settings 74547d71e962 -->
-### Paramètres
+<!-- source: settings 1ae3d39c472d -->
+### Réglages
 
 ```toml
 search = "meilisearch"
@@ -319,9 +319,9 @@ curl -X POST http://meilisearch:7700/keys \
     "expiresAt": null}'
 ```
 
-Utilisez la `key` de la réponse comme `search_meilisearch_api_key`. La clé n’est envoyée que dans l’en-tête `Authorization` : les journaux et les erreurs du serveur montrent le code d’erreur de Meilisearch (comme `invalid_api_key`) et jamais la clé, une publication ou une requête. Tous [les paramètres](../reference/configuration.md#search_meilisearch_url) figurent dans la référence de configuration.
+Utilisez le `key` de la réponse comme `search_meilisearch_api_key`. La clé n’est envoyée que dans l’en-tête `Authorization` : les journaux et les erreurs du serveur montrent le code d’erreur de Meilisearch (comme `invalid_api_key`) et jamais la clé, une publication ou une requête. Tous [les réglages](../reference/configuration.md#search_meilisearch_url) figurent dans la référence de configuration.
 
-Plusieurs serveurs peuvent partager un même serveur Meilisearch avec chacun un `search_meilisearch_index` différent, et une clé limitée à son propre index.
+Plusieurs serveurs peuvent partager un même serveur Meilisearch, chacun avec un `search_meilisearch_index` différent et une clé limitée à son propre index.
 
 <!-- source: the-index-and-its-settings 2657dc55a7bc -->
 ### L’index et ses réglages
@@ -348,10 +348,10 @@ Pour mettre à niveau Meilisearch lui-même, suivez son guide de mise à niveau 
 
 La requête d’une recherche est fixe, quoi que dise le fichier de réglages : `matchingStrategy: all`, pour qu’une publication ait chaque mot ; `sort: status_id:desc`, du plus récent au plus ancien ; un `filter` sur l’ID de la publication pour la page suivante ; une `limit` de la page plus un ; `attributesToRetrieve` de l’ID de la publication ; et `showMatchesPosition`, qui signale une requête sans mot. Les guillemets doubles d’une expression et le signe moins devant un mot, que Meilisearch lirait comme des opérateurs, sont retirés : une requête est donc toujours composée de mots simples.
 
-<!-- source: tuning-meilisearch df827448e06c -->
-### Ajuster Meilisearch
+<!-- source: tuning-meilisearch bc54de1bbf95 -->
+### Régler Meilisearch
 
-Ajustez le moteur avec un fichier JSON de [réglages d’index Meilisearch](https://www.meilisearch.com/docs/reference/api/settings), nommé par `search_meilisearch_index_settings_file`. Le serveur le vérifie au démarrage, lorsque `search = meilisearch` : il doit exister et être un objet JSON, ne doit pas définir les quatre réglages que le serveur définit lui-même, et ses `rankingRules`, s’il en a, doivent commencer par `sort`, ce qui garde les résultats du plus récent au plus ancien. Meilisearch vérifie les valeurs lorsque le serveur les envoie. Le serveur ne consigne jamais le contenu du fichier.
+Réglez le moteur avec un fichier JSON de [réglages d’index Meilisearch](https://www.meilisearch.com/docs/reference/api/settings), nommé par `search_meilisearch_index_settings_file`. Le serveur le vérifie au démarrage, lorsque `search = meilisearch` : il doit exister et être un objet JSON, ne doit pas définir les quatre réglages que le serveur définit lui-même, et ses `rankingRules`, lorsqu’il en a, doivent commencer par `sort`, ce qui garde les résultats du plus récent au plus ancien. Meilisearch vérifie les valeurs lorsque le serveur les envoie. Le serveur ne journalise jamais le contenu du fichier.
 
 Un exemple qui restreint les langues au japonais, traite `・` comme un séparateur, rend la proximité moins coûteuse à indexer et active la tolérance aux fautes de frappe pour les mots longs :
 
@@ -369,9 +369,9 @@ Un exemple qui restreint les langues au japonais, traite `・` comme un séparat
 
 Ce que coûte un changement :
 
-- Chaque modification du fichier, au démarrage suivant, fait réindexer à Meilisearch chaque document, comme ci-dessus : aucune donnée n’est perdue et rien n’exige de reconstruction, mais les écritures attendent la fin. Modifiez-le à un moment calme, et suivez la tâche avec `GET /tasks?types=settingsUpdate`.
-- `localizedAttributes` et les jetons décident de la façon dont le texte est découpé en mots : une liste de langues plus étroite peut segmenter une publication d’une autre langue comme si elle était de la mauvaise (voir plus bas) : gardez donc les champs japonais, chinois et coréen, sauf si le serveur n’a aucune publication dans ces langues.
-- La tolérance aux fautes de frappe et les synonymes font trouver à une recherche plus que les mots exacts. Les règles de classement après `sort` ne changent rien, puisque deux publications ne partagent jamais un ID ; les omettre ne fait qu’épargner un peu de travail à Meilisearch.
+- Chaque modification du fichier, au démarrage suivant, fait réindexer à Meilisearch chaque document, comme ci-dessus : aucune donnée n’est perdue et rien n’a besoin d’être reconstruit, mais les écritures attendent la fin. Modifiez-le à un moment calme, et suivez la tâche avec `GET /tasks?types=settingsUpdate`.
+- `localizedAttributes` et les tokens décident comment le texte est découpé en mots : une liste de locales plus étroite peut segmenter une publication dans une autre langue comme si elle était dans la mauvaise (voir ci-dessous) ; gardez donc les champs japonais, chinois et coréen, sauf si le serveur n’a aucune de ces publications.
+- La tolérance aux fautes de frappe et les synonymes font trouver à une recherche plus que les mots exacts. Les règles de classement après `sort` ne changent rien, puisque deux publications ne partagent jamais un même ID ; les omettre épargne seulement un peu de travail à Meilisearch.
 
 <!-- source: sizing-2 1d581fac5316 -->
 ### Dimensionnement

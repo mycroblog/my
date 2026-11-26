@@ -7,7 +7,7 @@ y cómo distinguir el modo de mantenimiento ([Mantenimiento](maintenance.md)) de
 
 Los datos de terceros que aparecen abajo llevan la fecha en que se confirmaron y su fuente. Los servicios cambian sus planes y sus pantallas; comprueba la página enlazada antes de fiarte de un límite.
 
-<!-- source: which-url-to-monitor 643ea5375522 -->
+<!-- source: which-url-to-monitor 9776f11ce8cf -->
 ## Qué URL monitorizar
 
 | Ruta | Para | Toca la BD | En el modo de mantenimiento |
@@ -18,9 +18,9 @@ Los datos de terceros que aparecen abajo llevan la fecha en que se confirmaron y
 
 Apunta el monitor externo a **`/api/v1/instance/health`**, no a `/readyz` (`/health/ready`): consulta la base de datos en cada solicitud,
 así que un monitor con un intervalo corto mantiene despierta una base de datos que escala a cero. Las sondas son para tu plataforma.
-La sección `monitoring` de [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) comprueba `/health/live` en Google Cloud, y la de [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) comprueba `/readyz`, cada una desde el propio monitor de la plataforma con un intervalo largo: su `uptime_period` es lo que eso cuesta, ya que cada comprobación despierta una instancia.
+La sección `monitoring` de los módulos de OpenTofu comprueba el servidor desde el propio monitor de la plataforma con un intervalo largo: `/health/live` en [Google Cloud](deploy-google-cloud.md#monitoring-and-alerts) y `/readyz` en [AWS](deploy-aws.md#monitoring-and-alerts).
 
-Adónde van las métricas, trazas e informes de errores del propio servidor lo decide la sección `observability` de los mismos módulos, que `monitoring` lee. Por defecto envía cada uno a la plataforma: en Google Cloud las métricas a Cloud Monitoring, las trazas de solicitudes a Cloud Trace y los informes de errores a Error Reporting, los tres a partir de lo que Cloud Run les envía, con sus API activadas; en AWS las métricas a CloudWatch en Embedded Metric Format, los informes de errores a CloudWatch Logs y las trazas a X-Ray, mediante un colector que se ejecuta junto al servidor en cada tarea ([trazas en AWS ECS](deploy-aws.md#traces-to-x-ray)). `monitoring` necesita allí las métricas: rechaza `observability.metrics = "settings"`, que deja `metrics_exporter` a la entrada `settings`.
+Adónde van las métricas, trazas e informes de errores del propio servidor lo decide la sección `observability` de los mismos módulos, que `monitoring` lee: las tablas de lo que crean [Google Cloud](deploy-google-cloud.md#what-it-creates) y [AWS](deploy-aws.md#what-it-creates) dan los valores predeterminados. `monitoring` necesita allí las métricas: rechaza `observability.metrics = "settings"`, que deja `metrics_exporter` a la entrada `settings`.
 
 Respuestas de `/api/v1/instance/health` (sin autenticación, `Cache-Control: no-store`):
 

@@ -1,12 +1,12 @@
-<!-- source: sending-email-through-amazon-ses cb9101de6cc9 -->
+<!-- source: sending-email-through-amazon-ses 6deee2054246 -->
 # Envoyer des e-mails avec Amazon SES
 
 Comment préparer Amazon SES à envoyer les e-mails du serveur : vérifier le domaine de l’expéditeur avec des enregistrements DNS, sortir du bac à sable
-dans lequel démarre un nouveau compte, et garder le compte en règle. Le module OpenTofu [`mycroblog-aws`](../../deploy/opentofu/README.md#aws) envoie via SES par
-défaut et crée l’identité et la permission ; les enregistrements et la demande d’accès à la production sont des étapes qui vous incombent.
-Les paramètres eux-mêmes se trouvent dans [Envoyer des e-mails](email.md#amazon-ses-api).
+dans lequel démarre un nouveau compte, et maintenir le compte en règle. Le module OpenTofu [`mycroblog-aws`](deploy-aws.md#email-through-amazon-ses) envoie par SES par
+défaut et crée l’identité et l’autorisation ; les enregistrements et la demande d’accès à la production sont des étapes qui vous reviennent.
+Les réglages eux-mêmes sont dans [Envoyer des e-mails](email.md#amazon-ses-api).
 
-**Le déploiement AWS n’a jamais été appliqué** ; ces étapes proviennent donc de la documentation d’AWS et n’ont pas été suivies de bout en
+**Le déploiement AWS n’a jamais été appliqué**, de sorte que ces étapes viennent de la documentation d’AWS et n’ont pas été suivies de bout en
 bout sur un serveur de ce projet.
 
 <!-- source: 1-add-the-records-of-the-domain b96b2365fdd4 -->

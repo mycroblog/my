@@ -154,12 +154,12 @@ Solo algunos participantes pueden hablar en una sala: los anfitriones y los oyen
 Eso detiene a los usuarios normales y al cliente web oficial, pero no es una defensa completa. **Dos participantes con clientes modificados que colaboran entre sí aún pueden intercambiar audio**: un cliente modificado de alguien que no puede hablar puede enviarlo, y un cliente modificado de un receptor puede reproducirlo, y el servidor no puede ver dentro del contenido multimedia cifrado.
 Si debes garantizar quién habla, por ejemplo en eventos públicos moderados, usa `livekit` o `sora`, donde el propio servidor multimedia descarta el audio de quien no tiene permiso.
 
-<!-- source: deployment-notes b0f03da306b7 -->
+<!-- source: deployment-notes 9daf6e4d8d98 -->
 ## Notas de despliegue
 
 - **Dos flujos por usuario**: durante una llamada, un participante mantiene el flujo de eventos propio de la sala (Server-Sent Events) además del flujo que la aplicación abre siempre. Dimensiona los límites de conexiones para dos solicitudes de larga duración por usuario en una llamada.
 - **Varios procesos**: usa un adaptador de flujo compartido (`stream` definido como `postgres`, `valkey`, `sns` o `pubsub`), como para el resto de la aplicación. Con `stream = hub` y un `role` distinto de `all`, el servidor avisa al arrancar de que el chat de voz no funcionará entre procesos.
-- **Cloud Run**: un flujo es una solicitud, y la CPU se asigna mientras está abierta. Cuando el tiempo de espera de la solicitud la corta, el cliente se reconecta. Fija el tiempo de espera tan largo como puedas.
+- **Cloud Run**: un flujo es una solicitud, y la CPU se asigna mientras está abierta. Cuando el tiempo de espera de la solicitud la corta, el cliente se reconecta. Fija el tiempo de espera tan largo como puedas: `service.request_timeout_seconds` de [Desplegar en Google Cloud](deploy-google-cloud.md#limits).
 - **Los servidores multimedia necesitan una máquina virtual**: LiveKit y Sora reciben el audio por UDP en un proceso de larga duración. Cloud Run solo acepta solicitudes HTTP, así que no puede alojarlos. Ejecútalos (y coturn) en una máquina virtual, o usa LiveKit Cloud, Sora Cloud o Cloudflare TURN.
 
 <!-- source: livekit b16c1d192419 -->

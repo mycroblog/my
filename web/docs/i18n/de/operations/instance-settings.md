@@ -28,7 +28,7 @@ Standard-Locale, wer die Timelines sehen kann, der Servername, die Beschreibung,
 <!-- source: keys ae25d36239c2 -->
 ## Schlüssel
 
-<!-- source: settings-one-key-one-value d7de299cd54d -->
+<!-- source: settings-one-key-one-value 50097b9aa7e6 -->
 ### Einstellungen (ein Schlüssel, ein Wert)
 
 | Schlüssel | Typ | Standard | Beschreibung |
@@ -118,7 +118,7 @@ Standard-Locale, wer die Timelines sehen kann, der Servername, die Beschreibung,
 | `translation_server_monthly_characters` | Ganzzahl 0-1000000000000 | `500000` | Wie viele Zeichen der ganze Server in einem UTC-Monat an Übersetzungsanbieter senden darf. Bei `0` wird nichts gesendet. Es gibt keinen Wert für unbegrenzt: Setze eine große Zahl |
 | `translation_retention_days` | Ganzzahl 1-3650 (Tage) | `30` | Wie viele Tage eine Übersetzung nach ihrer Erstellung behalten wird. Sie zu lesen verlängert das nicht, und sie verschwindet mit dem Beitrag |
 | `translation_reports_to_server` | Boolean | `false` | Ob Moderatoren den Text einer Meldung, die gemeldeten Beiträge und den Kommentar der meldenden Person, an die serverseitigen Anbieter senden dürfen. Jeder Anbieter erhält weiterhin nur die Sichtbarkeiten, die `translation_provider_visibilities` ihm erlaubt, wer auch immer fragt: Ein gemeldeter Direktbeitrag geht nur an einen Anbieter, dem `direct` erlaubt ist, und der Kommentar zählt als `private`. Die Übersetzung des Kommentars wird nie behalten, ebenso wenig die eines gelöschten Beitrags, und die Zeichen zählen nur gegen `translation_server_monthly_characters`. Bei `false` erreicht nichts von einer Meldung einen Anbieter |
-| `event_records_retention_days` | Ganzzahl 30-3650 (Tage) | `90` | Wie viele Tage nach dem Ende oder der Absage einer Veranstaltung behalten wird, wer geantwortet hat, wer genehmigt wurde, wer eingeladen wurde und wer über ihre Terminvorschläge abgestimmt hat. Eine Veranstaltung, deren Datum nie festgelegt wurde, endet mit ihrem letzten Terminvorschlag. Die Veranstaltung selbst (ihre Einstellungen, Orte, Datum und Terminvorschläge sowie die Absage) wird behalten. Die Datensätze einer gemeldeten Veranstaltung werden so lange behalten wie die Meldung, und Sperren gelten wie bei den anderen Datensätzen ([Aufbewahrung von Datensätzen](moderation.md#record-retention-and-holds)) |
+| `event_records_retention_days` | Ganzzahl 30-3650 (Tage) | `90` | Wie viele Tage nach dem Ende oder der Absage einer Veranstaltung behalten wird, wer geantwortet hat, wer genehmigt wurde, wer eingeladen wurde, wer über ihre Terminvorschläge abgestimmt hat und die Beiträge auf ihrer Pinnwand. Eine Veranstaltung, deren Datum nie festgelegt wurde, endet mit ihrem letzten Terminvorschlag. Die Veranstaltung selbst (ihre Einstellungen, Orte, Datum und Terminvorschläge sowie die Absage) wird behalten. Die Datensätze einer gemeldeten Veranstaltung werden so lange behalten wie die Meldung, und Sperren gelten wie bei den anderen Datensätzen ([Aufbewahrung von Datensätzen](moderation.md#record-retention-and-holds)) |
 | `voice_participants_retention_days` | Ganzzahl 30-3650 (Tage) | `90` | Wie viele Tage nach dem Ende eines Sprachchat-Raums die Datensätze behalten werden, wer daran teilgenommen hat: die Teilnahmen, die Sprecher und Zuhörer, die gehobenen Hände, die Einladungen und die Entfernungen. Der Raum selbst (sein Name, seine Beschreibung, seine Hosts und wie er endete) wird behalten. Die Datensätze eines gemeldeten Raums werden so lange behalten wie die Meldung, und Sperren gelten wie bei den anderen Datensätzen |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode`, `hook_inbound_actor_mode`, `hook_local_profile_mode` | `off`, `observe`, `enforce` | `observe` | Wie weit jeder [Entscheidungs-Hook](decision-hooks.md#modes) handelt, solange er ein Plugin hat. `off` geht nur über `observe` zu `enforce`. |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure`, `hook_inbound_actor_on_failure` | `pass`, `retry` | `pass` | Was der Hook tut, wenn er durchsetzt und sein Plugin ausfällt ([Details](decision-hooks.md#when-the-plugin-fails)). |
@@ -260,7 +260,7 @@ die Zusammenfassung und das Titelbild; der Text erscheint dort, wo der Artikel g
 - `GET /api/v1/instance` gibt die Limits in `limits.articles` und die Einstellung zum Verfassen in `article_authoring` zurück. Setze
   sie mit `my instance set`, zum Beispiel `my instance set article_authoring permission`.
 
-<!-- source: events 07dccecf6936 -->
+<!-- source: events b51d3b629557 -->
 ### Veranstaltungen
 
 Lokale Benutzer planen Veranstaltungen mit einem Datum, einer Zeitzone und bis zu drei Orten: einem Sprachchat-Raum dieses Servers, einem Treffpunkt vor Ort
@@ -294,7 +294,7 @@ und Besucher, die nicht angemeldet sind, sehen keine davon.
 - Ein Benutzer erstellt höchstens 10 Veranstaltungen pro Stunde, und eine Veranstaltung sendet höchstens 100 Einladungen pro Stunde.
 - Benutzer können eine Veranstaltung melden, und Moderatoren können eine absagen; das Sperren oder Löschen eines Organisators sagt dessen
   noch nicht begonnene Veranstaltungen ab ([Moderation](moderation.md#events)). Wer geantwortet hat und wer eingeladen wurde, wird
-  `event_records_retention_days` nach der Veranstaltung behalten, ebenso die Stimmen zu ihren Terminvorschlägen.
+  `event_records_retention_days` nach der Veranstaltung behalten, ebenso die Stimmen zu ihren Terminvorschlägen und die Beiträge auf ihrer Pinnwand.
 
 <!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### Texte (ein Schlüssel, ein Wert)

@@ -1,7 +1,7 @@
 <!-- source: posting-and-choosing-who-sees-a-post 5c4adb3025f6 -->
 # Publicar y elegir quién ve una publicación
 
-<!-- source: writing-a-post 5f24a2f4b092 -->
+<!-- source: writing-a-post a7aea00e3d00 -->
 ## Escribir una publicación
 
 Elige «Escribir una publicación» para abrir el formulario «Nueva publicación». Escribe en «Tu publicación» y elige «Publicar». El formulario muestra cuántos
@@ -15,7 +15,8 @@ caracteres te quedan. Además del texto puedes:
 - Responder a una publicación («Responder») o citar una («Citar»).
 
 Una publicación que no pudo enviarse permanece en «Publicaciones en envío», donde puedes «Enviar de nuevo», «Editar» o «Descartar» la publicación.
-Un servidor puede rechazar una publicación tras una revisión automática. Cuando el rechazo puede apelarse, la publicación ofrece «Apelar».
+Un servidor puede rechazar una publicación tras una revisión automática. Cuando el rechazo puede apelarse, la publicación ofrece «Apelar»,
+que envía su texto a los moderadores, con lo que escribes para ellos en «Lo que los moderadores deberían saber».
 
 <!-- source: drafts-and-scheduled-posts 9cee5f0d17b2 -->
 ## Borradores y publicaciones programadas
@@ -106,13 +107,13 @@ aprobación» deja que todas las demás lo soliciten en lugar de ser rechazadas.
 - Las solicitudes que te esperan se enumeran en «Esperando aprobación», que abre la fila de arriba de las notificaciones. «Aprobar» añade la respuesta, el impulso o la cita a tu publicación, y la conversación bajo ella muestra de inmediato una respuesta aprobada; «Rechazar» la mantiene fuera.
 - En la publicación de otra persona, «Responder» no se muestra y «Impulsar» no se puede pulsar cuando su autor no te lo permite. Cuando el autor los aprueba a mano, el formulario lo dice antes de que respondas, y después de impulsar, la publicación dice «Impulso esperando aprobación».
 
-<!-- source: after-posting e11fd06a76e8 -->
+<!-- source: after-posting a9f5b9c75fb4 -->
 ## Después de publicar
 
 Bajo una publicación encuentras «Responder», «Impulsar», «Citar», «Favorito», «Reaccionar» y «Más». «Más» tiene «Copiar el enlace», «Abrir la
 página original» (para una publicación de otro servidor), «Compartir» y «Marcador»; tus marcadores están en la página «Marcadores»,
-y solo tú los ves. En tu propia publicación también tiene «Editar» (no para una publicación con encuesta), «Eliminar y reescribir…» y
-«Eliminar…». Ambas eliminaciones preguntan antes. «Eliminar…» quita la publicación para todos, junto con sus impulsos y favoritos;
+y solo tú los ves; las publicaciones que marcaste como favoritas están en la página «Favoritos». En tu propia publicación «Más» también tiene «Editar»
+(no para una publicación con encuesta), «Eliminar y reescribir…» y «Eliminar…». Ambas eliminaciones preguntan antes. «Eliminar…» quita la publicación para todos, junto con sus impulsos y favoritos;
 «Eliminar y reescribir…» hace lo mismo y abre el formulario con su texto, imágenes y encuesta como una publicación nueva.
 
 Una publicación editada muestra «· editada» después de su hora; púlsala para abrir «Historial de ediciones», con la versión más reciente primero y los
@@ -131,7 +132,7 @@ Las imágenes, GIF, video y audio se muestran en la publicación. Pulsa una imag
 lee su descripción. El contenido multimedia marcado como sensible permanece oculto bajo una línea como «Imagen sensible», hasta que eliges «Mostrar». Un enlace en una
 publicación se muestra como una tarjeta.
 
-<!-- source: writing-an-article 3bc498986329 -->
+<!-- source: writing-an-article 7abd5d8b1ffd -->
 ## Escribir un artículo
 
 «Escribir un artículo», bajo el formulario de publicación nueva, abre el editor de artículos, una página propia. Dale al artículo un título, un
@@ -145,7 +146,7 @@ Solo se muestran en un artículo las imágenes que subes; una imagen de otra dir
 - «Vista previa» muestra el artículo tal como lo verán los lectores, generado por el servidor exactamente como se publicará, con el tamaño del cuerpo y el número de sus imágenes frente a los límites de este servidor.
 - «Marcar como sensible» muestra primero a los lectores el título y el resumen y pliega la portada y el cuerpo. Un artículo no puede ser «Directa».
 - Mientras escribes, el artículo se guarda como borrador cada vez que haces una pausa («Borrador guardado»), así que se abre en cualquier dispositivo desde «Borradores y publicaciones programadas», donde «Editar» lo devuelve al editor. Si el borrador se cambió entretanto en otro dispositivo, no se sobrescribe nada: tu texto permanece en el editor, y «Guardar como borrador nuevo» lo conserva como otro borrador.
-- «Publicar» publica el artículo ahora y abre su página; «Programar» lo publica a la hora que elijas, como una publicación.
+- «Publicar» publica el artículo ahora y abre su página; «Programar» lo publica a la hora que elijas, como una publicación. Un artículo que la revisión automática rechazó ofrece «Apelar» como una publicación, y envía su cuerpo, no su título ni su resumen.
 - Para cambiar un artículo que publicaste, elige «Editar» en su menú «Más acciones». El editor se abre con lo que escribiste; «Guardar los cambios» lo reemplaza, y la versión anterior permanece en su «Historial de ediciones». Quién puede ver un artículo no cambia.
 
 Un servidor puede permitir que solo algunas personas escriban artículos nuevos; entonces «Escribir un artículo» no se muestra a las demás, que aún pueden

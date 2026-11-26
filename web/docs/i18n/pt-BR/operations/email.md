@@ -195,23 +195,23 @@ plugin uma requisição sem destinatário, que ele deve recusar. O servidor não
 a que chegar: seus cabeçalhos devem conter `Message-ID`, `Date` e `Auto-Submitted: auto-generated`.
 Veja [Testar um plugin](plugins.md#test-a-plugin).
 
-<!-- source: receive-ses-notifications-sns e21b650ab5fe -->
-### Receber notificações do SES (SNS)
+<!-- source: receive-ses-notifications-sns aa8911000390 -->
+### Receber as notificações do SES (SNS)
 
-Os bounces e reclamações do SES vão para um tópico SNS, e uma assinatura HTTPS nesse tópico os entrega ao
+Os bounces e as reclamações do SES vão para um tópico do SNS, e uma assinatura HTTPS nesse tópico os entrega ao
 `POST /mail/events/ses` do servidor.
-O endpoint só abre quando `mail_ses_sns_topic_arn` está definido; caso contrário, responde `404`.
+O endpoint só abre quando `mail_ses_sns_topic_arn` está definido; caso contrário, ele responde `404`.
 
-1. Crie um tópico SNS padrão na mesma região da identidade do SES.
+1. Crie um tópico padrão do SNS na mesma região da identidade do SES.
 2. Defina o atributo `SignatureVersion` do tópico como `2` (SHA256withRSA). Uma assinatura com o padrão `1` não é aceita e o
    servidor responde `400`.
-3. Na política de acesso do tópico, permita que `ses.amazonaws.com` execute `SNS:Publish` a partir da sua própria conta (o console do SES adiciona isso
+3. Na política de acesso do tópico, permita que `ses.amazonaws.com` execute `SNS:Publish` a partir da sua própria conta (o console do SES adiciona isto
    quando cria o tópico).
-4. Aponte as notificações do SES para o tópico, de qualquer uma das duas formas (o servidor lê tanto `notificationType` quanto `eventType` no corpo).
-   - Notificações de identidade: use este tópico para as notificações de feedback “Bounce” e “Complaint” da identidade `mail_from`.
-   - Destino de eventos do configuration set: adicione este tópico como destino do configuration set em `mail_ses_configuration_set`,
+4. Aponte as notificações do SES para o tópico, de qualquer um dos dois modos (o servidor lê tanto `notificationType` quanto `eventType` no corpo).
+   - Notificações da identidade: use este tópico para as notificações de feedback “Bounce” e “Complaint” da identidade `mail_from`.
+   - Destino de eventos de um conjunto de configurações: adicione este tópico como destino do conjunto de configurações em `mail_ses_configuration_set`,
      para os tipos de evento `BOUNCE` e `COMPLAINT`.
-5. Defina `MY_MAIL_SES_SNS_TOPIC_ARN` com o ARN do tópico, verifique com `my config check` e reinicie.
+5. Defina `MY_MAIL_SES_SNS_TOPIC_ARN` como o ARN do tópico, verifique com `my config check` e reinicie.
 6. Crie uma assinatura no tópico com o protocolo `https` e o endpoint `https://<server host>/mail/events/ses`.
    **Não ative a entrega de mensagem bruta** (um corpo sem assinatura é rejeitado).
 
@@ -232,32 +232,32 @@ aws sns subscribe --region ap-northeast-1 \
   --protocol https --notification-endpoint https://social.example/mail/events/ses
 ```
 
-Quando o servidor recebe a confirmação da assinatura (`SubscriptionConfirmation`), ele envia um `GET` ao seu `SubscribeURL` para
-confirmá-la e registra no log `SNS subscription of the SES notifications confirmed`.
+Quando o servidor recebe a confirmação da assinatura (`SubscriptionConfirmation`), ele envia um `GET` ao `SubscribeURL` dela para
+confirmar a assinatura e registra no log `SNS subscription of the SES notifications confirmed`.
 Verifique com `aws sns list-subscriptions-by-topic` que a assinatura não está mais em `PendingConfirmation`.
 
 Antes de usar uma mensagem, o endpoint verifica tudo o que segue. Se algo falhar, ele responde `400` e não registra nada.
 
 - `TopicArn` é igual a `mail_ses_sns_topic_arn`.
 - `SignatureVersion` é `2` e a assinatura é válida.
-- A URL do certificado da assinatura (`SigningCertURL`) é `https` e seu host é `sns.<region>.amazonaws.com` para a região
+- A URL do certificado da assinatura (`SigningCertURL`) é `https` e o host dela é `sns.<region>.amazonaws.com` para a região
   do tópico. O `SubscribeURL` de uma confirmação de assinatura deve ter o mesmo host.
 
-O certificado é obtido com o cliente HTTP de saída que protege contra SSRF e fica em cache no armazenamento KV por 24 horas. O
+O certificado é buscado com o cliente HTTP de saída que protege contra SSRF e fica em cache no armazenamento KV por 24 horas. O
 corpo é lido até 1 MiB, e um maior recebe `413`.
-Quando o certificado não pode ser obtido, a confirmação da assinatura falha ou o registro não pode ser gravado, o endpoint
+Quando o certificado não pode ser buscado, a confirmação da assinatura falha ou o registro não pode ser gravado, o endpoint
 responde `503` e deixa o SNS tentar de novo. Ele também responde `503` durante o modo de manutenção.
 
-Estas são as notificações que ele registra. Ele compara o endereço do destinatário com o endereço principal (sem diferenciar maiúsculas de minúsculas, e um
-domínio Punycode também corresponde na forma Unicode); se nenhum corresponder, ele não faz nada.
+Estas são as notificações que ele registra. Ele compara o endereço do destinatário com o endereço principal (sem distinguir maiúsculas de minúsculas, e um
+domínio em Punycode também corresponde na forma Unicode); se nenhum corresponde, ele não faz nada.
 
 | Notificação | Registrada como |
 | --- | --- |
 | Um bounce cujo `bounceType` é `Permanent` (qualquer subtipo, como `General`, `NoEmail`, `Suppressed` ou `OnAccountSuppressionList`) | `hard_bounce` |
-| Uma reclamação (exceto aquelas cujo `complaintFeedbackType` é `not-spam`) | `complaint` |
-| Um bounce `Transient` ou `Undetermined`, e outras notificações, como entrega ou envio | Não registrada (responde `200`) |
+| Uma reclamação (exceto as cujo `complaintFeedbackType` é `not-spam`) | `complaint` |
+| Um bounce `Transient` ou `Undetermined`, outras notificações como entrega ou envio, e qualquer notificação cujo `mail.source` não é o endereço de `mail_from` (e-mail que outra instância que compartilha o tópico ou o conjunto de configurações enviou) | Não registrada (responde `200`) |
 
-O `feedbackId` do SES é a chave única de um registro, então, por mais vezes que o SNS envie a mesma notificação, há um só registro.
+O `feedbackId` do SES é a chave única de um registro, então, por mais vezes que o SNS envie a mesma notificação, há um único registro.
 
 <!-- source: amazon-ses-smtp-interface f46a7a562966 -->
 ### Amazon SES (interface SMTP)

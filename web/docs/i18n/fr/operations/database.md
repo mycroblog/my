@@ -248,11 +248,11 @@ kubectl rollout status deployment/my
 Si le Job échoue, `kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check` (ou `-c schema`, `-c upgrade`) montre pourquoi, et le Deployment reste sur l’image précédente.
 Avec SQLite sur un volume, montez le même volume dans le Job et arrêtez d’abord les pods du Deployment : SQLite n’admet qu’un seul écrivain.
 
-<!-- source: cloud-run 9e7486b6a4af -->
+<!-- source: cloud-run 4cd76d9b85b5 -->
 ### Cloud Run
 
 Avec le module OpenTofu, une mise à niveau consiste à appliquer la nouvelle version, ce qui exécute `my upgrade` dans le job de migration avant que les services prennent
-la nouvelle image, et s’arrête là en cas d’échec : voir [Déployer sur Cloud Run](deploy-opentofu.md#upgrading). À la main :
+la nouvelle image, et s’arrête là en cas d’échec : voir [Déployer avec OpenTofu](deploy-opentofu.md#upgrading). À la main :
 
 Les jobs Cloud Run exécutent un conteneur chacun ; créez donc un job par étape et exécutez-les dans l’ordre avec `--wait`, qui échoue lorsque le job échoue.
 Donnez aux jobs les mêmes variables d’environnement et secrets qu’au service.
@@ -274,7 +274,7 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
   gcloud run deploy my --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 --remove-env-vars=MY_MAINTENANCE
 ```
 
-Pour vérifier d’abord le SQL, déployez le job de schéma avec `--args=schema,apply,-dry-run`, exécutez-le et lisez ses journaux avant de le redéployer pour l’application.
+Pour vérifier d’abord le SQL, déployez le job du schéma avec `--args=schema,apply,-dry-run`, exécutez-le et lisez ses journaux avant de le redéployer pour l’application.
 
 <!-- source: backing-up b597d3139c2b -->
 ### Sauvegarder
@@ -317,22 +317,23 @@ Pour franchir plus d’une version mineure, passez successivement par la derniè
 De `v0.1.3` à `v0.4.0`, par exemple : la dernière `v0.1.x`, puis la dernière `v0.2.x`, puis la dernière `v0.3.x`, puis `v0.4.0`.
 `my db upgrade -check` arrête un saut qui ferait perdre des données et nomme la version par laquelle passer ; rien n’a changé à ce stade.
 
-<!-- source: checking-and-rebuilding-projections 40b848afd40d -->
+<!-- source: checking-and-rebuilding-projections df54e4ad696f -->
 ## Vérifier et reconstruire les projections
 
 Certaines tables sont des projections : le serveur les dérive des événements et des ressources de leur module (les restrictions d’un compte à partir de ses
-actions de modération, par exemple). Le worker vérifie chaque projection une fois par jour et corrige toute différence qu’il trouve. Pour en vérifier ou en corriger une à la main :
+actions de modération, par exemple). Avec `projection_verify_interval` défini, le worker vérifie chaque projection selon ce calendrier et journalise toute
+différence qu’il trouve (comptée par `my.projection.drifts`) sans la corriger ; par défaut, il ne vérifie pas. Pour en vérifier ou en corriger une à la main :
 
 ```sh
 my projection list              # each projection with its module and tables
-my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection verify [<name>]   # derive every projection, or the one named, into temporary copies and print the rows that differ
 my projection rebuild [<name>]  # derive them the same way and write the difference
 ```
 
 - `<name>` est une projection ou l’une de ses tables.
 - `verify` affiche les lignes que les tables contiennent mais que les sources ne dérivent pas (`-`) et les lignes que les sources dérivent mais qui manquent aux tables (`+`),
-  et se termine avec le code `1` si certaines diffèrent.
-- `rebuild` écrit au plus 500 lignes par transaction, de sorte que les lecteurs ne voient jamais une projection vidée. Exécutez-le lorsque l’instance est calme :
+  jusqu’à 1 000 par table dans chaque sens, et se termine avec `1` si elles diffèrent. Il ne verrouille aucune ligne, et peut donc s’exécuter pendant que l’instance fonctionne.
+- `rebuild` écrit au plus 500 lignes par transaction, de sorte que les lecteurs ne voient jamais une projection vidée. Exécutez-le pendant que l’instance est calme :
   une ligne qui change pendant la reconstruction garde sa nouvelle valeur, et un `verify` ultérieur signale toute différence restante.
 
 <!-- source: recreating-erasing-every-row 9ff993b99448 -->

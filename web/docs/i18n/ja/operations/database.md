@@ -314,21 +314,21 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
 たとえば `v0.1.3` から `v0.4.0` へは、最新の `v0.1.x`、次に最新の `v0.2.x`、次に最新の `v0.3.x`、そして `v0.4.0` の順です。
 データを失うような飛ばし方は `my db upgrade -check` が止め、経由するべきリリースを示します。その時点では何も変わっていません。
 
-<!-- source: checking-and-rebuilding-projections 40b848afd40d -->
+<!-- source: checking-and-rebuilding-projections df54e4ad696f -->
 ## プロジェクションの確認と作り直し
 
 一部のテーブルはプロジェクションです。サーバーは、それをモジュールのイベントとリソースから導き出します（たとえば、アカウントの制限をその
-モデレーションの操作から導きます）。ワーカーは 1 日に 1 回すべてのプロジェクションを確認し、見つけた差分を直します。手で確認したり直したりするには次のようにします。
+モデレーションの操作から導きます）。`projection_verify_interval` を設定すると、ワーカーはその間隔ですべてのプロジェクションを確認し、見つけた差分をログに記録します（`my.projection.drifts` で数えます）。差分は直しません。既定では確認しません。手で確認したり直したりするには次のようにします。
 
 ```sh
 my projection list              # each projection with its module and tables
-my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection verify [<name>]   # derive every projection, or the one named, into temporary copies and print the rows that differ
 my projection rebuild [<name>]  # derive them the same way and write the difference
 ```
 
 - `<name>` はプロジェクションか、そのテーブルの 1 つです。
-- `verify` は、テーブルにはあるがソースからは導き出されない行（`-`）と、ソースからは導き出されるがテーブルにない行（`+`）を出力し、
-  差分があれば `1` で終了します。
+- `verify` は、テーブルにはあるがソースからは導き出されない行（`-`）と、ソースからは導き出されるがテーブルにない行（`+`）をテーブルごと・向きごとに 1,000 行まで出力し、
+  差分があれば `1` で終了します。行をロックしないので、インスタンスが動いている間にも実行できます。
 - `rebuild` は 1 つのトランザクションで最大 500 行を書き込むので、読み手が空になったプロジェクションを目にすることはありません。インスタンスが静かなときに実行してください。
   作り直しの間に変わった行は新しい値を保ち、残った差分はあとの `verify` が報告します。
 

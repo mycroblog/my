@@ -5,7 +5,7 @@
 
 下文中关于第三方的事实都附有确认日期和来源。各服务会更改其方案和界面；在依赖某项限制之前，请查看链接的页面。
 
-<!-- source: which-url-to-monitor 643ea5375522 -->
+<!-- source: which-url-to-monitor 9776f11ce8cf -->
 ## 监控哪个 URL
 
 | 路径 | 用途 | 是否访问数据库 | 在维护模式下 |
@@ -16,9 +16,9 @@
 
 请让外部监控指向 **`/api/v1/instance/health`**，而不是 `/readyz`（`/health/ready`）：后者每个请求都会查询数据库，
 因此间隔很短的监控会让缩容到零的数据库一直保持唤醒。这些探测是留给你的平台用的。
-`monitoring` 部分在 Google Cloud（[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections)）上检查 `/health/live`，在 AWS（[`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws)）上检查 `/readyz`，都由平台自带的监控以较长的间隔执行：它的 `uptime_period` 就是这要花费的成本，因为每次检查都会唤醒一个实例。
+OpenTofu 模块的 `monitoring` 部分由平台自带的监控以较长的间隔检查服务器：在 [Google Cloud](deploy-google-cloud.md#monitoring-and-alerts) 上检查 `/health/live`，在 [AWS](deploy-aws.md#monitoring-and-alerts) 上检查 `/readyz`。
 
-服务器自己的指标、追踪和错误报告送往哪里，由这些模块中同一份配置的 `observability` 部分决定，`monitoring` 会读取它。默认情况下，它把每一项都送往平台：在 Google Cloud 上，指标送往 Cloud Monitoring，请求追踪送往 Cloud Trace，错误报告送往 Error Reporting，这三者都来自 Cloud Run 发送给它们的内容，并会启用它们的 API；在 AWS 上，指标以 Embedded Metric Format 送往 CloudWatch，错误报告送往 CloudWatch Logs，追踪则通过每个任务中与服务器并排运行的采集器送往 X-Ray（[AWS ECS 上的追踪](deploy-aws.md#traces-to-x-ray)）。`monitoring` 需要那里有指标：它拒绝 `observability.metrics = "settings"`，因为这会把 `metrics_exporter` 交给 `settings` 输入。
+服务器自己的指标、追踪和错误报告送往哪里，由这些模块中同一份配置的 `observability` 部分决定，`monitoring` 会读取它：[Google Cloud](deploy-google-cloud.md#what-it-creates) 和 [AWS](deploy-aws.md#what-it-creates) 所创建内容的表格给出了默认值。`monitoring` 需要那里有指标：它拒绝 `observability.metrics = "settings"`，因为这会把 `metrics_exporter` 交给 `settings` 输入。
 
 `/api/v1/instance/health` 的响应（无需认证，`Cache-Control: no-store`）：
 

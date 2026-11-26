@@ -11,7 +11,7 @@ Die Metriken zählen jeden Versuch nach Quelle, Ergebnis und Fehlerart (`my.bill
 Für AWS und Google Cloud werden in der Konfiguration dieses Servers keine Zugangsdaten gehalten. Gib der Laufzeitumgebung das, was die Standard-Credential-Chain des SDK jedes Anbieters liest (bei AWS die Ausführungsrolle, Umgebungsvariablen oder gemeinsame Credential-Dateien; bei Google Cloud Application Default Credentials).
 Cloudflare hat keine solche Chain, daher liest sein Import ein API-Token aus [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare).
 
-<!-- source: with-the-opentofu-modules a8e849af2fcd -->
+<!-- source: with-the-opentofu-modules 9f123e4796b9 -->
 ## Mit den OpenTofu-Modulen
 
 Auf Google Cloud setzt der Abschnitt `billing` von [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) `billing_sources = gcp` und erledigt die Teile dieser Anleitung, die die API des Anbieters erlaubt, mit `billing_account_id`, `method` (`bigquery` oder `budget`) und `dataset_location`. Er importiert nur die Kosten von Google Cloud. Auf AWS tut das Modul [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) des AWS-Beispiels dasselbe für die Kosten von AWS. Keines wurde bisher auf einem echten Konto angewendet.

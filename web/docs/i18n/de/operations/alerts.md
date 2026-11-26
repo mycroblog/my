@@ -62,7 +62,7 @@ die Anfragerate, die Statuscodes und die Latenz; die Job-Läufe, die Worker-Zeit
 und entfernte Server; sowie CPU und Speicher jedes Prozesses. Importiere es in Grafana (**Dashboards** → **New** → **Import**) und wähle deine
 Prometheus-Datenquelle; seine Variable **Job** wählt den Scrape-Job (standardmäßig `my`).
 
-<!-- source: google-cloud-cloud-run addd07c417a9 -->
+<!-- source: google-cloud-cloud-run 0db55ed9d56b -->
 ### Google Cloud (Cloud Run)
 
 Baue die Alarme mit `metrics_exporter = none` aus dem, was Cloud Run und Cloud Logging bereits haben:
@@ -72,9 +72,13 @@ Baue die Alarme mit `metrics_exporter = none` aus dem, was Cloud Run und Cloud L
 - **Jobs und Anfragen**: Der Server schreibt pro HTTP-Anfrage (`msg` = `http request`) und pro Job-Lauf (`msg` = `job`) eine Logzeile mit denselben
   Labels wie die Metriken. Erzeuge daraus logbasierte Metriken, zum Beispiel einen Zähler von `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   für fehlgeschlagene Jobs oder eine Verteilung von `jsonPayload.duration_seconds`, gefiltert auf `jsonPayload."my.surface"="client_api"`, für die Latenz.
+  Die Zeile eines POST an eine Inbox trägt außerdem die Labels von `my.inbox.activities`: `activity.type`, `my.outcome` und `my.inbox.rejection`.
 - **Queue-Rückstau und Speicher**: Alle 15 Minuten schreibt der Job `metrics.snapshot` eine Zeile (`msg` = `metrics snapshot`) mit den instanzweiten
-  Werten, etwa `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` und `my.media.stored_bytes`. Erzeuge aus ihren Feldern logbasierte Metriken;
+  Werten, etwa `my.queue.oldest_ready_age` (nach Job-Typ), `my.queue.dead`, `my.db.size` und `my.media.stored_bytes` (nach Herkunft). Ein Filter kann die Felder einer Gruppe
+  nicht miteinander vergleichen, daher hat die Zeile auch `my.queue.oldest_ready_age.max` und `my.media.stored_bytes.total`. Erzeuge aus ihren Feldern logbasierte Metriken;
   eine Lücke in diesen Zeilen bedeutet, dass der Tick oder die Queue stehen geblieben ist. Die Metrik für die Queue-Tiefe von Cloud Tasks zählt die Signale, die auf Zustellung warten.
+- **Adapter und der Datenbank-Pool**: Die Zeilen `http request` und `job` tragen außerdem die Felder von `MyAdapterErrors`, `MyDBPoolSaturated` und
+  `MyDBPoolWaiting`: die Adapter-Operationen der Anfrage oder des Jobs sowie Nutzung und Wartezeiten des Pools des Prozesses ([die Zeilen](running.md#start-the-server)).
 - **Datenbank**: die Metriken zu Festplattenauslastung und Verbindungen von Cloud SQL oder die Nutzungsalarme deines Datenbankanbieters.
 - **Kosten**: ein Cloud-Billing-Budget mit Alarmschwellen ([Kosten und Budget](#cost-and-budget)).
 
@@ -136,7 +140,7 @@ Schweregrad: **page** = sofort handeln, **ticket** = während der Arbeitszeit. �
 | Kosten | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 für 6 Std. | ticket | Fehlende Berechtigungen, der Billing-Export ist nicht eingerichtet, das Anfragelimit ist erreicht, der Anbieter ist nicht verfügbar |
 | Kosten | Budget überschritten | – | – | – | Traffic, Speicher oder eine Fehlkonfiguration kosten mehr als geplant ([unten](#cost-and-budget)) |
 
-<!-- source: where-to-look 988be973ea5b -->
+<!-- source: where-to-look 3211df763cac -->
 ## Wo du nachsehen kannst
 
 Diese Werkzeuge kehren in den meisten der folgenden Runbook-Einträge wieder.
@@ -147,8 +151,8 @@ Diese Werkzeuge kehren in den meisten der folgenden Runbook-Einträge wieder.
 - **Der Befehl `my job`** auf einem Host, der die Konfiguration des Servers hat (`queue = db` und `cloudtasks`):
   `my job list` listet die fehlgeschlagenen Jobs auf, die neuesten zuerst; `my job retry <id>...` stellt sie zurück in die Queue; `my job delete <id>...` verwirft sie.
   Jobs können gefahrlos erneut laufen.
-- **Der Bildschirm für entfernte Server** (Moderation → Entfernte Server, `/moderation/instances`, braucht `manage_domains`): die Server, die Zustellungen nicht erreichen konnten,
-  und jene, deren Zustellungen pausiert sind, mit Grund und Zeitpunkt. „Zustellungen fortsetzen“ markiert einen Server wieder als verfügbar. „Server öffnen“ öffnet die Seite eines beliebigen Servers anhand seiner Domain, ob aufgelistet oder nicht.
+- **Der Bildschirm für entfernte Server** (Moderation → Entfernte Server, `/moderation/instances`, braucht `manage_domains`): jeder Server, den dieser Server kennt, mit seiner Software und seinem Zustand;
+  filtere auf die, die Zustellungen nicht erreichen konnten, oder auf die pausierten. „Zustellungen fortsetzen“ markiert einen Server wieder als verfügbar. „Server öffnen“ öffnet die Seite eines beliebigen Servers anhand seiner Domain, ob aufgelistet oder nicht.
 - **Die Logs**: JSON-Zeilen auf der Standardfehlerausgabe. Jede HTTP-Anfrage endet mit einer Zeile, deren `msg` `http request` ist, jeder Job-Lauf mit einer Zeile, deren `msg` `job` ist
   (`INFO` bei Erfolg, `WARN` bei einer Wiederholung, `ERROR` bei einem Job, der endgültig fehlgeschlagen ist, mit `error`, `job_id` und `my.job.type`).
   Zeilen innerhalb einer Anfrage tragen ihre `request_id`, die der Client als `X-Request-Id` sieht.
@@ -268,7 +272,7 @@ Beheben:
 - Wenn entfernte Server während des Ausfalls pausiert wurden, werden sie bei der nächsten erfolgreichen Zustellung, signierten Anfrage oder der täglichen Prüfung fortgesetzt; du kannst auch
   „Zustellungen fortsetzen“ im Bildschirm für entfernte Server drücken.
 
-<!-- source: myremoteserverspaused 17c3ec51fb53 -->
+<!-- source: myremoteserverspaused 0f1e420b43eb -->
 ### MyRemoteServersPaused
 
 Zustellungen an 5 oder mehr Server wurden am letzten Tag pausiert. Ein Server wird pausiert, nachdem Zustellungen an ihn an 7 verschiedenen Tagen fehlgeschlagen sind, daher sind ein paar Pausen pro Woche
@@ -277,7 +281,7 @@ normal: Server werden abgeschaltet. Viele auf einmal bedeuten, dass so viele Ser
 
 Die Metrik hat kein Label pro Server (Labels tragen nie eine entfernte Domain). Prüfen:
 
-- Den Bildschirm für entfernte Server: Der Tab „Pausiert“ listet die pausierten Server auf, mit Zeitpunkt und Grund. Ob sie etwas gemeinsam haben (einen Hosting-Anbieter, eine Software)
+- Den Bildschirm für entfernte Server: Der Filter „Nicht verfügbar“ listet die pausierten Server auf; die Seite jedes Servers sagt, seit wann. Ob sie etwas gemeinsam haben (einen Hosting-Anbieter, eine Software)
   oder breit gestreut sind.
 - `MyDeliveryFailuresHigh` und `MyDeliveryAllFailing` über die letzte Woche: Ein Netzwerkproblem auf dieser Seite, das tagelang andauerte, pausiert viele Server.
 
@@ -472,10 +476,10 @@ Beheben:
 Arbeit wartet auf eine freie Datenbankverbindung oder hat das Warten nach [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) aufgegeben (Timeouts gibt es nur bei PostgreSQL): Anfragen antworten mit `503`, und Jobs laufen später erneut. Folge [MyDBPoolSaturated](#mydbpoolsaturated);
 prüfe außerdem, dass die Datenbank selbst nicht an ihrem Verbindungslimit ist.
 
-<!-- source: mydatabasestoragelarge edf767115918 -->
+<!-- source: mydatabasestoragelarge 2dd93b626b08 -->
 ### MyDatabaseStorageLarge
 
-Die Datenbank beansprucht mehr, als du eingeplant hast. `my_db_size_bytes` ist die Größe der PostgreSQL-Datenbank (`pg_database_size`, was die Speicherlimits der Anbieter zählen)
+Die Datenbank beansprucht mehr, als du eingeplant hast. `my_db_size_bytes` ist die Größe der Tabellen und Indizes des PostgreSQL-Schemas der Instanz (die Speicherlimits der Anbieter zählen die ganze Datenbank)
 oder der SQLite-Datei (ihr Write-Ahead-Log ausgenommen). Das ist Wachstum, kein Ausfall. Setze den Schwellenwert in der Regel einen Puffer unter das Speicherlimit
 deines Datenbanktarifs oder des Volumes, das die SQLite-Datei hält, das auch Platz für das Write-Ahead-Log und für Backups behalten muss.
 

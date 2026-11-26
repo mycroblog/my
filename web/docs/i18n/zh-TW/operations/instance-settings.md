@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## 鍵
 
-<!-- source: settings-one-key-one-value d7de299cd54d -->
+<!-- source: settings-one-key-one-value 50097b9aa7e6 -->
 ### 設定（一個鍵，一個值）
 
 | 鍵 | 型別 | 預設值 | 說明 |
@@ -115,7 +115,7 @@
 | `translation_server_monthly_characters` | 整數 0-1000000000000 | `500000` | 整台伺服器在一個 UTC 月內可以送給翻譯提供者的字元數。為 `0` 時不會送出任何東西。沒有無上限的值：請設定一個很大的數字 |
 | `translation_retention_days` | 整數 1-3650（天） | `30` | 翻譯在產生後保留的天數。閱讀它不會延長期限，而且它會隨貼文一起刪除 |
 | `translation_reports_to_server` | 布林值 | `false` | 版主是否可以將檢舉的文字（被檢舉的貼文和檢舉者的留言）送給伺服器端提供者。不論是誰提出請求，每個提供者仍只會收到 `translation_provider_visibilities` 允許它的可見範圍：被檢舉的私訊貼文只會送給允許 `direct` 的提供者，而留言視為 `private`。留言的翻譯永遠不會保留，已刪除貼文的翻譯也不會，而且字元數只計入 `translation_server_monthly_characters`。為 `false` 時，檢舉的任何內容都不會送到提供者 |
-| `event_records_retention_days` | 整數 30-3650（天） | `90` | 活動結束或被取消後，要保留多少天誰回覆了它、誰獲准、誰受邀，以及誰對它的候選日期投了票。日期從未確定的活動，會在它最後一個候選日期時結束。活動本身（它的設定、地點、日期與候選日期，以及取消）會保留。被檢舉活動的紀錄會保留到檢舉結束，保存保留的適用方式與其他紀錄相同（[紀錄保留](moderation.md#record-retention-and-holds)） |
+| `event_records_retention_days` | 整數 30-3650（天） | `90` | 活動結束或被取消後，要保留多少天誰回覆了它、誰獲准、誰受邀、誰對它的候選日期投了票，以及它公布欄上的貼文。日期從未確定的活動，會在它最後一個候選日期時結束。活動本身（它的設定、地點、日期與候選日期，以及取消）會保留。被檢舉活動的紀錄會保留到檢舉結束，保存保留的適用方式與其他紀錄相同（[紀錄保留](moderation.md#record-retention-and-holds)） |
 | `voice_participants_retention_days` | 整數 30-3650（天） | `90` | 語音聊天室結束後，保留參與者紀錄的天數：參與、發言者和聽眾、舉手、邀請和移除。聊天室本身（名稱、說明、主持人和結束方式）會保留。被檢舉聊天室的紀錄會與檢舉保留一樣久，保留措施也如同其他紀錄一樣適用 |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode`, `hook_inbound_actor_mode`, `hook_local_profile_mode` | `off`, `observe`, `enforce` | `observe` | 每個[決策掛鉤](decision-hooks.md#modes)在有外掛時作用到什麼程度。`off` 只能經由 `observe` 才能變成 `enforce`。 |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure`, `hook_inbound_actor_on_failure` | `pass`, `retry` | `pass` | 掛鉤在強制執行時，其外掛失敗時要怎麼做（[詳細說明](decision-hooks.md#when-the-plugin-fails)）。 |
@@ -193,7 +193,7 @@
 - 舊貼文的自動刪除會保留文章，除非使用者將它關閉（新帳號為 `auto_delete_default_keep_articles`，在上限之下為 `auto_delete_max_allow_articles`）。
 - `GET /api/v1/instance` 會在 `limits.articles` 中回傳上限，並在 `article_authoring` 中回傳撰寫設定。請以 `my instance set` 設定它們，例如 `my instance set article_authoring permission`。
 
-<!-- source: events 07dccecf6936 -->
+<!-- source: events b51d3b629557 -->
 ### 活動
 
 本站使用者可以規劃活動，包含日期、時區，以及最多三個地點：這台伺服器的語音聊天室、實體聚會的地點，以及一個連結。主辦人可以改為提供最多 20 個候選日期：看得到活動的使用者對每一個回答可以、可能或不行，然後由主辦人或共同主辦人確認其中一個，這就確定了日期。在那之前，沒有人回答自己是否會來。活動只屬於這台伺服器的使用者：它們永遠不會進行聯邦，遠端使用者和未登入的訪客完全看不到它們。
@@ -205,7 +205,7 @@
 - 活動的地址與連結，只會顯示給主辦人或共同主辦人核准的參加者，除非主辦人將它們顯示給所有看得到活動的人。連結必須是 `http` 或 `https`，而伺服器從不開啟它們。
 - 看得到活動的使用者可以將它儲存為 iCalendar（`.ics`）檔案，加入自己的行事曆。檔案只會指名該使用者看得到的地點，所以保留給已核准參加者的地址絕不會出現在其中。沒有行事曆訂閱位址。
 - 使用者每小時最多建立 10 個活動，一個活動每小時最多送出 100 個邀請。
-- 使用者可以檢舉活動，版主可以取消活動；停權或刪除主辦人，會取消該主辦人尚未開始的活動（[審核](moderation.md#events)）。誰回覆了以及誰受邀，會在活動之後保留 `event_records_retention_days`，對其候選日期的投票也一樣。
+- 使用者可以檢舉活動，版主可以取消活動；停權或刪除主辦人，會取消該主辦人尚未開始的活動（[審核](moderation.md#events)）。誰回覆了以及誰受邀，會在活動之後保留 `event_records_retention_days`，對其候選日期的投票與它公布欄上的貼文也一樣。
 
 <!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### 文字（一個鍵，一個值）

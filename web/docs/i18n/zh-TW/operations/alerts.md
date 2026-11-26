@@ -49,7 +49,7 @@ promtool test rules alerts.test.yml
 
 [`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) 是以同一批 Prometheus 指標做成的 Grafana 儀表板：請求速率、狀態碼與延遲；任務執行、每種任務類型的 worker 時間與佇列；傳送、收件匣活動與遠端伺服器；以及每個程序的 CPU 與記憶體。請在 Grafana 中匯入它（**Dashboards** → **New** → **Import**），並選擇你的 Prometheus 資料來源；它的 **Job** 變數用來選擇抓取任務（預設為 `my`）。
 
-<!-- source: google-cloud-cloud-run addd07c417a9 -->
+<!-- source: google-cloud-cloud-run 0db55ed9d56b -->
 ### Google Cloud（Cloud Run）
 
 當 `metrics_exporter = none` 時，請用 Cloud Run 和 Cloud Logging 已有的資料來建立警示：
@@ -57,7 +57,9 @@ promtool test rules alerts.test.yml
 - **HTTP 錯誤與延遲**：依回應碼類別區分的 Cloud Run 請求數，以及該服務的請求延遲指標。
 - **錯誤**：`error report` 行會進入 Error Reporting，它會將它們分組，並在出現新的與重複的錯誤時通知你（[錯誤回報](error-reporting.md#google-cloud-cloud-run)）。
 - **任務與請求**：伺服器會為每個 HTTP 請求（`msg` = `http request`）和每次任務執行（`msg` = `job`）寫一行日誌，標籤與指標相同。請以它們建立以日誌為基礎的指標，例如以 `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` 計算失敗任務的計數器，或是以 `jsonPayload."my.surface"="client_api"` 篩選 `jsonPayload.duration_seconds` 來取得延遲的分布。
-- **佇列積壓與儲存**：任務 `metrics.snapshot` 每 15 分鐘會寫一行（`msg` = `metrics snapshot`），內含整個實例的數值，例如 `my.queue.oldest_ready_age`、`my.queue.dead`、`my.db.size` 和 `my.media.stored_bytes`。請以它的欄位建立以日誌為基礎的指標；這些日誌行出現空缺，表示計時或佇列停了。Cloud Tasks 的佇列深度指標計算的是等待傳送的訊號。
+  POST 到收件匣的那一行，也帶有 `my.inbox.activities` 的標籤：`activity.type`、`my.outcome` 和 `my.inbox.rejection`。
+- **佇列積壓與儲存**：任務 `metrics.snapshot` 每 15 分鐘會寫一行（`msg` = `metrics snapshot`），內含整個實例的數值，例如 `my.queue.oldest_ready_age`（依任務類型）、`my.queue.dead`、`my.db.size` 和 `my.media.stored_bytes`（依來源）。篩選條件無法跨群組的欄位比較，所以這一行還有 `my.queue.oldest_ready_age.max` 和 `my.media.stored_bytes.total`。請以它的欄位建立以日誌為基礎的指標；這些日誌行出現空缺，表示計時或佇列停了。Cloud Tasks 的佇列深度指標計算的是等待傳送的訊號。
+- **轉接器與資料庫連線池**：`http request` 和 `job` 行也帶有 `MyAdapterErrors`、`MyDBPoolSaturated` 和 `MyDBPoolWaiting` 的欄位：該請求或任務的轉接器操作，以及程序的連線池使用與等待（[這些行](running.md#start-the-server)）。
 - **資料庫**：Cloud SQL 的磁碟使用率與連線指標，或你的資料庫供應商的用量警示。
 - **成本**：設有警示門檻的 Cloud Billing 預算（[成本與預算](#cost-and-budget)）。
 
@@ -115,14 +117,14 @@ promtool test rules alerts.test.yml
 | 費用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 並持續 6 小時 | ticket | 缺少權限、未設定帳單匯出、達到請求上限、服務商無法使用 |
 | 費用 | 超出預算 | – | – | – | 流量、儲存空間或設定錯誤導致費用超出規劃（[見下文](#cost-and-budget)） |
 
-<!-- source: where-to-look 988be973ea5b -->
+<!-- source: where-to-look 3211df763cac -->
 ## 該去哪裡看
 
 下方的運作手冊條目大多會用到這些工具。
 
 - **任務畫面**（「管理」→「任務」，`/admin/jobs`，需要 `manage_jobs`）：依狀態（等待中、執行中、重試中、失敗）和類型區分的數量，以及等待最久的任務；它的**任務**頁面（`/admin/jobs/list`）會列出某一種狀態的任務，每個任務的頁面都有它最後的錯誤和未成功的嘗試。只有保存在資料庫中的佇列（`queue = db` 和 `cloudtasks`）才會列出待處理的任務；失敗的任務和嘗試則會在所有佇列中列出。
 - **`my job` 指令**，在擁有伺服器設定的主機上執行（`queue = db` 和 `cloudtasks`）：`my job list` 會列出失敗的任務，最新的在前；`my job retry <id>...` 會將它們放回佇列；`my job delete <id>...` 會捨棄它們。任務可以安全地重新執行。
-- **遠端伺服器畫面**（「審核」→「遠端伺服器」，`/moderation/instances`，需要 `manage_domains`）：傳送失敗的伺服器，以及傳送被暫停的伺服器，附有原因和時間。「恢復傳送」會把伺服器重新標示為可用。「開啟伺服器」會以網域開啟任何伺服器的頁面，不論它有沒有列在清單中。
+- **遠端伺服器畫面**（「審核」→「遠端伺服器」，`/moderation/instances`，需要 `manage_domains`）：本站所知的每個伺服器，附有它的軟體與狀態；可以篩選出傳送失敗的伺服器或被暫停的伺服器。「恢復傳送」會把伺服器重新標示為可用。「開啟伺服器」會以網域開啟任何伺服器的頁面，不論它有沒有列在清單中。
 - **日誌**：標準錯誤輸出上的 JSON 行。每個 HTTP 請求結束時有一行 `msg` 為 `http request` 的日誌，每次任務執行則有一行 `msg` 為 `job` 的日誌（成功為 `INFO`，重試為 `WARN`，徹底失敗的任務為 `ERROR`，並附有 `error`、`job_id` 和 `my.job.type`）。請求內的日誌行帶有它的 `request_id`，用戶端會將它看成 `X-Request-Id`。
   - `federation.deliver` 執行的日誌行也會說明傳送去了哪裡以及如何結束：`my.delivery.domain`（遠端伺服器的網域）、`activity.type`（例如 `Create`）、`my.delivery.outcome`（`succeeded`、`retryable_failure`、`permanent_failure` 或 `skipped`），以及 `http.response.status_code`（收件匣的回應；當它沒有回應或什麼都沒送出時不存在）。`my.outcome` 仍是任務執行的結果。該行從不指出寄件者、活動或收件匣 URL。
     Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
@@ -232,14 +234,14 @@ promtool test rules alerts.test.yml
 - 如果傳送用完了重試次數，請從任務畫面重新執行失敗的 `federation.deliver` 任務。
 - 如果遠端伺服器在故障期間被暫停，它們會在下一次成功的傳送、簽章請求或每日探測時恢復；你也可以在遠端伺服器畫面按下「恢復傳送」。
 
-<!-- source: myremoteserverspaused 17c3ec51fb53 -->
+<!-- source: myremoteserverspaused 0f1e420b43eb -->
 ### MyRemoteServersPaused
 
 過去一天內，對 5 個以上伺服器的傳送被暫停。對某個伺服器的傳送在 7 個不同的日子失敗後，該伺服器就會被暫停，因此每週有幾次暫停是正常的：伺服器會關閉。同時大量暫停，代表許多伺服器在同一時間失敗了好幾天。`my_federation_instance_state` = `available` 的 `my_federation_instances` 會計算仍在傳送、但曾在某天失敗的伺服器；那裡的數字跳升會出現在暫停之前。
 
 這個指標沒有區分個別伺服器的標籤（標籤永遠不會帶有遠端網域）。檢查：
 
-- 遠端伺服器畫面：「已暫停」分頁會列出被暫停的伺服器，以及暫停的時間和原因。看看它們是否有共通點（同一個託管服務商、同一種軟體），還是分散各處。
+- 遠端伺服器畫面：「無法使用」篩選會列出被暫停的伺服器；每個伺服器的頁面會說明從什麼時候開始。看看它們是否有共通點（同一個託管服務商、同一種軟體），還是分散各處。
 - 過去一週的 `MyDeliveryFailuresHigh` 和 `MyDeliveryAllFailing`：本端持續數天的網路問題會讓許多伺服器被暫停。
 
 處理：
@@ -422,10 +424,10 @@ Go 執行階段使用了超過 `GOMEMLIMIT` 的 90%。接近上限時，垃圾�
 
 任務正在等待空閒的資料庫連線，或在 [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) 後放棄等待（逾時僅限 PostgreSQL）：請求會回應 `503`，任務則會稍後重新執行。請依照 [MyDBPoolSaturated](#mydbpoolsaturated) 處理；也請確認資料庫本身沒有達到連線上限。
 
-<!-- source: mydatabasestoragelarge edf767115918 -->
+<!-- source: mydatabasestoragelarge 2dd93b626b08 -->
 ### MyDatabaseStorageLarge
 
-資料庫佔用的空間超過你的規劃。`my_db_size_bytes` 是 PostgreSQL 資料庫的大小（`pg_database_size`，也就是服務商的儲存空間上限所計算的值），或 SQLite 檔案的大小（不含預寫日誌）。這是成長，不是故障。請把規則中的門檻設為比資料庫方案的儲存空間上限，或保存 SQLite 檔案的磁碟區上限低一些的值，磁碟區還必須為預寫日誌和備份保留空間。
+資料庫佔用的空間超過你的規劃。`my_db_size_bytes` 是實例的 PostgreSQL 結構描述中資料表與索引的大小（服務商的儲存空間上限計算的是整個資料庫），或 SQLite 檔案的大小（不含預寫日誌）。這是成長，不是故障。請把規則中的門檻設為比資料庫方案的儲存空間上限，或保存 SQLite 檔案的磁碟區上限低一些的值，磁碟區還必須為預寫日誌和備份保留空間。
 
 處理：
 

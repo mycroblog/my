@@ -343,10 +343,10 @@ my admin refetch domain remote.example
 - 不会从带有 `suspend` 的域名获取，也不会从因投递失败而处于 `unavailable` 的域名获取。同一 URI 的获取失败会被记住 1 小时，在此期间的重新获取不会去获取它。
 - 你的请求会在审计日志中记录为 `status_refetch_queued`、`account_statuses_refetch_queued` 或 `domain_statuses_refetch_queued`。
 
-<!-- source: checking-what-reached-a-remote-server 6c1ec9c8cef1 -->
+<!-- source: checking-what-reached-a-remote-server 320117beafdd -->
 ## 检查已送达远程服务器的内容
 
-当用户询问某条帖子、某次关注或某个接受是否已送达另一台服务器时，请用管理 API 列出向该服务器的投递。它会按最新在前显示向该服务器某个收件箱发送某个活动的每一次投递，包括每次尝试以及该服务器的回应，已成功的投递也在其中。它需要 `manage_domains` 权限。在 Web 客户端中，远程服务器页面（`/moderation/instances/{domain}`）的**投递**部分会显示同样的列表，带有按**活动 ID** 和**本站账号**筛选的功能，被遮蔽的投递在**详情**下的每个隐藏字段上还有**显示**；该页面会在这些操作运行之前说明其中哪些会被记录在审计日志中。远程服务器列表只显示投递曾经失败的服务器。要打开其他任何服务器，请在列表上方的**打开服务器**中输入它的域名、其上的某个用户名或其上的某个 URL，或者使用远程账号的“审核”页面或关于远程账号的举报页面上的**打开该账号所在的服务器**，也可以使用审计日志中关于某个域名的条目里的域名。
+当用户询问某条帖子、某次关注或某个接受是否已送达另一台服务器时，请用管理 API 列出向该服务器的投递。它会按最新在前显示向该服务器某个收件箱发送某个活动的每一次投递，包括每次尝试以及该服务器的回应，已成功的投递也在其中。它需要 `manage_domains` 权限。在 Web 客户端中，远程服务器页面（`/moderation/instances/{domain}`）的**投递**部分会显示同样的列表，带有按**活动 ID** 和**本站账号**筛选的功能，被遮蔽的投递在**详情**下的每个隐藏字段上还有**显示**；该页面会在这些操作运行之前说明其中哪些会被记录在审计日志中。远程服务器列表会显示本服务器所知的每一台服务器。要打开其中没有列出的服务器，请在列表上方的**打开服务器**中输入它的域名、其上的某个用户名或其上的某个 URL，或者使用远程账号的“审核”页面或关于远程账号的举报页面上的**打开该账号所在的服务器**，也可以使用审计日志中关于某个域名的条目里的域名。
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \
@@ -412,12 +412,13 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - 举报详情（`GET /api/v1/admin/reports/{id}`）会显示房间（`voice_room`）：其设置的每次更改、谁参与过以及何时离开、谁被移出，以及房间如何结束。参与者的记录在房间结束后保留 90 天（`voice_participants_retention_days`），并且只要有举报指向该房间就会一直保留（[记录保留](#record-retention-and-holds)）。没有录音，也没有文字聊天，所以这些记录是唯一的证据。
 - 拥有 `manage_reports` 的人可以用 `POST /api/v1/admin/voice_rooms/{id}/end`（请求体 `{"reason": "..."}`，可选，最多 500 个字符）为所有参与者结束正在进行的房间。理由只供审核员查看；参与者只能看到房间已结束。语音聊天关闭时也能使用，审计日志会记录 `voice_room_ended`。在 Web 客户端中，正在进行的房间的举报页面上有“结束房间”，会先询问确认，并附有理由。
 
-<!-- source: events cbc3e19bfdb6 -->
+<!-- source: events 72a8d513f936 -->
 ### 活动
 
 - 本站用户可以举报自己能看到的活动，包括已取消的活动（带有 `event_id` 的 `POST /api/v1/reports`，并把 `account_id` 设为该活动的主办者）。该举报以主办者为目标，并指向举报者所见的活动设置（标题、描述和地点）。仍在为日期投票的活动，可以像其他任何活动一样被举报和取消。它不指向任何帖子，也从不转发到其他服务器。
 - 举报详情（`GET /api/v1/admin/reports/{id}`）会显示该活动（`event`）：它的日期、是否以及如何被取消，以及其设置的每一次更改（最旧在前），包括它的所有地点，也包括只有已获批准的参加者才能看到的地点。`reported_revision_id` 是举报者所见的版本，因此举报之后更改的标题或地址仍然摆在你面前。
 - 拥有 `manage_reports` 的人可以用 `POST /api/v1/admin/events/{id}/cancel` 取消活动（请求体 `{"reason": "..."}`，可选，最多 500 个字符）。该理由会与取消一起显示给所有能看到该活动的人。回复了参加或可能参加的用户以及受邀的用户会收到通知，与主办者自己取消时相同，审计日志会记录 `event_canceled`。已经取消的活动会返回 `409` `event-closed`。在 Web 客户端中，活动的举报页面上有“取消活动”，会先询问确认，并附有理由。
+- 活动公告板上的帖子与其他任何帖子一样被举报、审核和删除（`status_ids`，并把 `account_id` 设为其作者）。针对它的举报从不转发，对它的删除也从不离开本服务器。
 - 封禁或删除主办者会取消该主办者尚未开始的活动，包括仍在为日期投票的活动（`gathering.cancel_organized`），并通知它们的参加者。这些取消不会指明是谁取消的，解除封禁也不会恢复它们。已经开始的活动不会被取消。
 
 <!-- source: notifications-for-moderators-and-the-pending-counts 0d1c327abe83 -->
@@ -440,7 +441,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 
 `GET /api/v1/admin/counts` 返回待处理举报数（`open_reports`，需要 `manage_reports`）、等待批准的注册数（`pending_registrations`）和等待审核的申诉数（`pending_appeals`）（两者都需要 `manage_accounts`）、等待决定的自定义表情请求数（`pending_custom_emoji_requests`，需要 `manage_custom_emojis`），以及未处理的错误组数，即新出现的、复发的或取消静音的错误组（`open_error_groups`，需要 `manage_errors`）。你没有权限的项目不会返回。
 
-<!-- source: audit-log 8334cc0280f5 -->
+<!-- source: audit-log 6a072e747840 -->
 ## 审计日志
 
 审核员和管理员的操作会在与操作相同的事务中，以每次一行的形式记录到审计日志（`audit_log_entries`）中。失败的操作和没有改变任何东西的操作不会记录：解除已解除的操作、处理已处理的举报、分配给相同的负责人、停用已停用的规则、移动到相同的位置、授予用户已有的角色，以及撤销用户没有的角色。
@@ -496,7 +497,7 @@ my admin audit list -target-kind domain -target-id spam.example
 - 列表按从新到旧排列，使用键集分页（CLI 中为 `-before <entry id>`）。
 - 没有用于更新或删除审计日志的 API 或 CLI。旧的行会在[保留期](#record-retention-and-holds)后删除。
 
-<!-- source: record-retention-and-holds 9861d8570a91 -->
+<!-- source: record-retention-and-holds 888b0178e795 -->
 ## 记录保留与冻结
 
 每类记录的保留期过后，每小时运行的任务（`moderation.purge_records`、`identity.purge_origins`、`voice.purge_records` 和 `gathering.purge_records`）会删除审核记录。你可以在实例设置中更改保留期，但不能低于下限（[实例设置](instance-settings.md)）。更改后的保留期从下一次运行起生效。已解除的保留冻结及其理由，会在解除后经过审核操作的保留期时删除。
@@ -509,13 +510,14 @@ my admin audit list -target-kind domain -target-id spam.example
 | 针对账号的操作（理由、备注、目标帖子、解除）和申诉 | `moderation_actions_retention_days` | 365 天 | 180 天 | 操作结束时 |
 | 审计日志 | `audit_log_retention_days` | 730 天 | 365 天 | 记录时 |
 | 注册屏蔽 | 无（无法更改） | 30 天 | 不适用 | 解除和到期中较早者 |
+| 屏蔽列表订阅的获取记录；最近一次未失败的获取及其之后的失败记录会保留 | 无（无法更改） | 30 天 | 不适用 | 获取时 |
 | 谁参与过语音聊天房间（参与记录、发言者和听众、举手、邀请、移出） | `voice_participants_retention_days` | 90 天 | 30 天 | 房间结束时 |
 | [决策钩子](decision-hooks.md#the-decisions)的决策 | `hook_decisions_retention_days` | 90 天 | 30 天 | 决策时 |
-| 活动的回复、批准、邀请，以及对候选日期的投票 | `event_records_retention_days` | 90 天 | 30 天 | 活动结束（日期始终没有确定的活动，则为其最后一个候选日期结束）和取消中较早者 |
+| 活动的回复、批准、邀请、对候选日期的投票，以及公告板上的帖子 | `event_records_retention_days` | 90 天 | 30 天 | 活动结束（日期始终没有确定的活动，则为其最后一个候选日期结束）和取消中较早者 |
 
 - 待处理的举报永远不会删除。被操作引用的举报（操作的 `report_id`）会一直保留到该操作被删除。
 - 操作的结束是解除和到期中较早者。对于被申诉的操作，如果审查晚于此时间，则以审查时间为结束，申诉等待审查期间操作会被保留。`warn` 和 `delete_statuses` 没有持续效果，所以以发起时间为结束。没有结束的操作（`ban`、没有结束时间的 `suspend` 等）在被解除之前不会删除。
-- 被举报或操作指向的帖子，即使作者已删除（从视图中消失），在该举报或操作被删除之前，清理任务也不会物理删除这些帖子及其附带的媒体。远程帖子也会超出保留期保留（包括实例设置 `remote_status_max_retention_days`）。
+- 已删除的帖子会立即从视图中消失，每小时运行的任务 `content.purge_deleted_statuses` 会在 7 天后删除它的文本、媒体和投票，那时它的 `Delete` 已有时间到达其他服务器；它的 URI 记录会保留。被举报或操作指向的帖子，在该举报或操作被删除之前，不会被物理删除，其附带的媒体也是如此。远程帖子也会超出保留期保留（包括实例设置 `remote_status_max_retention_days`）。
 - 既没有解除也没有结束时间的注册屏蔽，在生效期间会一直保留。
 - 被举报指向的语音聊天房间的参与者记录会保留到该举报被删除。房间本身（名称、描述、主持人以及结束方式）永远不会删除。
 - 被举报指向的活动的回复、投票和邀请会保留到该举报被删除，指名了处于保全之下的账号的那些也是如此。活动本身（它的设置和地点、日期和候选日期、共同主办者以及取消）永远不会删除；一旦它的回复被删除，它就不再统计任何人为参加者。

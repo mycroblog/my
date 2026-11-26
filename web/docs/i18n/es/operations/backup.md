@@ -213,10 +213,10 @@ La base de datos nombra los archivos multimedia que usa, y la copia de los archi
 El otro orden es peor: todos los archivos subidos entre la copia multimedia y la copia de la base de datos faltarían tras una restauración,
 incluidos los archivos multimedia de las publicaciones nuevas. Hacer ambas copias en el modo de mantenimiento evita cualquiera de los dos desfases.
 
-<!-- source: on-the-opentofu-targets 9862430f808c -->
+<!-- source: on-the-opentofu-targets a0188744140f -->
 ### En los destinos de OpenTofu
 
-Los módulos no guardan ninguna copia de seguridad propia más allá de lo que ofrece el proveedor: el PostgreSQL gestionado de Cloud SQL y RDS tiene copias de seguridad automáticas
+Los módulos no guardan ninguna copia de seguridad propia más allá de lo que ofrece el proveedor: el PostgreSQL gestionado de [Cloud SQL](deploy-google-cloud.md#cloud-sql) y [RDS](deploy-aws.md#2-choose-the-database) tiene copias de seguridad automáticas
 con una retención que tú defines, mientras que una base de datos con solo el historial del proveedor (Neon) solo puede retroceder hasta donde llegue ese historial.
 Programa esto tú mismo, con credenciales que la instancia no tenga:
 

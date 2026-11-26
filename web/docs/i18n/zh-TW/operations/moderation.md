@@ -394,14 +394,14 @@ my admin refetch domain remote.example
 - 不會從設有 `suspend` 的網域，或因傳送失敗而處於 `unavailable` 的網域擷取。同一個 URI 的擷取失敗會被記住 1 小時，在這段時間內重新擷取時不會擷取它。
 - 你的要求會以 `status_refetch_queued`、`account_statuses_refetch_queued` 或 `domain_statuses_refetch_queued` 記錄在稽核記錄中。
 
-<!-- source: checking-what-reached-a-remote-server 6c1ec9c8cef1 -->
+<!-- source: checking-what-reached-a-remote-server 320117beafdd -->
 ## 檢查傳到了遠端伺服器的內容
 
 當使用者詢問某則貼文、某個追蹤或某個接受是否已傳到另一個伺服器時，請用管理 API 列出傳送給該伺服器的傳送。
 它會依最新順序，顯示活動傳送到該伺服器收件匣的每一次傳送，附有每次嘗試以及該伺服器的回應，成功的傳送也包含在內。
 它需要 `manage_domains` 權限。
 在 Web 用戶端中，遠端伺服器畫面（`/moderation/instances/{domain}`）的**傳送**區段會顯示同一份清單，附有依**活動 ID** 和**本站帳號**的篩選，並在被遮蔽的傳送的**詳細資料**下，為每個隱藏的欄位提供**顯示**；畫面會在它們執行之前，說明其中哪些會記錄在稽核記錄中。
-遠端伺服器清單只會顯示傳送失敗而無法送達的伺服器。要開啟其他任何伺服器，請在清單上方的**開啟伺服器**中輸入它的網域、它上面的帳號識別或它上面的 URL，
+遠端伺服器清單會顯示本站所知的每個伺服器。要開啟清單中沒有的伺服器，請在清單上方的**開啟伺服器**中輸入它的網域、它上面的帳號識別或它上面的 URL，
 或使用遠端帳號的審查頁面或關於遠端帳號的檢舉上的**開啟該帳號的伺服器**，或使用稽核記錄中關於某個網域的項目裡的網域。
 
 ```sh
@@ -486,7 +486,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
   理由只給版主看；參與者只會看到聊天室已結束。語音聊天關閉時也能使用，稽核記錄會記下 `voice_room_ended`。
   在 Web 用戶端中，開放中聊天室的檢舉頁面有「結束聊天室」，會先詢問確認，並附上理由。
 
-<!-- source: events cbc3e19bfdb6 -->
+<!-- source: events 72a8d513f936 -->
 ### 活動
 
 - 本站使用者可以檢舉自己看得到的活動，包括已取消的活動（`POST /api/v1/reports`，帶有 `event_id`，並將 `account_id` 設為活動的主辦人）。
@@ -496,6 +496,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - 持有 `manage_reports` 的人可以用 `POST /api/v1/admin/events/{id}/cancel` 取消活動（內容為 `{"reason": "..."}`，可省略，最多 500 個字元）。
   原因會連同取消一起顯示給所有看得到該活動的人。回覆要參加或可能參加的使用者與受邀的使用者會收到通知，與主辦人自己取消時相同，而稽核記錄會記錄 `event_canceled`。
   已經取消的活動會回應 `409` `event-closed`。在 Web 用戶端中，活動的檢舉頁面有「取消活動」，會先詢問確認，並附上理由。
+- 活動公布欄上的貼文，會像其他任何貼文一樣被檢舉、審查與刪除（`status_ids`，並將 `account_id` 設為撰寫者）。它的檢舉絕不會被轉送，它的刪除也絕不會離開這個伺服器。
 - 停權或刪除主辦人，會取消該主辦人尚未開始的活動，包括仍在以投票挑選日期的活動（`gathering.cancel_organized`），並通知它們的參加者。這些取消不會指名任何人是取消者，而解除停權也不會恢復它們。已經開始的活動不會被取消。
 
 <!-- source: notifications-for-moderators-and-the-pending-counts 0d1c327abe83 -->
@@ -532,7 +533,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 `GET /api/v1/admin/counts` 會回傳待處理檢舉的數量（`open_reports`，需要 `manage_reports`）、等待核准的註冊申請數量（`pending_registrations`）與等待審查的申訴數量（`pending_appeals`）（兩者都需要 `manage_accounts`）、等待決定的自訂表情符號申請數量（`pending_custom_emoji_requests`，需要 `manage_custom_emojis`），以及未處理的錯誤群組（新的、再次發生的或已取消靜音的）數量（`open_error_groups`，需要 `manage_errors`）。
 你沒有權限的項目不會回傳。
 
-<!-- source: audit-log 8334cc0280f5 -->
+<!-- source: audit-log 6a072e747840 -->
 ## 稽核記錄
 
 版主與管理員的操作會在與操作相同的交易中，每次一列記錄在稽核記錄（`audit_log_entries`）中。
@@ -592,7 +593,7 @@ my admin audit list -target-kind domain -target-id spam.example
 - 清單依最新排序，使用 keyset 分頁（CLI 中為 `-before <entry id>`）。
 - 沒有更新或刪除稽核記錄的 API 或 CLI。舊的列會在[保留期間](#record-retention-and-holds)過後移除。
 
-<!-- source: record-retention-and-holds 9861d8570a91 -->
+<!-- source: record-retention-and-holds 888b0178e795 -->
 ## 紀錄保留與保全
 
 每種紀錄的保留期間過後，每小時執行的任務（`moderation.purge_records`、`identity.purge_origins`、`voice.purge_records` 與 `gathering.purge_records`）會移除審核紀錄。你可以在實例設定中變更期間，但不能低於下限（[實例設定](instance-settings.md)）。變更後的期間從下一次執行開始生效。已解除的保留保全連同其理由，會在解除後經過審核處置的保留期間時移除。
@@ -605,13 +606,15 @@ my admin audit list -target-kind domain -target-id spam.example
 | 對帳號的處置（理由、筆記、目標貼文、解除）與申訴 | `moderation_actions_retention_days` | 365 天 | 180 天 | 處置結束時 |
 | 稽核記錄 | `audit_log_retention_days` | 730 天 | 365 天 | 記錄時 |
 | 註冊封鎖 | 無（無法變更） | 30 天 | 不適用 | 解除與到期中較早者 |
+| 封鎖清單訂閱的擷取紀錄；最後一次沒有失敗的擷取，以及它之後的失敗會保留 | 無（無法變更） | 30 天 | 不適用 | 擷取時 |
 | 語音聊天室的參與者（參與、發言者與聽眾、舉手、邀請、移出） | `voice_participants_retention_days` | 90 天 | 30 天 | 聊天室結束時 |
 | [決策 hook](decision-hooks.md#the-decisions) 的決策 | `hook_decisions_retention_days` | 90 天 | 30 天 | 決策時 |
-| 活動的回覆、核准、邀請，以及對候選日期的投票 | `event_records_retention_days` | 90 天 | 30 天 | 活動結束（日期從未確定的活動，則為它最後一個候選日期結束）與活動取消兩者中較早的時間 |
+| 活動的回覆、核准、邀請、對候選日期的投票，以及公布欄上的貼文 | `event_records_retention_days` | 90 天 | 30 天 | 活動結束（日期從未確定的活動，則為它最後一個候選日期結束）與活動取消兩者中較早的時間 |
 
 - 待處理的檢舉絕不會被移除。處置所引用的檢舉（處置的 `report_id`）會保留到該處置被移除為止。
 - 處置的結束是解除與到期中較早者。對於已申訴的處置，若審查比那更晚，則結束時間為審查時間，而申訴等待審查期間處置會被保留。`warn` 與 `delete_statuses` 沒有持續的效果，因此結束時間就是發出的時間。沒有結束的處置（`ban`、沒有結束時間的 `suspend` 等）在解除前不會被移除。
-- 檢舉或處置所指向的貼文，即使作者已刪除（從畫面上消失），在該檢舉或處置被移除之前，清除任務也不會連同附加的媒體實際刪除它們。遠端貼文也會保留超過保留期間（包括實例設定 `remote_status_max_retention_days`）。
+- 已刪除的貼文會立即從畫面上消失，每小時執行的任務 `content.purge_deleted_statuses` 會在 7 天後移除它的文字、媒體與投票，那時它的 `Delete` 已有時間傳到其他伺服器；它的 URI 紀錄會保留。
+  檢舉或處置所指向的貼文，在該檢舉或處置被移除之前，不會連同附加的媒體被實際刪除。遠端貼文也會保留超過保留期間（包括實例設定 `remote_status_max_retention_days`）。
 - 既沒有解除也沒有結束時間的註冊封鎖，在生效期間會一直保留。
 - 檢舉所指向的語音聊天室的參與者紀錄，會保留到該檢舉被移除為止。聊天室本身（名稱、說明、主持人以及如何結束）絕不會被移除。
 - 檢舉所指向的活動的回覆、投票與邀請，會保留到該檢舉被移除為止，指名處於保全之下的帳號的那些也一樣。活動本身（它的設定與地點、它的日期與候選日期、它的共同主辦人，以及它的取消）絕不會被移除；一旦它的回覆被移除，它就不再算有任何人要參加。

@@ -131,12 +131,12 @@ denied-peer-ip=192.168.0.0-192.168.255.255
 
 这能阻止普通用户和官方 Web 客户端，但并不是完整的防护。**两个使用修改版客户端的参与者相互配合，仍然可以交换音频**：无权发言者的修改版客户端可以发送音频，接收方的修改版客户端可以播放它，而服务器无法看到加密媒体的内容。如果你必须保证谁能发言（例如有审核的公开活动），请使用 `livekit` 或 `sora`，由媒体服务器本身丢弃无权限者的音频。
 
-<!-- source: deployment-notes b0f03da306b7 -->
+<!-- source: deployment-notes 9daf6e4d8d98 -->
 ## 部署说明
 
 - **每位用户两个流**：通话期间，参与者除了应用始终打开的流之外，还会保持房间自己的事件流（Server-Sent Events）。请按通话中每位用户两个长连接请求来设置连接数限制。
 - **多个进程**：和应用的其他部分一样，使用共享的流适配器（`stream` 设为 `postgres`、`valkey`、`sns` 或 `pubsub`）。使用 `stream = hub` 且 `role` 不是 `all` 时，服务器会在启动时警告语音聊天无法跨进程工作。
-- **Cloud Run**：一个流就是一个请求，打开期间会分配 CPU。请求超时切断它后，客户端会重新连接。请把超时时间设得尽可能长。
+- **Cloud Run**：一个流就是一个请求，打开期间会分配 CPU。请求超时切断它后，客户端会重新连接。请把超时时间设得尽可能长：见[在 Google Cloud 上部署](deploy-google-cloud.md#limits)中的 `service.request_timeout_seconds`。
 - **媒体服务器需要虚拟机**：LiveKit 和 Sora 在长时间运行的进程中通过 UDP 接收音频。Cloud Run 只接受 HTTP 请求，因此无法托管它们。请在虚拟机上运行它们（以及 coturn），或使用 LiveKit Cloud、Sora Cloud 或 Cloudflare TURN。
 
 <!-- source: livekit b16c1d192419 -->

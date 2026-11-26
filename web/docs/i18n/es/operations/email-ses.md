@@ -1,8 +1,8 @@
-<!-- source: sending-email-through-amazon-ses cb9101de6cc9 -->
+<!-- source: sending-email-through-amazon-ses 6deee2054246 -->
 # Enviar correo con Amazon SES
 
 Cómo preparar Amazon SES para enviar el correo del servidor: verificar el dominio del remitente con registros DNS, salir del sandbox
-en el que empieza una cuenta nueva y mantener la cuenta en buen estado. El módulo de OpenTofu [`mycroblog-aws`](../../deploy/opentofu/README.md#aws) envía por SES de forma
+en el que empieza una cuenta nueva y mantener la cuenta en buen estado. El módulo de OpenTofu [`mycroblog-aws`](deploy-aws.md#email-through-amazon-ses) envía por SES de forma
 predeterminada y crea la identidad y el permiso; los registros y la solicitud de acceso a producción son pasos tuyos.
 Los ajustes en sí están en [Enviar correo](email.md#amazon-ses-api).
 

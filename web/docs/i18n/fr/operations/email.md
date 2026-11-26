@@ -180,24 +180,24 @@ plugin une requête sans destinataire, qu’il doit refuser. Le serveur ne peut 
 celui qui arrive : ses en-têtes doivent contenir `Message-ID`, `Date` et `Auto-Submitted: auto-generated`.
 Voir [Tester un plugin](plugins.md#test-a-plugin).
 
-<!-- source: receive-ses-notifications-sns e21b650ab5fe -->
-### Recevoir les notifications SES (SNS)
+<!-- source: receive-ses-notifications-sns aa8911000390 -->
+### Recevoir les notifications de SES (SNS)
 
-Les bounces et plaintes SES vont vers un topic SNS, et un abonnement HTTPS à ce topic les remet au
+Les rebonds et les plaintes de SES vont vers un topic SNS, et un abonnement HTTPS à ce topic les remet au
 `POST /mail/events/ses` du serveur.
-Le point d’accès ne s’ouvre que lorsque `mail_ses_sns_topic_arn` est défini ; sinon il répond `404`.
+Le point de terminaison ne s’ouvre que lorsque `mail_ses_sns_topic_arn` est défini ; sinon il répond `404`.
 
 1. Créez un topic SNS standard dans la même région que l’identité SES.
 2. Définissez l’attribut de topic `SignatureVersion` sur `2` (SHA256withRSA). Une signature avec la valeur par défaut `1` n’est pas acceptée et le
    serveur répond `400`.
-3. Dans la politique d’accès du topic, autorisez `ses.amazonaws.com` à effectuer `SNS:Publish` depuis votre propre compte (la console SES l’ajoute
+3. Dans la politique d’accès du topic, autorisez `ses.amazonaws.com` à `SNS:Publish` depuis votre propre compte (la console SES l’ajoute
    lorsqu’elle crée le topic).
 4. Dirigez les notifications SES vers le topic, de l’une ou l’autre façon (le serveur lit à la fois `notificationType` et `eventType` dans le corps).
    - Notifications d’identité : utilisez ce topic pour les notifications de retour « Bounce » et « Complaint » de l’identité `mail_from`.
    - Destination d’événements d’un jeu de configuration : ajoutez ce topic comme destination du jeu de configuration de `mail_ses_configuration_set`,
      pour les types d’événements `BOUNCE` et `COMPLAINT`.
-5. Définissez `MY_MAIL_SES_SNS_TOPIC_ARN` sur l’ARN du topic, vérifiez avec `my config check` et redémarrez.
-6. Créez un abonnement au topic avec le protocole `https` et le point d’accès `https://<server host>/mail/events/ses`.
+5. Définissez `MY_MAIL_SES_SNS_TOPIC_ARN` sur l’ARN du topic, vérifiez avec `my config check`, puis redémarrez.
+6. Créez sur le topic un abonnement avec le protocole `https` et le point de terminaison `https://<server host>/mail/events/ses`.
    **N’activez pas la remise de message brut** (un corps sans signature est rejeté).
 
 ```sh
@@ -218,10 +218,10 @@ aws sns subscribe --region ap-northeast-1 \
 ```
 
 Lorsque le serveur reçoit la confirmation d’abonnement (`SubscriptionConfirmation`), il envoie un `GET` à son `SubscribeURL` pour
-confirmer l’abonnement et consigne `SNS subscription of the SES notifications confirmed`.
-Vérifiez avec `aws sns list-subscriptions-by-topic` que l’abonnement n’est plus en `PendingConfirmation`.
+confirmer l’abonnement et journalise `SNS subscription of the SES notifications confirmed`.
+Vérifiez avec `aws sns list-subscriptions-by-topic` que l’abonnement n’est plus `PendingConfirmation`.
 
-Avant d’utiliser un message, le point d’accès vérifie tout ce qui suit. Si l’un des points échoue, il répond `400` et n’enregistre rien.
+Avant d’utiliser un message, le point de terminaison vérifie tout ce qui suit. Si l’une des vérifications échoue, il répond `400` et n’enregistre rien.
 
 - `TopicArn` est égal à `mail_ses_sns_topic_arn`.
 - `SignatureVersion` vaut `2` et la signature est valide.
@@ -230,17 +230,17 @@ Avant d’utiliser un message, le point d’accès vérifie tout ce qui suit. Si
 
 Le certificat est récupéré avec le client HTTP sortant qui protège contre le SSRF et mis en cache dans le magasin KV pendant 24 heures. Le
 corps est lu jusqu’à 1 Mio, et un corps plus gros reçoit `413`.
-Lorsque le certificat ne peut pas être récupéré, que la confirmation d’abonnement échoue ou que l’enregistrement ne peut pas être écrit, le point d’accès
-répond `503` et laisse SNS réessayer. Il répond aussi `503` pendant le mode maintenance.
+Lorsque le certificat ne peut pas être récupéré, que la confirmation d’abonnement échoue ou que l’enregistrement ne peut pas être écrit, le point de terminaison
+répond `503` et laisse SNS réessayer. Il répond aussi `503` en mode maintenance.
 
 Voici les notifications qu’il enregistre. Il compare l’adresse du destinataire à l’adresse principale (sans tenir compte de la casse, et un
-domaine Punycode correspond aussi sous sa forme Unicode) ; si rien ne correspond, il ne fait rien.
+domaine en Punycode correspond aussi sous sa forme Unicode) ; si aucune ne correspond, il ne fait rien.
 
 | Notification | Enregistrée comme |
 | --- | --- |
-| Un bounce dont le `bounceType` est `Permanent` (n’importe quel sous-type tel que `General`, `NoEmail`, `Suppressed` ou `OnAccountSuppressionList`) | `hard_bounce` |
+| Un rebond dont le `bounceType` est `Permanent` (tout sous-type comme `General`, `NoEmail`, `Suppressed` ou `OnAccountSuppressionList`) | `hard_bounce` |
 | Une plainte (sauf celles dont le `complaintFeedbackType` est `not-spam`) | `complaint` |
-| Un bounce `Transient` ou `Undetermined`, et d’autres notifications telles que la distribution ou l’envoi | Non enregistrée (répond `200`) |
+| Un rebond `Transient` ou `Undetermined`, d’autres notifications comme la remise ou l’envoi, et toute notification dont le `mail.source` n’est pas l’adresse de `mail_from` (un e-mail qu’une autre instance partageant le topic ou le jeu de configuration a envoyé) | Non enregistrée (répond `200`) |
 
 Le `feedbackId` de SES est la clé unique d’un enregistrement : quel que soit le nombre de fois où SNS envoie la même notification, il n’y a qu’un seul enregistrement.
 

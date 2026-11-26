@@ -246,11 +246,11 @@ kubectl rollout status deployment/my
 Schlägt der Job fehl, zeigt `kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check` (oder `-c schema`, `-c upgrade`) warum, und das Deployment bleibt auf dem vorherigen Image.
 Binde bei SQLite auf einem Volume dasselbe Volume im Job ein und halte zuerst die Pods des Deployments an: SQLite erlaubt einen Schreiber.
 
-<!-- source: cloud-run 9e7486b6a4af -->
+<!-- source: cloud-run 4cd76d9b85b5 -->
 ### Cloud Run
 
 Mit dem OpenTofu-Modul ist ein Upgrade ein Apply des neuen Releases, das `my upgrade` im Migrationsjob ausführt, bevor die Dienste das neue Image
-übernehmen, und dort anhält, wenn es fehlschlägt: siehe [Auf Cloud Run betreiben](deploy-opentofu.md#upgrading). Von Hand:
+übernehmen, und dort anhält, wenn es fehlschlägt: siehe [Mit OpenTofu bereitstellen](deploy-opentofu.md#upgrading). Von Hand:
 
 Cloud-Run-Jobs führen je einen Container aus, lege also pro Schritt einen Job an und führe sie der Reihe nach mit `--wait` aus, was fehlschlägt, wenn der Job fehlschlägt.
 Gib den Jobs dieselben Umgebungsvariablen und Secrets wie dem Dienst.
@@ -315,22 +315,23 @@ Um mehr als eine Minor-Version zu überbrücken, upgrade nacheinander über das 
 Von `v0.1.3` auf `v0.4.0` zum Beispiel: das neueste `v0.1.x`, dann das neueste `v0.2.x`, dann das neueste `v0.3.x`, dann `v0.4.0`.
 `my db upgrade -check` stoppt einen Sprung, der Daten verlieren würde, und nennt das Release, über das du gehen musst; zu diesem Zeitpunkt hat sich nichts geändert.
 
-<!-- source: checking-and-rebuilding-projections 40b848afd40d -->
+<!-- source: checking-and-rebuilding-projections df54e4ad696f -->
 ## Projektionen prüfen und neu aufbauen
 
 Manche Tabellen sind Projektionen: Der Server leitet sie aus den Events und Ressourcen ihres Moduls ab (die Einschränkungen eines Kontos aus seinen
-Moderationsaktionen, zum Beispiel). Der Worker prüft jede Projektion einmal am Tag und korrigiert jede Differenz, die er findet. So prüfst oder korrigierst du eine von Hand:
+Moderationsaktionen, zum Beispiel). Ist `projection_verify_interval` gesetzt, prüft der Worker jede Projektion nach diesem Zeitplan und protokolliert jede
+Differenz, die er findet (gezählt von `my.projection.drifts`), ohne sie zu korrigieren; standardmäßig prüft er nicht. So prüfst oder korrigierst du eine von Hand:
 
 ```sh
 my projection list              # each projection with its module and tables
-my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection verify [<name>]   # derive every projection, or the one named, into temporary copies and print the rows that differ
 my projection rebuild [<name>]  # derive them the same way and write the difference
 ```
 
 - `<name>` ist eine Projektion oder eine ihrer Tabellen.
 - `verify` gibt die Zeilen aus, die die Tabellen enthalten, die Quellen aber nicht ableiten (`-`), und die Zeilen, die die Quellen ableiten, die Tabellen aber nicht haben (`+`),
-  und beendet sich mit `1`, wenn irgendeine abweicht.
-- `rebuild` schreibt höchstens 500 Zeilen pro Transaktion, sodass Leser nie eine geleerte Projektion sehen. Führe es aus, während der Server ruhig ist:
+  je Tabelle und Richtung bis zu 1.000, und beendet sich mit `1`, wenn irgendeine abweicht. Es sperrt keine Zeile und kann daher laufen, während die Instanz arbeitet.
+- `rebuild` schreibt höchstens 500 Zeilen pro Transaktion, sodass Leser nie eine geleerte Projektion sehen. Führe es aus, während die Instanz ruhig ist:
   Eine Zeile, die sich während des Neuaufbaus ändert, behält ihren neuen Wert, und ein späteres `verify` meldet jede verbleibende Differenz.
 
 <!-- source: recreating-erasing-every-row 9ff993b99448 -->

@@ -161,10 +161,10 @@ aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-confi
 
 另一種順序更糟：在媒體備份與資料庫備份之間上傳的每個檔案，還原後都會遺失，包括新貼文的媒體。在維護模式下同時進行兩者備份，就能避免任何一種落差。
 
-<!-- source: on-the-opentofu-targets 9862430f808c -->
+<!-- source: on-the-opentofu-targets a0188744140f -->
 ### 在 OpenTofu 目標上
 
-除了供應商所提供的之外，這些模組不會自己保留任何備份：Cloud SQL 和 RDS 的託管 PostgreSQL 有自動備份，保留期間由你設定，而只有供應商歷史紀錄的資料庫（Neon）只能回到該歷史紀錄所及的時間。請自己排程這些工作，並使用實例沒有的憑證：
+除了供應商所提供的之外，這些模組不會自己保留任何備份：[Cloud SQL](deploy-google-cloud.md#cloud-sql) 和 [RDS](deploy-aws.md#2-choose-the-database) 的託管 PostgreSQL 有自動備份，保留期間由你設定，而只有供應商歷史紀錄的資料庫（Neon）只能回到該歷史紀錄所及的時間。請自己排程這些工作，並使用實例沒有的憑證：
 
 1. **資料庫，每天一次。** 從託管資料庫的供應商之外的機器或排程任務，對實例的 PostgreSQL 執行 `pg_dump`（請參閱 [PostgreSQL](#postgresql)），將傾印檔加密，並寫入另一個帳號或供應商的 bucket。保留[多久備份一次、存在哪裡](#how-often-and-where)的各個世代。該任務只需要 `database_url`，不需要別的；它不能持有 KEK。
 2. **媒體，緊接在它之後。** 在 bucket 模組上設定 `versioning = true` 時，這些版本就是最近 `noncurrent_version_days` 天的副本；為了防範帳號遺失，也請依資料庫傾印的排程，如[存放在 bucket 中的媒體](#media-in-a-bucket)所示，執行 `rclone copy`，將實例的 bucket 複製到別處的 bucket。

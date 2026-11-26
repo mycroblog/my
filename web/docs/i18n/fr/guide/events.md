@@ -31,19 +31,25 @@ Un événement peut avoir un lieu pour se retrouver en personne, un lien en lign
 
 Les liens vers des cartes, des réunions en ligne et les liens d’une description s’ouvrent dans un nouvel onglet et nomment le site vers lequel ils mènent : ils quittent ce serveur, qui ne les vérifie jamais.
 
-<!-- source: organizing-an-event d6a7b15b234f -->
+<!-- source: the-board 074b939b2717 -->
+## Le tableau
+
+Chaque événement a un tableau pour ce que les gens doivent savoir avant et pendant celui-ci. L’organisateur, les co-organisateurs et les personnes qui ont répondu « Je participe  » ou « Peut-être  » voient la page de l’événement sous forme de deux onglets, « Détails  » et « Tableau  » ; les autres ne voient aucun tableau. Sur le tableau, « Écrire sur le tableau  » ouvre l’éditeur, et la publication va sur le tableau seul : elle n’est jamais affichée dans un fil, un profil ou une recherche, jamais envoyée à d’autres serveurs, et ne peut être ni boostée ni citée. Les publications du tableau se modifient, se suppriment, reçoivent des réponses, des favoris et des réactions comme n’importe quelle publication. Qui peut écrire est au choix de l’organisateur ; lorsque vous ne le pouvez pas, le tableau indique qui le peut. Une fois l’événement annulé, ou 7 jours après sa fin, le tableau est en lecture seule. Une nouvelle publication sur le tableau notifie ses lecteurs, et la notification ouvre le tableau.
+
+<!-- source: organizing-an-event e8a2d468ac33 -->
 ## Organiser un événement
 
-Choisissez « Nouvel événement » dans la liste des événements. L’éditeur demande :
+Choisissez « Nouvel événement  » dans la liste des événements. L’éditeur demande :
 
 - **Titre**, et une **Description** facultative (texte brut ; ses liens deviennent cliquables).
-- **Fuseau horaire de l’événement**, **Début** et **Fin**. Les heures sont celles du fuseau horaire de l’événement, qui est au départ le vôtre. Un événement dure au plus 7 jours et commence dans l’année. Pour laisser les gens choisir la date, sélectionnez « Demander aux personnes de répondre à des dates candidates » et saisissez à la place jusqu’à 20 candidates, chacune avec son début et sa fin.
-- **Lieux** : « Se retrouver sur place » (un nom, une adresse et un lien de carte facultatif) et « Lien en ligne » (un nom et une URL), ainsi que **Qui voit le lieu et le lien** : « Uniquement les participants que vous approuvez » ou « Toutes les personnes qui voient l’événement ». Lorsque le chat vocal est activé et que vous pouvez créer des salons, « Salon vocal » ouvre un salon pour l’événement à son début, avec **Qui peut parler sans demander**.
+- **Fuseau horaire de l’événement**, **Début** et **Fin**. Les heures sont celles du fuseau horaire de l’événement, qui est au départ le vôtre. Un événement dure au plus 7 jours et commence dans l’année. Pour laisser les gens choisir la date, sélectionnez « Demander aux personnes de répondre à des dates candidates  » et saisissez à la place jusqu’à 20 candidates, chacune avec son début et sa fin.
+- **Lieux** : « Se retrouver sur place  » (un nom, une adresse et un lien de carte facultatif) et « Lien en ligne  » (un nom et une URL), ainsi que **Qui voit le lieu et le lien** : « Uniquement les participants que vous approuvez  » ou « Toutes les personnes qui voient l’événement  ». Lorsque le chat vocal est activé et que vous pouvez créer des salons, « Salon vocal  » ouvre un salon pour l’événement à son début, avec **Qui peut parler sans demander**.
 - **Qui voit l’événement** : tout le monde sur ce serveur, les abonnés de l’organisateur, les personnes que l’organisateur suit, les abonnés mutuels de l’organisateur, ou uniquement les personnes invitées. Les personnes que vous invitez et celles qui ont répondu le voient toujours.
-- **Capacité**, le nombre de personnes qui peuvent répondre « Je participe » ; laissez vide pour ne pas fixer de limite.
+- **Qui peut écrire sur le tableau** : vous seul, vous et les co-organisateurs (par défaut), ou toutes les personnes qui lisent le tableau.
+- **Capacité**, le nombre de personnes qui peuvent répondre « Je participe  » ; laissez vide pour ne pas fixer de limite.
 
-Sur la page de l’événement, l’organisateur et les co-organisateurs approuvent les participants (« Approuver » et « Révoquer l’approbation »), invitent des personnes de ce serveur sous « Invitations » et modifient l’événement avec « Modifier l’événement ». L’organisateur seul change qui voit l’événement, nomme jusqu’à trois « Co-organisateurs » et annule l’événement avec « Annuler l’événement », éventuellement en indiquant un motif que l’événement affiche ensuite. Un événement annulé reste lisible mais n’accepte plus de réponses.
+Sur la page de l’événement, l’organisateur et les co-organisateurs approuvent les participants (« Approuver  » et « Révoquer l’approbation  »), invitent des personnes de ce serveur sous « Invitations  » et modifient l’événement avec « Modifier l’événement  ». L’organisateur seul change qui voit l’événement et qui peut écrire sur le tableau, nomme jusqu’à trois « Co-organisateurs  » et annule l’événement avec « Annuler l’événement  », éventuellement en indiquant un motif que l’événement affiche ensuite. Un événement annulé reste lisible mais n’accepte plus de réponses.
 
-Les modérateurs du serveur peuvent aussi annuler un événement ; sa page l’indique alors, avec leur motif. Certains serveurs ne laissent que certaines personnes créer des événements : lorsque vous n’y êtes pas autorisé, la création affiche « Vous ne pouvez pas créer d’événements sur ce serveur ».
+Les modérateurs du serveur peuvent aussi annuler un événement ; sa page l’indique alors, avec leur motif. Certains serveurs ne laissent que certaines personnes créer des événements : lorsque vous n’y êtes pas autorisé, la création affiche « Vous ne pouvez pas créer d’événements sur ce serveur  ».
 
-Si vous avez répondu « Je participe » ou « Peut-être », des rappels arrivent un jour et une heure avant le début de l’événement. Pour toutes les notifications d’événements (invitations, modifications, annulations et rappels), consultez [Notifications](notifications.md).
+Si vous avez répondu « Je participe  » ou « Peut-être  », des rappels arrivent un jour et une heure avant le début de l’événement. Pour toutes les notifications d’événements (invitations, modifications, annulations, rappels et nouvelles publications sur le tableau), consultez [Notifications](notifications.md).

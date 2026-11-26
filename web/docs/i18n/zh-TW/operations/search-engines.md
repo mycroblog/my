@@ -8,7 +8,7 @@
 
 `search = elasticsearch` 會把索引保存在 8 版或更新版本的 Elasticsearch 叢集中，可以是自行管理的叢集，或 Elastic Cloud Hosted。已針對 Elasticsearch 9.5 和 8.19 進行過驗證。索引的欄位由伺服器負責，伺服器會依這些欄位寫入、篩選、排序和分頁。索引的設定則可以由你負責：分析、分片和副本。沒有你自己的設定時，內建設定不需要任何外掛，並會依[下文所述](#how-the-built-in-analysis-finds-japanese)的方式找到日文。
 
-<!-- source: setting-it-up 3e02c35ff319 -->
+<!-- source: setting-it-up bf8c46897990 -->
 ### 設定方式
 
 1. 執行 Elasticsearch。大多數伺服器使用單一節點就夠了。若要在同一台主機上快速開始：
@@ -300,7 +300,7 @@ docker run -d --name meilisearch --restart unless-stopped \
 
 `MEILI_ENV=production` 在沒有 master key 時會拒絕啟動，並關閉內建的搜尋預覽。Meilisearch 使用純 HTTP：當 `my` 不是透過本機或私有連結連到它時，請把它放在 TLS 後方，或保持在私有網路中。
 
-<!-- source: settings 74547d71e962 -->
+<!-- source: settings 1ae3d39c472d -->
 ### 設定
 
 ```toml
@@ -350,7 +350,7 @@ curl -X POST http://meilisearch:7700/keys \
 
 不論設定檔怎麼寫，搜尋的查詢都是固定的：`matchingStrategy: all`，讓貼文必須包含每個詞；`sort: status_id:desc`，由新到舊；用於下一頁的貼文 ID `filter`；頁面大小加一的 `limit`；貼文 ID 的 `attributesToRetrieve`；以及 `showMatchesPosition`，用來判斷沒有詞的查詢。Meilisearch 會當作運算子解讀的片語雙引號和詞前面的減號會被移除，因此查詢永遠是單純的詞。
 
-<!-- source: tuning-meilisearch df827448e06c -->
+<!-- source: tuning-meilisearch bc54de1bbf95 -->
 ### 調整 Meilisearch
 
 以 `search_meilisearch_index_settings_file` 指定一個 [Meilisearch 索引設定](https://www.meilisearch.com/docs/reference/api/settings)的 JSON 檔案來調整引擎。`search = meilisearch` 時，伺服器會在啟動時檢查它：它必須存在且是一個 JSON 物件，不能設定伺服器自行設定的四個項目，而如果有 `rankingRules`，必須以 `sort` 開頭，以維持由新到舊的結果。Meilisearch 會在伺服器傳送時檢查這些值。伺服器永遠不會記錄檔案的內容。

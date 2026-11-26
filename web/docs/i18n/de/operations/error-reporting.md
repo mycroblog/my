@@ -137,7 +137,7 @@ Der Server begrenzt, was er sendet, damit der Dienst nicht überflutet wird:
 
 Beobachte den Zähler `my.errors.exported`: `my.outcome` ist `success`, `dropped` (über einem Limit, die Queue war voll oder der Dienst bat um Verlangsamung) oder `failed` (der Dienst war nicht erreichbar oder hat den Bericht abgelehnt) ([Den Server betreiben](running.md#metrics)).
 
-<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
+<!-- source: sentry-glitchtip-and-datadog 81bdd8389ace -->
 ### Sentry, GlitchTip und Datadog
 
 ```sh
@@ -153,7 +153,7 @@ Lass bei den OpenTofu-Modulen die Fehler des Abschnitts `observability` bei den 
   secrets       = ["errors_sentry_dsn"]
 ```
 
-Der Server spricht das Sentry-Protokoll selbst, es ist also kein Sentry-SDK beteiligt, und es wird keine Umgebungsvariable `SENTRY_*` gelesen. Er setzt den Fingerprint, damit der Dienst danach gruppiert, und die Tags `service` (`my`), `my.role`, `my.error.where` und `error.fingerprint`. Das Release ist die Version des Servers und die Umgebung ist `errors_environment`.
+Der Server spricht das Sentry-Protokoll selbst, es ist also kein Sentry-SDK beteiligt, und es wird keine Umgebungsvariable `SENTRY_*` gelesen. Er setzt den Fingerprint, damit der Dienst danach gruppiert, und die Tags `service` (`my`), `service.namespace` (der `host`), `my.role`, `my.error.where` und `error.fingerprint`. Das Release ist die Version des Servers und die Umgebung ist `errors_environment`.
 
 - **Sentry** (gehostet oder selbst gehostet): Kopiere den DSN aus den Client-Keys des Projekts.
 - **GlitchTip**: Kopiere den DSN des Projekts. Es ist Open Source und läuft auf einem kleinen Server. Prüfe, welche Alert-Regeln deine Version für neue und wiederkehrende Issues anbietet.

@@ -97,7 +97,7 @@ Estos nombres se usan en las actividades que siguen. Enumera cada uno de los que
 | Supresión | Direcciones IP de registro `{{180 days}}`, orígenes de inicio de sesión `{{180 days}}`, contadores en el plazo de dos veces la ventana del límite, bloqueos de registro 30 días después de levantarse o caducar. Se detiene con una retención legal |
 | Base jurídica | {{p. ej. intereses legítimos}} |
 
-<!-- source: 3-publishing-and-social-features 33e1e1657705 -->
+<!-- source: 3-publishing-and-social-features 427ca53258a4 -->
 ### 3. Publicación y funciones sociales
 
 | | |
@@ -106,7 +106,7 @@ Estos nombres se usan en las actividades que siguen. Enumera cada uno de los que
 | Interesados | Personas con una cuenta, personas a las que mencionan |
 | Datos personales | Perfil y sus versiones, etiquetas destacadas, publicaciones y sus versiones, archivos multimedia, favoritos, reacciones, impulsos, marcadores, publicaciones fijadas, votos en encuestas, seguimientos, etiquetas seguidas, bloqueos, silenciados, listas, filtros de palabras clave, notas privadas sobre cuentas. Las publicaciones pueden contener cualquier dato que una persona escriba, incluidas categorías especiales. `{{IF post review}}` El texto de una publicación rechazada que su autor envía con una apelación |
 | Destinatarios | Alojamiento, CDN, servicio de revisión de archivos multimedia (una pequeña copia procesada de cada subida), otros usuarios, la web pública para el contenido público, servidores federados (actividad 4), motores de búsqueda y rastreadores de IA según `search_indexing` y `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, aplicaciones que la persona autorizó, `{{IF post review}}` el servicio de revisión de publicaciones para las publicaciones `public`, `local` y `unlisted` de cuentas nuevas y sus ediciones (su texto tal como se escribió y tal como se muestra, advertencia de contenido, idioma, marca de contenido sensible, opciones de encuesta, descripciones de imágenes, etiquetas y número de menciones, su dirección y las direcciones de las publicaciones a las que responden o que citan, la dirección y el nombre de usuario del autor, y cuándo se creó la cuenta; sin archivos multimedia), `{{IF profile review}}` el servicio de revisión de perfiles para los cambios de perfil de cuentas nuevas (el nombre visible, la biografía tal como se escribió y tal como se muestra, los campos del perfil, si cambió el avatar o la cabecera, la dirección y el nombre de usuario de la cuenta, y cuándo se creó la cuenta; sin imágenes) |
-| Supresión | Cuando la persona la elimina, por su política de eliminación automática, o al suprimir la cuenta. `{{IF auto_delete_max_age_days}}` Como máximo `{{auto_delete_max_age_days}}` días después de la publicación, para las cuentas sin `keep_posts_longer`. Subidas adjuntas a nada `{{24 hours}}`. Versiones antiguas de imágenes después de que una versión más reciente las sustituya `{{30 days}}`. El registro del URI de una publicación eliminada permanece. `{{IF post review}}` Una apelación se va con su decisión (`hook_decisions_retention_days`, conservada mientras puede apelarse o espera revisión) o al suprimir la cuenta |
+| Supresión | 7 días después de que la persona la elimina o de que lo hace su política de eliminación automática, o al suprimir la cuenta. `{{IF auto_delete_max_age_days}}` Como máximo `{{auto_delete_max_age_days}}` días después de la publicación, para las cuentas sin `keep_posts_longer`. Subidas adjuntas a nada `{{24 hours}}`. Versiones antiguas de imágenes después de que una versión más reciente las sustituya `{{30 days}}`. El registro del URI de una publicación eliminada permanece. `{{IF post review}}` Una apelación se va con su decisión (`hook_decisions_retention_days`, conservada mientras puede apelarse o espera revisión) o al suprimir la cuenta |
 | Base jurídica | {{p. ej. contrato}} |
 
 <!-- source: 4-federation 795a56004c37 -->
@@ -225,16 +225,16 @@ Elimina esta actividad cuando `translation_providers` esté vacío.
 | Supresión | Traducciones `{{30 days}}` desde la traducción, y con la publicación cuando se elimina. Caracteres por cuenta hasta el final del mes siguiente, o al suprimir la cuenta. En los proveedores: lo que se envió no puede retirarse. {{SUS PLAZOS}} |
 | Base jurídica | {{p. ej. intereses legítimos}} |
 
-<!-- source: 13-events 3f83323d2455 -->
+<!-- source: 13-events bf20c9a47e67 -->
 ### 13. Eventos
 
 | | |
 | --- | --- |
 | Fines | Organizar eventos de los usuarios locales, con sus fechas, fechas candidatas, lugares, invitaciones y respuestas, y avisar a las personas afectadas de sus cambios y de su inicio |
 | Interesados | Organizadores, coorganizadores, usuarios invitados y asistentes |
-| Datos personales | Título, descripción, fecha, zona horaria y lugares (la dirección de un lugar de encuentro, un enlace) de cada versión de un evento; organizadores y coorganizadores; fechas candidatas y la respuesta de cada usuario a ellas; invitaciones; respuestas y su aprobación; cancelaciones con su motivo; con cuánta antelación a un evento se recuerda a cada usuario. Los eventos no se federan |
+| Datos personales | Título, descripción, fecha, zona horaria y lugares (la dirección de un lugar de encuentro, un enlace) de cada versión de un evento; organizadores y coorganizadores; fechas candidatas y la respuesta de cada usuario a ellas; invitaciones; respuestas y su aprobación; cancelaciones con su motivo; con cuánta antelación a un evento se recuerda a cada usuario; las publicaciones del tablón de cada evento. Los eventos y sus tablones no se federan |
 | Destinatarios | Alojamiento, los usuarios locales que ven el evento (la dirección y el enlace solo para los asistentes aprobados, salvo que el organizador los muestre a todos) y el proveedor de correo para los correos de notificación, que indican el título, el inicio y los organizadores y nunca los lugares |
-| Supresión | El título, la descripción y los lugares de las versiones que escribió una cuenta, y sus horas de recordatorio, al suprimirla. Invitaciones, respuestas, su aprobación y votos sobre fechas candidatas {{90 days}} después de que el evento terminara o se cancelara (`event_records_retention_days`), más tiempo mientras una denuncia apunte al evento o una retención cubra una cuenta que nombran. Los eventos, sus fechas y las fechas candidatas no tienen un fin automático: {{PLAZO}} |
+| Supresión | El título, la descripción y los lugares de las versiones que escribió una cuenta, y sus horas de recordatorio, al suprimirla. Invitaciones, respuestas, su aprobación, votos sobre fechas candidatas y las publicaciones del tablón del evento {{90 days}} después de que el evento terminara o se cancelara (`event_records_retention_days`), más tiempo mientras una denuncia apunte al evento o una retención cubra una cuenta que nombran. Los eventos, sus fechas y las fechas candidatas no tienen un fin automático: {{PLAZO}} |
 | Base jurídica | {{p. ej. contrato, intereses legítimos}} |
 
 <!-- source: security-measures-article-301g 756bb9e562e3 -->

@@ -1,358 +1,260 @@
-<!-- source: deploying-on-cloud-run 7728d9a37c56 -->
-# Implantando no Cloud Run
+<!-- source: deploying-on-google-cloud 03b87618467f -->
+# Implantar no Google Cloud
 
-Como executar o `my` no Google Cloud com o módulo OpenTofu [`mycroblog-gcp`](../../deploy/opentofu/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage e Pub/Sub, com um banco de dados PostgreSQL no Neon, atrás de um Application Load Balancer externo global. O serviço não executa nenhuma instância enquanto ninguém o usa, exceto por um tick que acorda o servidor a cada minuto. Um servidor custa dinheiro: espere cerca de US$ 37 por mês antes de armazenamento, tráfego e streams abertos, e leia [Custos](#costs) para saber o que o cuidado pode reduzir.
+Como executar o `my` no Google Cloud com o módulo do OpenTofu `mycroblog-gcp`: um serviço do Cloud Run e um backend para cada função,
+que você escolhe pelo `kind` da seção dela. Toda seção usa por padrão a recomendação do módulo, que não executa nenhuma instância
+enquanto ninguém usa o servidor, exceto por um tick que o acorda a cada minuto. Um servidor custa dinheiro: a configuração recomendada com um
+banco de dados no Neon sai por cerca de US$ 37 por mês antes do armazenamento e do tráfego, e [Custos](#costs) dá o valor de cada escolha.
 
-O módulo exige o OpenTofu 1.11 ou posterior. O Terraform não é compatível.
+O que toda implantação com o OpenTofu tem em comum, o bloco e as seções dele, os segredos, o console e as atualizações, está em
+[Implantar com o OpenTofu](deploy-opentofu.md). Esta página acrescenta o que o Google Cloud precisa.
 
-<!-- source: what-it-creates cae1e55a1722 -->
+<!-- source: what-it-creates 7b13c8bbc968 -->
 ## O que ele cria
 
-Um bloco do `mycroblog-gcp` cria tudo isto. Cada linha é uma seção do módulo, e o padrão dela é o que este guia implanta; [o README do módulo](../../deploy/opentofu/README.md#sections) lista os outros tipos.
+Um bloco de `mycroblog-gcp` cria o seguinte. O primeiro tipo de cada linha é o recomendado e o padrão;
+[a referência dos módulos](../../deploy/opentofu/README.md#sections) lista todos os campos.
 
-| Parte | Seção | Recursos |
-| --- | --- | --- |
-| Servidor | `service`, `jobs` | Um serviço do Cloud Run com `role = all`, um job de migração, um job de console enquanto você precisar dele, uma conta de serviço e acesso público |
-| Tráfego | `ingress` | Um Application Load Balancer externo global com um certificado. Um mapeamento de domínio ou a Cloudflare são os outros tipos, e um host de mídia na Cloudflare pode ficar ao lado de qualquer um |
-| Jobs | `queue` | Uma fila do Cloud Tasks, um job do Cloud Scheduler e uma conta de serviço que chama o servidor |
-| Mídia | `media` | Um bucket privado |
-| Atualizações em tempo real | `stream` | Um tópico e uma função personalizada. O servidor cria e remove as próprias assinaturas |
-| Banco de dados | `database` | Um segredo para a URL dele: você cria o banco de dados à mão |
-| E-mail | `mail` | Um segredo para a senha do SMTP: qualquer serviço SMTP |
-| Segredos | | Uma chave VAPID gerada e os segredos que só você pode preencher, vazios |
-| KEK | `kek` | Um segredo gerado montado como arquivo. O Cloud KMS é o outro tipo |
-| Métricas, traces, erros | `observability` | As APIs do Cloud Monitoring, do Cloud Trace e do Error Reporting, que leem o que o Cloud Run envia a elas |
+| Função | Seção | Recomendado | Outros tipos |
+| --- | --- | --- | --- |
+| Servidor | `service`, `jobs` | Um serviço do Cloud Run com `role = all`, um job de migração, um job de console enquanto você precisar, uma conta de serviço e acesso público | |
+| Tráfego | `ingress` | `load-balancer`: um Application Load Balancer externo global com um certificado gerenciado pelo Google | `domain-mapping`, `cloudflare` e um host de mídia em cache no Cloudflare ao lado de qualquer um |
+| Banco de dados | `database` | `external`: um segredo para a URL de um PostgreSQL que você executa, como o Neon | `cloud-sql`: uma instância, o banco de dados, o usuário e a senha dela |
+| Jobs | `queue` | `cloud-tasks`: uma fila do Cloud Tasks, o job do Cloud Scheduler do tick e uma conta de serviço que chama o servidor | `db`: os jobs no banco de dados |
+| Mídia | `media` | `gcs`: um bucket privado do Cloud Storage | `r2`, `s3` |
+| Caches e limites de taxa | `kv` | `db`: no banco de dados, sem nada a criar | `memorystore`, `external` (Valkey) |
+| Atualizações em tempo real | `stream` | `pubsub`: um tópico e um papel personalizado com o qual o servidor gerencia as próprias assinaturas | `postgres`, `valkey` |
+| E-mail | `mail` | Qualquer serviço SMTP, com um segredo para a senha dele | |
+| KEK | `kek` | `secret-manager`: um segredo gerado, montado como um arquivo | `kms`: uma chave no Cloud KMS |
+| Rede | `network` | `none`: nada a anexar | `vpc`, `existing` |
+| Métricas, traces, erros | `observability` | Cloud Monitoring, Cloud Trace e Error Reporting, que leem o que o Cloud Run envia a eles. O módulo ativa as APIs deles | `settings`, como o Sentry |
+| Alertas | `monitoring` | Uma verificação de disponibilidade, métricas baseadas em logs e políticas de alerta: [Monitoramento e alertas](#monitoring-and-alerts) | `null`, nenhum |
 
-Os valores dos segredos nunca chegam ao plano nem ao estado do OpenTofu: você adiciona por conta própria os que vêm de outro lugar, e o módulo gera a KEK e a chave VAPID por atributos somente de escrita.
+O módulo também gera a chave VAPID e cria vazios os segredos que só você pode preencher.
 
-<!-- source: before-you-start 10846ce6f3b1 -->
+`examples/gcp-cloud-run-neon` é um jeito de começar: o provedor e um bloco com todos os tipos recomendados, que funciona com
+qualquer banco de dados externo, Neon ou não. Adicione ao bloco dele as seções que você mudar.
+
+<!-- source: before-you-start 9869afda9a07 -->
 ## Antes de começar
 
-- `tofu` 1.11 ou posterior, `gcloud` e `jq`, onde você aplica: um apply que muda a versão executa a migração a partir dali, pelo `gcloud`.
-- Um projeto do Google Cloud com cobrança, usado apenas para esta instância, e uma conta nele com o papel Owner.
-- Um domínio para [`host`](../reference/configuration.md#host). Ele não pode mudar depois: leia [Configurações que você não pode mudar depois](production-checklist.md#settings-you-cannot-change-later).
-- Uma versão do `my` dos [releases](running.md#get-the-image). Não há tag `latest`.
+- O que [a primeira implantação](deploy-opentofu.md#first-deployment) precisa, com `gcloud` como a CLI da plataforma e
+  `gcloud auth application-default login` para o provedor.
+- Um projeto do Google Cloud com faturamento, usado apenas para esta instância, e uma conta nele com o papel Owner. O papel
+  personalizado de `stream = pubsub` vai no projeto, então alcançaria as assinaturas de qualquer outra coisa que estiver ali.
 
-<!-- source: first-deployment 996fcc6eb35e -->
+<!-- source: first-deployment 894b6af2cee9 -->
 ## Primeira implantação
 
-<!-- source: 1-enable-the-apis c7f2ef4a9ee9 -->
+Faça aqui os dois primeiros passos e depois siga [a primeira implantação](deploy-opentofu.md#first-deployment) com as notas do
+terceiro.
+
+<!-- source: 1-enable-the-apis fdd2dc400c20 -->
 ### 1. Ative as APIs
+
+Toda implantação precisa destas:
 
 ```sh
 gcloud services enable --project="$PROJECT" run.googleapis.com cloudtasks.googleapis.com cloudscheduler.googleapis.com \
   pubsub.googleapis.com secretmanager.googleapis.com storage.googleapis.com iam.googleapis.com \
-  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com compute.googleapis.com \
-  monitoring.googleapis.com
+  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com
 ```
 
-`compute.googleapis.com` é para o balanceador de carga.
+Adicione a API de cada escolha que precisar de uma:
 
-<!-- source: 2-create-the-database-on-neon ca5f51e8979e -->
-### 2. Crie o banco de dados no Neon
+| Escolha | API |
+| --- | --- |
+| `ingress = load-balancer` | `compute.googleapis.com` |
+| `database = cloud-sql` | `sqladmin.googleapis.com` |
+| `kek = kms` | `cloudkms.googleapis.com` |
+| `network = vpc` ou `existing` | `compute.googleapis.com`, `servicenetworking.googleapis.com`, `networkconnectivity.googleapis.com` |
+| `kv = memorystore` | `memorystore.googleapis.com`, `serviceconsumermanagement.googleapis.com` e as da rede |
 
-Espere o plano Launch: com o tick padrão, o compute nunca para. O plano Free também funciona, com as contrapartidas em [Custos](#costs).
+`translation` ativa a própria API, e `observability` também. [Importar custos de uso da nuvem](billing-import.md) lista o que
+`billing` precisa.
 
-No console do Neon, crie um projeto em uma região próxima da sua região do Cloud Run e copie as strings de conexão dele. O módulo nunca o cria, para que a senha dele fique fora do estado do OpenTofu. Um projeto tem duas strings de conexão, e a implantação usa cada uma onde ela cabe:
+<!-- source: 2-prepare-the-database b54e3b01002b -->
+### 2. Prepare o banco de dados
 
-- A **direta** (o host sem `-pooler`) é obrigatória. O job de migração e o console sempre a usam: `my schema apply` mantém um lock em nível de sessão, que um pooler em modo de transação não mantém.
-- A **com pool** (o host com `-pooler`) é opcional, para o serviço. O pooler do Neon cuida do que o servidor precisa: veja [Por um pooler de conexões](database.md#through-a-connection-pooler). Defina `database = { pooled = true }`, e o módulo cria um segundo segredo para ela.
+- **`external`**: crie o banco de dados e guarde a URL de conexão direta dele e, se tiver uma, a URL com pool para
+  `secrets_to_fill`: [O banco de dados](#the-database) diz qual vai onde. O módulo nunca o cria, então a senha dele fica
+  fora do estado do OpenTofu.
+- **`cloud-sql`**: nada a fazer. O módulo cria a instância e grava a URL dela, com uma senha gerada, no segredo.
 
-Sem uma string com pool, o serviço usa a direta também, no limite de conexões do banco de dados, que `service.max_instances` limita. Para aumentar o pool do padrão de 4 por instância, para as 80 requisições que uma instância do Cloud Run recebe de uma vez, adicione `pool_max_conns` à string que o serviço usa, por exemplo `postgres://...-pooler...neon.tech/neondb?sslmode=require&pool_max_conns=8`. Veja [Esperando uma conexão com o banco de dados](running.md#waiting-for-a-database-connection).
+<!-- source: 3-deploy 4470affd40e4 -->
+### 3. Implante
 
-<!-- source: 3-copy-the-example-and-set-the-variables 1b99f37cb3a7 -->
-### 3. Copie o exemplo e defina as variáveis
+Siga [a primeira implantação](deploy-opentofu.md#first-deployment). No Google Cloud:
 
-Comece de uma cópia em um diretório vazio, com o arquivo de lock dos provedores, a partir da versão que você implanta:
+- **Variáveis**: `mail_from`, `mail_smtp_host` e `mail_smtp_username` do exemplo configuram o [e-mail](email.md). A porta
+  é a 587, já que o Google Cloud bloqueia a porta de saída 25.
+- **Segredos**: a KEK é `my-kek` e a chave VAPID `my-vapid-key`, cada um começando com `name`, e
+  `gcloud secrets versions access latest --secret=<id> --project="$PROJECT"` os copia. A KEK chega ao servidor como um
+  arquivo montado, nomeado por `MY_KEK_FILE`, e os outros segredos como variáveis de ambiente.
+- **Apply**: o job de migração vem primeiro, com o que ele precisa, o que inclui o ingress, já que as configurações do servidor
+  o nomeiam. A sonda de inicialização do serviço espera `/health/ready`, que responde `503` até o esquema existir.
+- **DNS**: adicione os registros de `tofu output dns_records`, como [Como o tráfego chega ao serviço](#how-traffic-reaches-the-service)
+  diz para cada tipo. Até o certificado ficar ativo, `https://{host}` falha com um erro de TLS, então a federação e os navegadores
+  ainda não alcançam o servidor. Nada mais espera por isso: o Cloud Tasks e o Cloud Scheduler chamam a URL padrão do serviço,
+  `https://<name>-<project number>.<region>.run.app`. **Não desative a URL padrão**, ou os jobs param. O Cloud Run conta
+  esses dois chamadores como internos apenas do mesmo projeto e nessa URL, o que permite que um balanceador de carga a feche para
+  a internet.
+- **O primeiro administrador**: o link fica no Cloud Logging, onde qualquer pessoa que possa ler os logs do projeto pode usá-lo.
 
-```sh
-VERSION=v0.1.0
-git clone --depth 1 --branch "$VERSION" https://github.com/mycroblog/my.git my-source
-mkdir my-deployment
-cp -r my-source/deploy/opentofu/examples/gcp-cloud-run-neon/. my-deployment/
-rm -rf my-source
-cd my-deployment
-cp terraform.tfvars.example terraform.tfvars
-```
+<!-- source: the-console-and-upgrades a40a1df56865 -->
+## O console e as atualizações
 
-`main.tf` é o provedor `google` e um bloco, `module "mycroblog"`. **Defina `ref` para essa versão.** O bloco nomeia uma versão com `?ref=`, que a cópia de uma versão estável já traz certo. A imagem do servidor é a mesma versão, então `ref` sozinho nomeia o que executa. Para uma pré-versão, defina os dois por conta própria: `sed -i "s/?ref=[^&]*/?ref=$VERSION/" main.tf`, e `image = { version = "0.1.0-rc.4" }` no bloco, a versão sem o `v`, já que o módulo de uma pré-versão não usa a própria imagem como padrão. O módulo existe apenas a partir da primeira versão que o contém, então uma tag anterior não tem exemplo para copiar. Mantenha este diretório: ele guarda o seu estado e as suas configurações.
+[O console](deploy-opentofu.md#the-console) e as [atualizações](deploy-opentofu.md#upgrading) executam execuções dos jobs do Cloud Run
+`<name>-console` e `<name>-migrate` a partir de onde você aplica, por meio de `gcloud`. Elas precisam de credenciais que possam executar
+os jobs e ler os logs deles, `roles/run.developer` e `roles/logging.viewer`, que o Owner inclui. Um apply interrompido
+deixa a execução rodando no Cloud Run, e o próximo apply espera que ela termine.
 
-Preencha `terraform.tfvars`. `mail_from`, `mail_smtp_host` e `mail_smtp_username` configuram o [e-mail](email.md); a porta é 587, já que o Google Cloud bloqueia a porta de saída 25. Para mudar qualquer outra coisa, adicione a seção ao bloco em `main.tf`, como `ingress = { kind = "domain-mapping" }`: todas as seções e o que cada uma recusa estão em [o README do módulo](../../deploy/opentofu/README.md#sections).
-
-`settings` aceita qualquer outra configuração da [referência de configuração](../reference/configuration.md) pela chave dela, e `secrets` as chaves de configurações secretas, cada uma das quais ganha um segredo vazio para preencher. Uma chave que uma seção ou o módulo define faz o plano falhar, e o mesmo vale para uma chave que o módulo não aceita no Cloud Run, como `listen`; o erro diz o motivo. Decida agora sobre [`account_domain`](../reference/configuration.md#account_domain), como `settings = { account_domain = "example.org" }`, se os identificadores usam outro domínio.
-
-**O estado** fica neste diretório por padrão. Ele não guarda valores secretos, mas é o único registro do que foi criado: guarde-o em um bucket com um bloco `backend "gcs"` se mais de uma pessoa executa isto.
-
-<!-- source: 4-create-the-secrets-and-add-their-values 51cddae33ec9 -->
-### 4. Crie os segredos e adicione os valores deles
-
-Isto cria os segredos e gera a KEK e a chave VAPID:
-
-```sh
-tofu init
-tofu apply -target=module.mycroblog.module.secrets -target=module.mycroblog.module.kek_secret_manager
-```
-
-`tofu init` também busca os scripts dessa versão: `migrate.sh`, que um apply executa, e `console.sh`, que uma etapa posterior usa:
-
-```sh
-SCRIPTS=.terraform/modules/mycroblog/deploy/opentofu
-```
-
-**Copie a KEK agora** e guarde a cópia separada do banco de dados, por exemplo em um gerenciador de senhas. Sem ela um [backup](backup.md) não pode ser restaurado, e as chaves das contas se perdem. `tofu output kek` mostra o comando. Faça o mesmo com a chave VAPID, cuja perda encerra todas as assinaturas de Web Push:
-
-```sh
-gcloud secrets versions access latest --secret=my-kek --project="$PROJECT"
-gcloud secrets versions access latest --secret=my-vapid-key --project="$PROJECT"
-```
-
-Depois adicione os valores que vêm de outro lugar. `tofu output secrets_to_fill` lista cada segredo que o módulo criou vazio, com o que vai nele e o comando que o adiciona. Uma instância cujo segredo não pode ser lido não inicia, então adicione-os antes do serviço:
-
-```sh
-printf '%s' 'postgres://...' | gcloud secrets versions add my-database-url --project="$PROJECT" --data-file=- # the direct string
-printf '%s' '<the SMTP password>' | gcloud secrets versions add my-smtp-password --project="$PROJECT" --data-file=-
-```
-
-A KEK chega ao servidor como um arquivo montado, nomeado por `MY_KEK_FILE`. Os outros são variáveis de ambiente resolvidas quando uma instância inicia, então uma nova versão vale na próxima instância: implante uma nova revisão para ter certeza.
-
-**O OpenTofu gera a KEK uma vez e nunca mais.** O segredo e a versão dele têm `prevent_destroy`, e o número de versão que gravaria um novo valor é fixo no módulo: uma nova KEK aleatória torna ilegível tudo o que a antiga criptografou. Para trocá-la, siga [Trocar a KEK](key-management.md#rotate-the-kek), adicionando o novo valor com `gcloud secrets versions add`. O OpenTofu não acompanha o que você adiciona ali.
-
-Para manter a KEK no Cloud KMS desde o início, defina `kek = { kind = "kms" }` antes desta etapa, use como alvo `module.mycroblog.module.kek_kms` no lugar de `kek_secret_manager` e ative `cloudkms.googleapis.com`.
-
-<!-- source: 5-apply 2076866c0f3b -->
-### 5. Aplique
-
-```sh
-tofu apply
-```
-
-Isto cria todo o restante, em uma ordem de que a sonda de inicialização do serviço precisa: a sonda espera `/health/ready`, que responde `503` até o esquema existir. O job de migração vem primeiro, com o que ele depende, o que inclui o endereço do balanceador de carga, já que as configurações do servidor o nomeiam. Depois o apply executa `my upgrade` como uma execução do job, a partir da sua máquina pelo `gcloud`, e espera por ele: `my config check`, `my db upgrade -check`, `my schema apply` e `my db upgrade`, que para no primeiro que falha. A saída dele aparece na do apply. O primeiro comando que usa o banco de dados grava `host` e `account_domain` nele. Só então o apply cria os serviços.
-
-Se a migração falhar, o apply para antes dos serviços. Corrija a causa, muitas vezes um segredo sem valor, e execute `tofu apply` de novo: ele executa a migração de novo.
-
-<!-- source: 6-point-the-domain-at-the-load-balancer c81cc51be2af -->
-### 6. Aponte o domínio para o balanceador de carga
-
-`tofu output dns_records` lista um registro `A`, de `host` para o endereço do balanceador de carga. Adicione-o no seu provedor de DNS. Se esse provedor tem um proxy próprio, deixe-o desligado para este registro.
-
-O certificado é gerenciado pelo Google e só fica ativo depois que o DNS aponta para o endereço, o que pode demorar. Até lá `https://{host}` falha com um erro de TLS, então a federação e os navegadores ainda não alcançam o servidor. Nada mais espera por isso: o Cloud Tasks e o Cloud Scheduler chamam a URL `run.app` padrão do serviço, `https://<service>-<project number>.<region>.run.app`. **Não desative a URL padrão**, ou os jobs param. Essa URL recusa requisições da internet, e o Cloud Run conta esses dois como internos apenas do mesmo projeto e nessa URL, não em um domínio personalizado.
-
-Veja [Como o tráfego chega ao serviço](#how-traffic-reaches-the-service) para o que mais você pode escolher.
-
-<!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
-### 7. Crie o primeiro administrador
-
-Os jobs do Cloud Run não têm terminal nem entrada padrão, então `my admin create` imprime um link que define a senha em vez de ler uma. Ative o [console](deploy-opentofu.md#the-console) e execute:
-
-```sh
-tofu apply -var console_enabled=true
-tofu output -json console | "$SCRIPTS/console.sh" admin create -username alice -email alice@example.com -password-link
-tofu apply -var console_enabled=false
-```
-
-Abra o link logo e defina a senha. Ele funciona uma vez, por uma hora. **Ele fica no Cloud Logging até lá**, onde qualquer pessoa que possa ler os logs do projeto pode usá-lo. Se ele expirar, execute `my admin account password-reset-link @alice` pelo console. Depois ative a autenticação em dois fatores.
-
-<!-- source: 8-go-through-the-checklist e7fe33d10e80 -->
-### 8. Percorra a lista de verificação
-
-Percorra a [lista de verificação de produção](production-checklist.md), começando pelo [e-mail](production-checklist.md#email): SPF, DKIM e DMARC no domínio de `mail_from`.
-
-<!-- source: the-console 52df6f8c43ac -->
-## O console
-
-O console executa um comando `my` com a imagem, as configurações e os segredos do serviço. Ele existe apenas enquanto `console_enabled` está ativado, então desative-o quando terminar:
-
-```sh
-tofu apply -var console_enabled=true
-tofu output -json console | "$SCRIPTS/console.sh" instance set registration_mode open
-tofu apply -var console_enabled=false
-```
-
-`console.sh` espera o comando, imprime a saída e o código de saída dele e termina com esse código. Ele precisa de `roles/logging.viewer`, porque a saída de um job vai para o Cloud Logging. Ele usa a imagem que o serviço executa: depois de uma atualização que parou na migração, essa é a versão anterior, à qual o banco de dados ainda serve.
-
-O comando não tem entrada padrão nem terminal, então um comando que lê uma senha ou um arquivo deles não pode executar assim. O que ele imprime fica nos logs, então não execute um comando cuja saída você não escreveria ali.
-
-<!-- source: upgrading fe1bed77d3af -->
-## Atualizando
-
-Leia primeiro [Atualizando](database.md#upgrading) e as notas da versão, e avance uma versão menor por vez. Uma atualização é um apply da nova versão: o plano mostra cada serviço e job recebendo a imagem dela, e o apply executa a migração antes de qualquer um deles servi-la.
-
-```sh
-# 1. Back up the database while nothing writes: see "The maintenance mode" below, and Backup and restore.
-pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
-
-# 2. Name the new release in main.tf, as ?ref=v0.2.0, and fetch it.
-tofu init
-
-# 3. Read the plan, then apply it.
-tofu plan
-tofu apply
-```
-
-A imagem é a versão que `ref` nomeia, então mudar `ref` é a atualização inteira. Leia o plano antes de aplicá-lo: o módulo de uma nova versão pode mudar recursos também. O apply faz isto e para no primeiro passo que falha:
-
-1. Dá aos jobs de migração e de console a nova imagem, com o restante do plano de que os serviços não dependem.
-2. Executa `my upgrade` como uma execução do job de migração, de onde você aplica, e espera por ele: `my config check`, `my db upgrade -check`, `my schema apply` e `my db upgrade`. A saída dele aparece na do apply.
-3. Implanta a nova revisão de cada worker, depois do serviço. Uma revisão só recebe tráfego quando a sonda de inicialização dela passa em `/health/ready`.
-
-**Onde você aplica** precisa de `gcloud` e `jq`, e de credenciais que possam executar o job e ler os logs dele (`roles/run.developer` e `roles/logging.viewer`, que o Owner inclui). O mesmo vale para um job de CI que aplica.
-
-**Quando um passo falha**, os serviços ficam nas revisões deles, e as notas da versão ou a saída da migração dizem o motivo. Corrija a causa e execute `tofu apply` de novo, com a mesma versão: ele executa a migração de novo, e os passos que terminaram não encontram mais nada a fazer. Um apply que foi interrompido, ou que perdeu a conexão, deixa a execução rodando no Cloud Run; o próximo apply espera ela terminar antes de iniciar a sua. Para voltar depois que o esquema mudou, restaure o backup: veja [Revertendo](database.md#rolling-back). Um apply com uma versão anterior para na migração, já que essa versão recusa um esquema mais novo, e não muda nenhum serviço.
-
-Para experimentar uma release candidate, ou manter a imagem de uma versão anterior sob um módulo mais novo, defina a versão por conta própria; ela é a tag da imagem, sem o `v` da versão:
-
-```hcl
-  image = { version = "0.2.0-rc.1" }
-```
-
-<!-- source: checking-the-sql-first 9ff10080c36d -->
-### Verificando o SQL antes
-
-O plano não mostra o SQL da migração. Para lê-lo antes do apply, dê ao job de migração apenas a nova imagem e execute nele `my upgrade -dry-run`, que não muda nada:
+Para [verificar o SQL primeiro](deploy-opentofu.md#checking-the-sql-first):
 
 ```sh
 tofu apply -target='module.mycroblog.module.app.google_cloud_run_v2_job.one_off["migrate"]'
-gcloud run jobs execute my-migrate --project="$PROJECT" --region=asia-northeast1 --args=upgrade,-dry-run --wait
+gcloud run jobs execute my-migrate --project="$PROJECT" --region="$REGION" --args=upgrade,-dry-run --wait
 gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="my-migrate"' --project="$PROJECT" \
   --freshness=1h --format='value(textPayload)' --order=asc
 ```
 
-<!-- source: destructive-changes 5b3fdea90a55 -->
-### Mudanças destrutivas
+<!-- source: the-database 0303fdd046ef -->
+## O banco de dados
 
-Quando as notas da versão pedirem `-allow-destructive`, nomeie essa versão no bloco:
+O módulo recomenda `external`, que não precisa de rede e não cobra nada no Google Cloud: um banco de dados que para quando ocioso,
+como o Neon, mantém barato um servidor tranquilo. `cloud-sql` mantém tudo em um projeto, a um custo fixo. Mover dados entre
+eles é [uma troca de backend](deploy-opentofu.md#changing-a-backend).
 
-```hcl
-  upgrade = { allow_destructive_for = "0.3.0" }
-```
+<!-- source: an-external-postgresql d6604bfb9e2f -->
+### Um PostgreSQL externo
 
-`my upgrade` recebe `-allow-destructive` apenas no apply dessa versão, então um valor deixado ali não deixa nenhuma versão posterior descartar dados.
+`database = { kind = "external" }`, o padrão, aceita qualquer PostgreSQL que o Cloud Run consiga alcançar: o Neon, outro PostgreSQL
+hospedado ou um que você executa, pela internet ou em um endereço privado por [uma rede](#networks). O módulo cria o
+segredo `my-database-url`, para a URL **direta**, que o job de migração e o console sempre usam: `my schema apply` mantém
+um lock em nível de sessão, que um pooler em modo de transação não preserva.
 
-<!-- source: pinning-the-image-by-digest b31962ecc908 -->
-### Fixando a imagem por digest
+`database = { kind = "external", pooled = true }` adiciona o segredo `my-database-url-pooled`, para uma URL **com pool**, que o
+serviço então usa. Um pooler serve ao servidor, como [Por um pooler de conexões](database.md#through-a-connection-pooler)
+diz. Sem um, o serviço usa também a URL direta, então `service.max_instances` vezes o pool de cada instância deve ficar
+abaixo do limite de conexões do banco de dados. O pool é de 4 conexões por instância por padrão, para as 80 requisições que uma instância
+aceita ao mesmo tempo: aumente-o com `pool_max_conns` na URL que o serviço usa, como `...?sslmode=require&pool_max_conns=8`
+([Esperar por uma conexão com o banco de dados](running.md#waiting-for-a-database-connection)).
 
-A [lista de verificação de produção](production-checklist.md#operations) recomenda um digest, das notas da versão:
+**No Neon**, crie um projeto em uma região próxima da sua região do Cloud Run. A string de conexão direta dele tem o host simples, e a
+com pool o host com `-pooler`, que é o pooler do Neon e serve ao servidor: defina `pooled = true`. Espere o plano Launch,
+já que o tick padrão mantém o compute acordado; o plano Free funciona com [os compromissos em Custos](#where-care-reduces-it).
 
-```hcl
-  image = { digest = "sha256:..." }
-```
+<!-- source: cloud-sql dc9461df8cc2 -->
+### Cloud SQL
 
-Um digest nomeia uma imagem, seja o que for que a tag ao lado dele diga, então mude-o na mesma edição que `ref`: um digest deixado da versão anterior mantém a imagem dessa versão sob a nova versão.
+`database = { kind = "cloud-sql" }` cria uma instância PostgreSQL 18, `db-f1-micro` por padrão, com backups diários e
+recuperação para um ponto no tempo mantida por 7 dias, o banco de dados e o usuário dela e uma senha gerada que não chega nem ao plano nem ao
+estado. `tier`, `disk_size_gb`, `retained_backups` e `deletion_protection` a alteram. Nunca foi aplicado: trate a
+primeira implantação como o teste dele.
 
-<!-- source: the-maintenance-mode 518e9aa176c0 -->
-### O modo de manutenção
+- **Sem uma rede**, o Cloud Run o alcança pelo socket do conector do Cloud SQL, e o endereço público da instância não admite
+  mais nada.
+- **Com uma rede**, ele tem apenas um endereço privado, e um `pg_dump` deve ser executado de dentro da rede.
+- **Ele não tem pooler**: `pooled` é recusado, e `service.max_instances` e `pool_max_conns` limitam as conexões. Mantenha o
+  pool pequeno no `db-f1-micro`, que tem 0,6 GB de memória.
+- **Ele nunca escala a zero**, então cobra qualquer que seja o tráfego, e o SLA do Google não cobre um nível de núcleo compartilhado.
 
-O [modo de manutenção](maintenance.md) leva três applies, já que os serviços mudam antes da atualização e depois dela. Adicione-o às configurações do bloco e aplique, faça o backup, aumente `ref` e aplique, depois remova-o e aplique:
+<!-- source: the-other-backends 91ef8e2dea11 -->
+## Os outros backends
 
-```hcl
-  settings = { maintenance = "true" }
-```
+Cada um tem a recomendação dele como padrão, e [uma troca de `kind`](deploy-opentofu.md#changing-a-backend) passa para outro.
 
-Sem ele, a revisão antiga continua servindo durante a migração, o que [não tem garantia de funcionar](database.md#the-server-during-an-upgrade). As configurações mudadas à mão com o `gcloud` não duram: o próximo apply devolve o que o bloco diz.
+- **Jobs**: `cloud-tasks` envia cada job ao serviço, que pode escalar a zero. `queue.tick_schedule`, a cada minuto por
+  padrão, acorda o servidor e o banco de dados para os jobs periódicos. `db` consulta o banco de dados a partir de um processo que permanece no ar, então
+  precisa de `service.min_instances` igual a 1 ou mais e de `service.cpu_always_allocated = true`.
+- **Mídia**: `gcs` cria um bucket privado, `media.bucket_name`, na região. `r2` cria um bucket R2 em
+  `cloudflare.account_id`, e `s3` usa qualquer armazenamento compatível com S3 em `endpoint`; os dois leem uma chave de acesso dos segredos
+  que `secrets_to_fill` lista. Para compartilhar um bucket com outras instâncias, `existing_bucket = true` usa o seu e `prefix`
+  (`tenant-a/`) inicia o nome de todo objeto; com `gcs`, a conta de serviço então alcança apenas os objetos sob ele, o que exige
+  acesso uniforme em nível de bucket.
+- **Caches e limites de taxa**: `db` os mantém no banco de dados. `memorystore` cria o Memorystore para Valkey, que precisa de uma
+  rede e não tem senha: qualquer coisa na rede pode alcançá-lo. `external` lê de um segredo a URL de um Valkey que você executa.
+- **Atualizações em tempo real**: `pubsub` alcança todas as instâncias. `postgres` usa `LISTEN` e `NOTIFY` pela conexão direta do banco de dados,
+  e `valkey` o Valkey de `kv`.
+- **A KEK**: `secret-manager` a gera uma vez, para você copiar. `kms` a mantém no Cloud KMS, de onde ela nunca sai, então um
+  dump do banco de dados vazado e uma configuração vazada juntos ainda não expõem nenhum segredo. Mudá-la em uma instância com dados é
+  [uma mudança de lugar](deploy-opentofu.md#the-kek).
 
-<!-- source: monitoring-and-alerts 930234cd0dde -->
-## Monitoramento e alertas
+<!-- source: networks 9d28311e11a6 -->
+## Redes
 
-O módulo adiciona uma verificação de disponibilidade de `/health/live`, métricas baseadas em logs e políticas de alerta com os nomes do [runbook](alerts.md), que notificam os endereços de `monitoring.notification_emails` (`alert_emails` no exemplo) ou os canais de `notification_channels`. A entrada não tem padrão: nomeie quem é notificado, ou defina `monitoring = null` para deixar tudo isso de fora. Ele nunca foi aplicado, então teste-o uma vez fazendo uma verificação falhar. Cada execução da verificação acorda uma instância, o que se soma à [contrapartida do tick](#costs): `uptime_period`, 15 minutos por padrão, é a frequência.
+A configuração recomendada não precisa de nenhuma: um banco de dados externo, o Cloud Tasks, o Cloud Storage e o Pub/Sub são todos alcançados pela
+internet com a identidade do próprio serviço, então o Cloud Run não se anexa a nada.
 
-<!-- source: changing-a-backend c20598caf230 -->
-## Trocando um backend
-
-Mude o `kind` da seção dele. Cada tipo define o que precisa no servidor, e o plano diz o que muda. Trocar o banco de dados também significa mover os dados dele, já que um novo está vazio: faça um [backup](backup.md) do antigo e restaure-o no novo enquanto nada escreve. Por exemplo, Cloud SQL no lugar do Neon:
-
-```hcl
-  database = { kind = "cloud-sql" }
-```
-
-Para um armazenamento fora do Google Cloud, defina `media.kind` como `s3`, para qualquer serviço compatível com S3 com o `endpoint` dele, ou como `r2`, com `cloudflare.account_id`. Ambos leem uma chave de acesso dos segredos que `secrets_to_fill` lista.
-
-<!-- source: when-you-need-a-network 0a4359c002ed -->
-## Quando você precisa de uma rede
-
-Este guia não precisa de nenhuma: Neon, Cloud Tasks, Cloud Storage e Pub/Sub são todos alcançados pela internet com a identidade do próprio serviço, então o Cloud Run não se conecta a nada e não há nada a pagar nem a cuidar.
-
-Você precisa de uma para colocar o Memorystore na implantação, já que ele só tem endereços privados, ou para dar ao Cloud SQL um endereço privado no lugar do público. `network = { kind = "vpc" }` cria uma, e `network = { kind = "existing", ... }` se conecta a uma VPC que você tem, que você descreve com `network`, `subnetwork`, `private_services_range` e `memorystore_connection_policy`:
+Você precisa de uma para o Memorystore, que só tem endereços privados, para dar um endereço privado ao Cloud SQL, ou para alcançar um banco de dados
+seu em uma. `network = { kind = "vpc" }` cria uma VPC, as sub-redes dela e o acesso a serviços privados, e
+`network = { kind = "existing", ... }` se anexa a uma VPC que você tem, que você descreve por `network`, `subnetwork`,
+`private_services_range` e `memorystore_connection_policy`:
 
 ```hcl
   network = { kind = "vpc" }
   kv      = { kind = "memorystore" }
 ```
 
-Apenas intervalos privados passam pela rede, então o serviço alcança a internet como antes, sem Cloud NAT. `nat = true` envia tudo pelo Cloud NAT no lugar, para um endereço de origem estático. Ative primeiro as APIs Service Networking e Network Connectivity, e a API Compute Engine. Uma rede aumenta o cold start de uma instância, e o Memorystore é cobrado enquanto o servidor está ocioso.
+O serviço e os jobs se anexam pelo Direct VPC egress, e apenas os intervalos privados passam pela rede, então a internet
+mantém o próprio caminho, sem Cloud NAT. Com `vpc`, `nat = true` envia tudo pelo Cloud NAT, para um endereço de
+origem estático. Uma rede pode atrasar o início de uma instância em um minuto ou mais, o que um servidor que escala a zero encontra
+com frequência. A VPC que o módulo cria nunca foi aplicada.
 
-<!-- source: splitting-jobs-into-workers 831929244c6d -->
-## Dividindo jobs em workers
-
-Quando um tipo de job segura os demais, dê a ele o próprio serviço. Decida o que dividir a partir das métricas, como [Dividindo workers por tipo de job](running.md#splitting-workers-by-job-type) diz. Um valor, `workers`, vai para o serviço, a fila e o monitoramento, e toda fila, URL, rota e configuração vem das chaves dele, então você não escreve nenhuma delas:
-
-```hcl
-  workers = {
-    delivery = {
-      job_types     = ["federation.fanout", "federation.deliver"]
-      max_instances = 20
-      concurrency   = 16
-    }
-  }
-```
-
-O plano recusa uma divisão dos tipos que precisam ficar juntos. Ele também precisa de um broker que alcance todos os processos, o que `stream.kind = pubsub` é.
-
-Os dois layouts comuns dessa página ficam assim. Para evitar que as entregas atrasem o restante, use o valor acima. Para manter o e-mail e as notificações rápidos:
-
-```hcl
-  workers = {
-    notify = {
-      job_types = [
-        "identity.verification_email", "identity.password_reset_email", "identity.password_notice_email",
-        "identity.closure_email", "identity.deactivation_email",
-        "notification.email", "notification.moderator_email", "notification.supporter_email",
-        "notification.push", "notification.post_subscribers",
-        "instance.notify_announcement", "voice.notify_started",
-      ]
-      max_instances = 10
-    }
-  }
-```
-
-Deixe de fora os tipos das configurações que você não definiu, como essa página diz: um tipo que o servidor não registrou impede a inicialização, e o plano não consegue ver quais são. Com `workers`, o serviço padrão não ajuda com esses tipos quando está livre, já que as tarefas deles vão para a fila própria.
-
-Cada worker aceita `job_types`, e `min_instances`, `max_instances`, `cpu`, `memory_mib`, `concurrency`, `max_concurrent_dispatches` e `max_dispatches_per_second`, cada um o do serviço ou o da fila quando não é nomeado. O serviço de um worker não recebe tráfego de fora. Uma atualização move cada um depois da migração e antes do serviço padrão, e sem nada para avisá-lo: apenas um passo que falha o interrompe. Cada worker pode trazer o que o serviço custa, e as conexões das instâncias dele contam contra o limite do banco de dados.
-
-<!-- source: how-traffic-reaches-the-service 156fc6f76743 -->
+<!-- source: how-traffic-reaches-the-service 094ddaf201c8 -->
 ## Como o tráfego chega ao serviço
 
-`ingress.kind` decide isso. O padrão é o balanceador de carga, que é pensado para produção. O mapeamento de domínio serve para experimentar uma implantação de forma barata: defina `ingress = { kind = "domain-mapping" }`.
+`ingress.kind` decide isso. O módulo recomenda o balanceador de carga, para produção. O mapeamento de domínio serve para experimentar uma
+implantação de forma barata.
 
-| | `load-balancer` (o padrão) | `domain-mapping` |
+| | `load-balancer` | `domain-mapping` |
 | --- | --- | --- |
-| Taxa mensal | Cerca de US$ 18 pelas regras de encaminhamento, mais uma cobrança por GB. Confira a [página de preços](https://cloud.google.com/vpc/network-pricing): este valor não pôde ser confirmado lá | Nenhuma |
-| Situação | A forma recomendada pelo Google Cloud | Um recurso em Preview que o Google Cloud não recomenda para produção, por causa da latência |
+| Tarifa mensal | Cerca de US$ 18 pelas regras de encaminhamento, mais uma cobrança por GB. Confira a [página de preços](https://cloud.google.com/vpc/network-pricing): este valor não pôde ser confirmado lá | Nenhuma |
+| Status | O jeito recomendado do Google Cloud | Um recurso em Preview que o Google Cloud não recomenda para produção, por causa da latência |
 | Regiões | Qualquer uma | `asia-northeast1`, `us-central1` e algumas outras |
-| DNS | Um registro `A`, de `tofu output dns_records` | Os registros que a mesma saída lista |
-| Certificado | Gerenciado pelo Google, ativo depois que o DNS aponta para o endereço | Gerenciado pelo Google, até 24 horas |
-| Propriedade do domínio | Nada além do DNS | Você, e toda outra conta que aplica, precisa ser um [proprietário verificado](https://cloud.google.com/run/docs/mapping-custom-domains) antes de aplicar |
+| DNS | Um registro `A` de `host` para o endereço dele. Deixe desativado qualquer proxy do seu provedor de DNS para ele | Os registros que `dns_records` lista |
+| Certificado | Gerenciado pelo Google, ativo quando o DNS aponta para o endereço, o que pode levar um tempo | Gerenciado pelo Google, até 24 horas |
+| Propriedade do domínio | Nada além do DNS | Quem aplica deve primeiro ser um [proprietário verificado](https://cloud.google.com/run/docs/mapping-custom-domains) do domínio |
 | URL `run.app` | Recusada pela internet, então ninguém contorna o balanceador de carga | Acessível por qualquer pessoa: um mapeamento de domínio não pode adicionar um cabeçalho, então a origem fica aberta |
 | `MY_TRUSTED_PROXIES` | `169.254.0.0/16` e o endereço do balanceador de carga | `169.254.0.0/16` |
 
-O Cloud Tasks e o Cloud Scheduler não chegam por nenhum dos dois: eles chamam a URL `run.app` padrão diretamente.
+O Cloud Tasks e o Cloud Scheduler não chegam por nenhum dos dois: eles chamam diretamente a URL `run.app` padrão.
 
-<!-- source: cloudflare e55e367a0064 -->
+<!-- source: cloudflare 35dc1e54d2bb -->
 ### Cloudflare
 
-`ingress = { kind = "cloudflare" }` coloca a Cloudflare na frente de `host`, com o cache ignorado para tudo, e `ingress.media_host` adiciona um host de mídia em cache ao lado de qualquer tipo. Ambos precisam de `cloudflare = { zone_id = "..." }`, e o token vai em `CLOUDFLARE_API_TOKEN`. Eles só foram executados em provedores simulados.
+`ingress = { kind = "cloudflare" }` coloca o Cloudflare na frente de `host`, com o cache ignorado para tudo, e
+`ingress.media_host` adiciona um host de mídia em cache ao lado de qualquer tipo. Os dois precisam de `cloudflare = { zone_id = "..." }`, o provedor
+lê o token dele de `CLOUDFLARE_API_TOKEN`, e o módulo cria os registros, então `dns_records` fica vazio. Eles só foram executados
+com provedores simulados.
 
-- **O seu plano decide a origem.** O Cloud Run roteia por `Host`, e a Cloudflare oferece a substituição do cabeçalho Host apenas no plano Enterprise. Em qualquer outro plano a origem precisa aceitar o seu host por conta própria, então o módulo cria um mapeamento de domínio de cada host, com as contrapartidas da tabela acima, e a Cloudflare se conecta a ele. Se o certificado dele é emitido e renovado atrás do proxy não foi verificado, então comece com `cloudflare.proxied = false`. No plano Enterprise, `cloudflare.host_header_override = true` se conecta à URL `run.app` no lugar, sem mapeamento de domínio.
-- **Um cabeçalho fecha a origem.** O módulo adiciona uma regra de transformação do cabeçalho da requisição, e o servidor recusa com `403` uma requisição sem o cabeçalho, exceto as verificações de saúde e os `POST`s dos próprios jobs, que verificam os tokens deles. Assim ninguém contorna a Cloudflare pela URL `run.app`, e um Cloudflare Worker do próprio chamador não pode escolher o endereço de cliente que os limites de taxa veem.
-- **O valor vai parar no estado.** O módulo o gera e o grava no segredo `my-origin-secret`, mas o provedor da Cloudflare não tem uma forma somente de escrita do valor do cabeçalho de uma regra, então mantenha o estado privado. [O guia da CDN](cdn.md#rotate-the-value) explica como funciona a troca.
-- **Nada adiciona o cabeçalho enquanto um registro não passa pelo proxy**, então o servidor recusa tudo, exceto as verificações de saúde: com `proxied = false` para o certificado de um mapeamento de domínio, ative o proxy quando o certificado estiver ativo.
-- **Desative o Bot Fight Mode** no painel. Ele cobre a zona inteira e nenhuma regra pode ignorá-lo, e um desafio em `/ap/`, `/.well-known/` ou `/api/` quebra a federação, porque os outros servidores não são navegadores. Os jobs não passam pela Cloudflare. O módulo não adiciona nenhum desafio e desativa o Browser Integrity Check, mas não gerencia o Bot Fight Mode. Não ative o “I'm Under Attack” pelo mesmo motivo.
-- **O Email Address Obfuscation pode continuar ativado.** Ele reescreve endereços de e-mail em HTML como `[email protected]` e adiciona um script para restaurá-los, que a Content-Security-Policy do servidor recusa. As páginas do próprio servidor, como a que diz para onde foi o e-mail de confirmação, marcam o conteúdo delas para que ele deixe os endereços em paz.
-- **Ative o Always Use HTTPS** no painel se quiser `http://` redirecionado. Ele cobre a zona inteira, então o módulo o deixa com você.
-- **Timeouts**: a Cloudflare responde `524` quando a origem não envia nada por 125 segundos. Os jobs não são afetados, já que chamam a URL `run.app` diretamente. Os streams enviam um heartbeat a cada 30 segundos, abaixo do limite de ociosidade de 900 segundos. Se ela armazena streams em buffer em um host comum com proxy não foi verificado.
-- **Envios**: 100 MB nos planos Free e Pro, acima dos 32 MiB do Cloud Run, que continua sendo o limite.
-- **Vídeo**: os termos da Cloudflare restringem servir vídeo e uma quantidade desproporcional de arquivos grandes nos planos Free, Pro e Business, e ela pode redirecionar o conteúdo ou tomar outra ação. Decida isso antes de colocar vídeo em cache no host de mídia.
+- **O seu plano decide a origem.** O Cloud Run roteia por `Host`, e o Cloudflare só substitui o cabeçalho Host no plano
+  Enterprise. Em qualquer outro plano, o módulo cria um mapeamento de domínio de cada host, com os compromissos da tabela acima, e
+  o Cloudflare se conecta a ele. Não foi verificado se o certificado dele é emitido e renovado atrás do proxy, então comece com
+  `cloudflare.proxied = false`. No plano Enterprise, `cloudflare.host_header_override = true` se conecta à URL `run.app`
+  no lugar, sem mapeamento de domínio.
+- **Um cabeçalho fecha a origem.** Uma regra de transformação de cabeçalho de requisição adiciona um valor que o módulo gera, e o servidor
+  recusa uma requisição sem ele com um `403`, exceto as verificações de saúde e os próprios `POST`s dos jobs, que verificam os tokens deles.
+  Assim ninguém contorna o Cloudflare pela URL `run.app`, e ninguém pode escolher o endereço de cliente que os limites de taxa veem.
+- **Nada adiciona o cabeçalho enquanto um registro não passa pelo proxy**, então o servidor recusa tudo, exceto as verificações de saúde:
+  com `proxied = false` para o certificado de um mapeamento de domínio, ative o proxy quando o certificado estiver ativo.
+- **O valor vai parar no estado**, como [Segredos](deploy-opentofu.md#secrets) diz, e no segredo `my-origin-secret`.
+  [O guia da CDN](cdn.md#rotate-the-value) explica como rotacioná-lo.
+- **Desative o Bot Fight Mode** no painel e não ative “I'm Under Attack”: um desafio em `/ap/`, `/.well-known/`
+  ou `/api/` quebra a federação, já que os outros servidores não são navegadores. Os dois cobrem a zona inteira, que nenhuma regra pode isentar.
+  O módulo não adiciona nenhum desafio e desativa o Browser Integrity Check.
+- **A ofuscação de endereços de e-mail pode permanecer ativada.** As páginas do próprio servidor marcam o conteúdo cujos endereços ele deve deixar em paz.
+- **Ative o Always Use HTTPS** no painel se quiser que `http://` seja redirecionado. Ele cobre a zona inteira, então o módulo
+  o deixa para você.
+- **Timeouts**: o Cloudflare responde `524` quando a origem não envia nada por 125 segundos. Os jobs não são afetados, já que não
+  passam pelo Cloudflare. Os streams enviam um heartbeat a cada 30 segundos, abaixo do limite de inatividade de 900 segundos. Não foi verificado se o Cloudflare
+  armazena os streams em buffer em um host com proxy.
+- **Vídeo**: os termos do Cloudflare restringem servir vídeo e uma quantidade desproporcional de arquivos grandes nos planos Free, Pro e
+  Business, e ele pode agir sobre o conteúdo. Decida isso antes de armazenar vídeo em cache no host de mídia.
 
-**Um arquivo excluído continua em cache.** O host de mídia segue o `Cache-Control` do servidor, então um arquivo local excluído pode continuar visível por até um ano, e um remoto por `remote_media_cache_ttl_seconds`. O servidor não o limpa. Quando algo precisar desaparecer, limpe-o à mão, em **Caching > Configuration > Custom Purge** no painel, ou:
+**Um arquivo excluído permanece em cache.** O host de mídia segue o `Cache-Control` do servidor, então um arquivo local excluído pode continuar visível
+por até um ano, e um remoto por `remote_media_cache_ttl_seconds`. O servidor não o limpa. Quando algo precisar
+desaparecer, limpe-o manualmente, em **Caching > Configuration > Custom Purge** no painel, ou:
 
 ```sh
 curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
@@ -361,50 +263,103 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
   -d '{"files": ["https://media.example.org/media/<path>"]}'
 ```
 
-Uma URL de proxy guarda o `sig` dela na query string, que faz parte do que fica em cache, então informe a URL inteira.
+Uma URL de proxy guarda o `sig` dela na query string, que faz parte do que é armazenado em cache, então informe a URL inteira.
 
-<!-- source: changing-the-kek-backend b1e8cbb9ccfb -->
-## Trocando o backend da KEK
+<!-- source: monitoring-and-alerts eb28e653de36 -->
+## Monitoramento e alertas
 
-Mudar `kek.kind` é uma linha em `main.tf`, mas em uma instância com dados não é de graça. O banco de dados guarda segredos envolvidos com a chave atual, então uma instância que a perde não consegue mais lê-los, e as chaves de todas as contas estão entre eles.
+`monitoring` adiciona uma verificação de disponibilidade de `/health/live`, métricas baseadas em logs e políticas de alerta com os nomes do
+[runbook](alerts.md), que notificam os endereços de `notification_emails` (`alert_emails` no exemplo) ou os canais
+de `notification_channels`. A seção não tem padrão: nomeie quem é notificado, ou defina `monitoring = null` para deixar tudo isso
+de fora. Ela nunca foi aplicada, então teste-a uma vez fazendo uma verificação falhar. Cada execução da verificação acorda uma instância:
+`uptime_period`, 15 minutos por padrão, é a frequência.
 
-Siga [Mudar entre a KEK local e um KMS](key-management.md#move-between-the-local-kek-and-a-kms). Do segredo para o Cloud KMS, mantenha a KEK atual como `kek_previous` enquanto os segredos se movem: adicione `secrets = ["kek_previous"]` e preencha o segredo `my-kek-previous` com a KEK atual. Execute `my kek rewrap` pelo [console](deploy-opentofu.md#the-console) e depois remova-a quando `my kek status` não contar mais chaves `local:`. Guarde a KEK pelo tempo em que você guardar backups do banco de dados anteriores ao rewrap.
+<!-- source: traces da2e58dc6a3a -->
+### Traces
 
-Em uma instância nova sem dados, nada precisa se mover.
+O Cloud Trace mostra o trace que o Cloud Run registra de cada requisição, e as linhas de log do servidor trazem o `trace_id` dele, já que o
+módulo confia no ingress (`MY_TRUSTED_PROXIES`). As linhas não preenchem o campo de trace que o Cloud Logging vincula
+(`logging.googleapis.com/trace`), e não foi verificado se o Cloud Run sempre substitui o `traceparent` de uma requisição pública.
+Os próprios spans do servidor exigiriam um OpenTelemetry Collector ao lado dele, que o módulo não executa.
 
-<!-- source: limits 3ff113a57279 -->
+<!-- source: limits 3d4721415f18 -->
 ## Limites
 
-- **Envios**: o Cloud Run recusa uma requisição HTTP/1 acima de 32 MiB, e o servidor fala HTTP/1.1. O módulo portanto define `MY_MEDIA_MAX_AV_BYTES` como 30 MiB, contra o padrão de 100 MiB, para que um envio maior receba a resposta do próprio servidor.
-- **Streams**: o timeout de requisição, 15 minutos por padrão, encerra um stream aberto, e o cliente se conecta de novo.
-- **Endereços de cliente**: os limites de taxa dependem de `MY_TRUSTED_PROXIES`, que o módulo define a partir do ingress. Nenhum documento que lemos diz o que o Cloud Run adiciona a `X-Forwarded-For` para uma requisição direta nem qual endereço de par um contêiner vê, e o contrato de contêiner não diz nada sobre nenhum dos dois, então `169.254.0.0/16` é uma suposição. A forma documentada do balanceador de carga externo é `[<supplied>,]<client-ip>,<lb-ip>`. Confira os endereços nos logs das primeiras requisições: um IP de cliente que é um endereço `169.254` ou do Google significa que a configuração está errada para o seu projeto.
-- **Acesso público**: o serviço concede `roles/run.invoker` a `allUsers`, o que uma política de organização de compartilhamento restrito por domínio recusa. Um projeto assim precisa de uma exceção.
+- **Envios**: o Cloud Run recusa uma requisição HTTP/1 acima de 32 MiB, e o servidor fala HTTP/1.1, então o módulo define
+  `MY_MEDIA_MAX_AV_BYTES` como 30 MiB, contra o padrão de 100 MiB, para que um envio maior receba a resposta do próprio servidor.
+  O limite do próprio Cloudflare, 100 MB no Free e no Pro, está acima dele.
+- **Streams**: `service.request_timeout_seconds`, 15 minutos por padrão, encerra um stream aberto, e o cliente se conecta de novo.
+- **Conexões com o banco de dados**: o Google limita uma instância do Cloud Run a 100 conexões com o Cloud SQL.
+- **Endereços de clientes**: os limites de taxa dependem de `MY_TRUSTED_PROXIES`, que o módulo define a partir do ingress. Nenhum documento que
+  lemos diz o que o Cloud Run acrescenta a `X-Forwarded-For` em uma requisição direta nem qual endereço de par um contêiner vê, então
+  `169.254.0.0/16` é uma suposição. A forma documentada do balanceador de carga é `[<supplied>,]<client-ip>,<lb-ip>`. Verifique os
+  endereços nos primeiros logs de requisições: um endereço de cliente em `169.254` ou do Google significa que a configuração está errada para o seu projeto.
+- **Acesso público**: o serviço concede `roles/run.invoker` a `allUsers`, o que uma política da organização de compartilhamento
+  restrito a domínios recusa. Um projeto assim precisa de uma exceção.
+- **Nomes que continuam ocupados**: o Cloud SQL e o Cloud Tasks recusam o nome de uma instância ou fila excluída por cerca de uma semana, e um
+  papel personalizado excluído mantém o ID dele por um tempo, então uma implantação refeita depois de um `destroy` precisa de outro `name`.
 
-<!-- source: costs b8be3997d723 -->
+<!-- source: costs ea658d24d79d -->
 ## Custos
 
-Um servidor custa dinheiro. Estes valores são um guia do que esperar e de onde o cuidado reduz, não limites a que a implantação esteja presa. São preços de tabela aproximados para uma região, de 2026-10 e 2026-11. Confira-os nas páginas de preços do [Cloud Run](https://cloud.google.com/run/pricing) e do [Neon](https://neon.com/pricing). O compute é gratuito por conta de cobrança até 180.000 vCPU-segundos e 360.000 GiB-segundos por mês.
+Estes valores são um guia do que esperar e de onde o cuidado reduz o custo, não limites a que a implantação esteja sujeita. São
+preços de tabela aproximados para uma região, de 2026-10 e 2026-11: confira-os nas páginas de preços do
+[Cloud Run](https://cloud.google.com/run/pricing), do [Cloud SQL](https://cloud.google.com/sql/pricing) e do
+[Neon](https://neon.com/pricing). O compute do Cloud Run é gratuito por conta de faturamento até 180.000 vCPU-segundos e 360.000
+GiB-segundos por mês.
 
-| Parte | Ocioso | O que se soma |
+O que toda implantação paga, cerca de US$ 0 em repouso:
+
+| Parte | Em repouso | O que acrescenta |
 | --- | --- | --- |
-| Balanceador de carga | Cerca de US$ 18 por mês, não confirmado na página de preços | Uma cobrança por GB; veja [Como o tráfego chega ao serviço](#how-traffic-reaches-the-service) |
-| Neon, no plano Launch | Cerca de US$ 19 por mês, com o tick padrão | Armazenamento a US$ 0,35 por GB-mês. `database.kind = cloud-sql` no lugar tem um custo fixo de cerca de US$ 9,40 por mês, para uma máquina menor |
-| Cloud Run | US$ 0: min instances é 0 e a CPU é cobrada apenas durante as requisições | Cada stream aberto mantém uma instância cobrada; veja abaixo |
-| Cloud Tasks | US$ 0 | 1 milhão de operações grátis, depois US$ 0,40 por milhão. Um job leva cerca de 2 |
-| Cloud Scheduler | US$ 0: 3 jobs grátis por conta de cobrança | US$ 0,10 por job acima disso |
-| Cloud Storage | Cerca de US$ 0,02 por GiB por mês | 5 GiB são grátis apenas em `us-east1`, `us-west1` e `us-central1`. A mídia sai pelo Cloud Run |
+| Cloud Run | US$ 0: nenhuma instância executa, e a CPU é cobrada apenas durante as requisições | Cada stream aberto mantém uma instância cobrada; veja abaixo |
+| Cloud Tasks | US$ 0 | 1 milhão de operações grátis, depois US$ 0,40 por milhão. Um job leva cerca de 2 operações (enfileirá-lo e entregá-lo) |
+| Cloud Scheduler | US$ 0: o tick é um job, e 3 são grátis por conta de faturamento | US$ 0,10 por job acima disso |
 | Pub/Sub | US$ 0: 10 GiB grátis | Apenas enquanto há streams abertos |
 | Secret Manager | Centavos | Algumas versões grátis, depois alguns centavos por versão |
+| Cloud Storage | Cerca de US$ 0,02 por GiB por mês | 5 GiB são grátis apenas em `us-east1`, `us-west1` e `us-central1`. A mídia sai pelo Cloud Run |
+| Monitoring | US$ 0 dentro das cotas gratuitas | |
 
-**O tick mantém o Neon acordado.** Cada tick lê e escreve no banco de dados, e o Neon só para um compute depois de 5 minutos sem atividade, então com o padrão `* * * * *` o compute nunca para. São 730 horas por mês, ou 182,5 CU-horas a 0,25 CU, que são os US$ 19 acima. O tick fica a cada minuto para que os jobs periódicos executem no horário, e um sinal de despertar perdido seja recuperado logo.
+O que cada escolha acrescenta:
 
-**Um stream aberto mantém uma instância cobrada.** Na cobrança por requisição, uma instância é cobrada enquanto trata qualquer requisição, e as atualizações em tempo real são uma requisição longa. Um cliente que mantém o stream aberto o mês todo custa uma instância 24 horas por dia: cerca de US$ 60 por mês com 1 vCPU e 512 MiB, depois da cota grátis. Mais streams compartilham a instância, até `concurrency`. Se os streams ficam abertos a maior parte do tempo, compare com a cobrança por instância, ou com uma VM pequena e o [Docker Compose](deploy-docker-compose.md).
+| Seção | Escolha | Por mês |
+| --- | --- | --- |
+| `ingress` | `load-balancer` | Cerca de US$ 18, não confirmado na página de preços, mais uma cobrança por GB |
+| | `domain-mapping` | US$ 0 |
+| | `cloudflare` | O seu plano do Cloudflare, e a origem: US$ 0 com um mapeamento de domínio |
+| `database` | `external` no plano Launch do Neon | Cerca de US$ 19 com o tick padrão, mais US$ 0,35 por GB-mês |
+| | `external` no plano Free do Neon | US$ 0, dentro dos limites dele: [abaixo](#where-care-reduces-it) |
+| | `external` em outro lugar | O que esse banco de dados custa |
+| | `cloud-sql` | Cerca de US$ 9,40 para `db-f1-micro` e 10 GiB em `us-central1`, mais os backups, qualquer que seja o tráfego |
+| `queue` | `db` | Uma instância cobrada o dia todo, com a CPU sempre alocada |
+| `kv` | `memorystore` | Cerca de US$ 23 pelo menor nó, qualquer que seja o tráfego |
+| `kek` | `kms` | Centavos, pela chave e pelas operações dela |
+| `network` | `vpc` com `nat = true` | Cloud NAT, por hora e por GB |
 
-<!-- source: where-care-reduces-it 28bfc2e5ffcc -->
-### Onde o cuidado reduz
+A configuração recomendada no plano Launch do Neon, o balanceador de carga e o Neon, sai por cerca de US$ 37 por mês; com o Cloud SQL, por
+cerca de US$ 27.
 
-- **O mapeamento de domínio** no lugar do balanceador de carga tira os US$ 18, com [as contrapartidas acima](#how-traffic-reaches-the-service). Ele serve para experimentar uma implantação.
-- **O plano Free do Neon** tira os US$ 19, e uma instância pequena pode executar nele, com estas contrapartidas:
-  - Ele permite 100 CU-horas por mês, que o tick padrão consome depois de cerca de 17 dias. Fique dentro dele com um agendamento mais longo, como `queue = { tick_schedule = "*/10 * * * *" }`: no máximo metade do tempo acordado, cerca de 91 CU-horas, antes de qualquer outra coisa acordá-lo. Os jobs periódicos então executam com até 10 minutos de atraso, e um sinal de despertar perdido é recuperado mais tarde.
-  - Um servidor federado recebe entregas 24 horas por dia, o que também acorda o banco de dados, então uma instância movimentada o supera seja qual for o agendamento.
-  - Ele guarda 1 GB por projeto e um histórico de 6 horas para restaurar, e o compute sempre para depois de 5 minutos ocioso, então a primeira requisição depois disso espera por ele.
+**O tick mantém o Neon acordado.** Cada tick lê e grava no banco de dados, e o Neon só para um compute depois de 5 minutos sem
+atividade, então com o `* * * * *` padrão o compute nunca para. São 730 horas por mês, ou 182,5 CU-horas a 0,25 CU,
+que são os US$ 19 acima. O tick permanece a cada minuto para que os jobs periódicos executem no horário, e um sinal de despertar perdido é
+recuperado logo. O Cloud SQL cobra o mesmo, qualquer que seja o tick.
+
+**Um stream aberto mantém uma instância cobrada.** Na cobrança por requisição, uma instância é cobrada enquanto atende qualquer requisição,
+e as atualizações em tempo real são uma requisição longa. Um cliente que mantém o stream aberto o mês inteiro custa uma instância o
+dia todo: cerca de US$ 60 por mês com 1 vCPU e 512 MiB, depois da cota gratuita. Mais streams compartilham a instância, até
+`service.concurrency`. Se os streams ficam abertos na maior parte do tempo, compare com a cobrança por instância
+(`service.cpu_always_allocated`), ou com uma VM pequena e o [Docker Compose](deploy-docker-compose.md).
+
+<!-- source: where-care-reduces-it 427be9d46d32 -->
+### Onde o cuidado reduz o custo
+
+- **O mapeamento de domínio** no lugar do balanceador de carga tira os US$ 18, com
+  [os compromissos dele](#how-traffic-reaches-the-service). Serve para experimentar uma implantação.
+- **O plano Free do Neon** tira os US$ 19, e uma instância pequena pode executar nele, com estes compromissos:
+  - Ele permite 100 CU-horas por mês, que o tick padrão esgota depois de cerca de 17 dias. Fique dentro dele com uma
+    programação mais longa, como `queue = { tick_schedule = "*/10 * * * *" }`: no máximo metade do tempo acordado, cerca de 91 CU-horas, antes de
+    qualquer outra coisa acordá-lo. Os jobs periódicos então executam com até 10 minutos de atraso, e um sinal de despertar perdido é recuperado mais tarde.
+  - Um servidor federado recebe entregas o dia todo, o que também acorda o banco de dados, então uma instância movimentada o ultrapassa
+    qualquer que seja a programação.
+  - Ele guarda 1 GB por projeto e um histórico de 6 horas para restaurar, e o compute dele sempre para depois de 5 minutos ocioso, então
+    a primeira requisição depois disso espera por ele.

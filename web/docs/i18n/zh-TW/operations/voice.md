@@ -131,12 +131,12 @@ denied-peer-ip=192.168.0.0-192.168.255.255
 
 這能阻止一般使用者和官方網頁用戶端，但並非完整的防護。**兩個使用修改過的用戶端並互相配合的參與者，仍然可以交換音訊**：不能發言者的修改版用戶端可以送出音訊，接收者的修改版用戶端可以播放它，而伺服器無法看到加密媒體的內容。如果你必須保證誰能發言，例如有主持的公開活動，請使用 `livekit` 或 `sora`，由媒體伺服器本身丟棄沒有權限者的音訊。
 
-<!-- source: deployment-notes b0f03da306b7 -->
+<!-- source: deployment-notes 9daf6e4d8d98 -->
 ## 部署注意事項
 
 - **每位使用者兩條串流**：通話期間，參與者除了應用程式一直開啟的串流之外，還會持有聊天室本身的事件串流（Server-Sent Events）。請以通話中的每位使用者有兩個長時間請求來規劃連線上限。
 - **多個程序**：和應用程式的其他部分一樣，請使用共用的串流轉接器（`stream` 設為 `postgres`、`valkey`、`sns` 或 `pubsub`）。使用 `stream = hub` 且 `role` 不是 `all` 時，伺服器會在啟動時警告語音聊天無法跨程序運作。
-- **Cloud Run**：串流是一個請求，在它開啟期間會分配 CPU。當請求逾時切斷它時，用戶端會重新連線。請把逾時設定得盡可能長。
+- **Cloud Run**：串流是一個請求，在它開啟期間會分配 CPU。當請求逾時切斷它時，用戶端會重新連線。請把逾時設定得盡可能長：請參閱[在 Google Cloud 上部署](deploy-google-cloud.md#limits)的 `service.request_timeout_seconds`。
 - **媒體伺服器需要 VM**：LiveKit 和 Sora 在長時間執行的程序中透過 UDP 接收音訊。Cloud Run 只接受 HTTP 請求，因此無法執行它們。請在 VM 上執行它們（以及 coturn），或使用 LiveKit Cloud、Sora Cloud 或 Cloudflare TURN。
 
 <!-- source: livekit b16c1d192419 -->

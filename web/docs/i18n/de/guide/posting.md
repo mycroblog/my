@@ -1,7 +1,7 @@
 <!-- source: posting-and-choosing-who-sees-a-post 5c4adb3025f6 -->
 # Beiträge verfassen und festlegen, wer sie sieht
 
-<!-- source: writing-a-post 5f24a2f4b092 -->
+<!-- source: writing-a-post a7aea00e3d00 -->
 ## Einen Beitrag verfassen
 
 Wähle „Beitrag verfassen“, um das Formular „Neuer Beitrag“ zu öffnen. Schreibe in „Dein Beitrag“ und wähle „Veröffentlichen“. Das Formular zeigt, wie viele Zeichen noch übrig sind. Neben Text kannst du:
@@ -13,7 +13,7 @@ Wähle „Beitrag verfassen“, um das Formular „Neuer Beitrag“ zu öffnen. 
 - Die Sprache des Beitrags festlegen und wer darauf antworten, ihn boosten und zitieren darf (siehe [Wer antworten, boosten und zitieren darf](#who-can-reply-boost-and-quote)).
 - Auf einen Beitrag antworten („Antworten“) oder einen zitieren („Zitieren“).
 
-Ein Beitrag, der nicht gesendet werden konnte, bleibt unter „Beiträge, die gesendet werden“, wo du ihn „Erneut senden“, „Bearbeiten“ oder „Verwerfen“ kannst. Ein Server kann einen Beitrag nach einer automatischen Prüfung ablehnen. Lässt sich die Ablehnung anfechten, bietet der Beitrag „Einspruch einlegen“ an.
+Ein Beitrag, der nicht gesendet werden konnte, bleibt unter „Beiträge, die gesendet werden“, wo du ihn „Erneut senden“, „Bearbeiten“ oder „Verwerfen“ kannst. Ein Server kann einen Beitrag nach einer automatischen Prüfung ablehnen. Lässt sich die Ablehnung anfechten, bietet der Beitrag „Einspruch einlegen“ an, was seinen Text an die Moderatoren sendet, zusammen mit dem, was du ihnen unter „Was die Moderatoren wissen sollten“ schreibst.
 
 <!-- source: drafts-and-scheduled-posts 9cee5f0d17b2 -->
 ## Entwürfe und geplante Beiträge
@@ -92,10 +92,10 @@ anderen anfragen, statt abgelehnt zu werden.
 - Anfragen, die auf dich warten, stehen unter „Wartet auf Genehmigung“, geöffnet über die Zeile ganz oben in den Benachrichtigungen. „Genehmigen“ fügt die Antwort, den Boost oder das Zitat zu deinem Beitrag hinzu, und die Unterhaltung darunter zeigt eine genehmigte Antwort sofort; „Ablehnen“ hält sie fern.
 - Unter dem Beitrag einer anderen Person wird „Antworten“ nicht angezeigt und „Boosten“ lässt sich nicht drücken, wenn der Autor es dir nicht erlaubt. Genehmigt der Autor sie von Hand, sagt das Formular das, bevor du antwortest, und nachdem du geboostet hast, steht am Beitrag „Boost wartet auf Genehmigung“.
 
-<!-- source: after-posting e11fd06a76e8 -->
+<!-- source: after-posting a9f5b9c75fb4 -->
 ## Nach dem Veröffentlichen
 
-Unter einem Beitrag findest du „Antworten“, „Boosten“, „Zitieren“, „Favorisieren“, „Reagieren“ und „Mehr“. „Mehr“ enthält „Link kopieren“, „Originalseite öffnen“ (bei einem Beitrag von einem anderen Server), „Teilen“ und „Lesezeichen“; deine Lesezeichen stehen auf der Seite „Lesezeichen“, und nur du siehst sie. Bei deinem eigenen Beitrag enthält es außerdem „Bearbeiten“ (nicht bei einem Beitrag mit Umfrage), „Löschen und neu verfassen …“ und „Löschen …“. Beide Löschungen fragen vorher nach. „Löschen …“ entfernt den Beitrag für alle, zusammen mit seinen Boosts und Favoriten; „Löschen und neu verfassen …“ tut dasselbe und öffnet das Formular mit seinem Text, seinen Bildern und seiner Umfrage als neuen Beitrag.
+Unter einem Beitrag findest du „Antworten“, „Boosten“, „Zitieren“, „Favorisieren“, „Reagieren“ und „Mehr“. „Mehr“ enthält „Link kopieren“, „Originalseite öffnen“ (bei einem Beitrag von einem anderen Server), „Teilen“ und „Lesezeichen“; deine Lesezeichen stehen auf der Seite „Lesezeichen“, und nur du siehst sie. Die Beiträge, die du favorisiert hast, stehen auf der Seite „Favoriten“. Bei deinem eigenen Beitrag enthält es außerdem „Bearbeiten“ (nicht bei einem Beitrag mit Umfrage), „Löschen und neu verfassen …“ und „Löschen …“. Beide Löschungen fragen vorher nach. „Löschen …“ entfernt den Beitrag für alle, zusammen mit seinen Boosts und Favoriten; „Löschen und neu verfassen …“ tut dasselbe und öffnet das Formular mit seinem Text, seinen Bildern und seiner Umfrage als neuen Beitrag.
 
 Ein bearbeiteter Beitrag zeigt nach seiner Zeit „· bearbeitet“; wähle es, um den „Bearbeitungsverlauf“ zu öffnen, die neueste Version zuerst, mit markierten Änderungen.
 
@@ -105,7 +105,7 @@ Ein Beitrag in einer anderen Sprache als deiner hat „Übersetzen“, wenn der 
 
 Bilder, GIFs, Videos und Audio werden im Beitrag angezeigt. Wähle ein Bild, um die Ansicht zu öffnen: Wische oder nutze die Pfeile, zoome und lies die Beschreibung. Als sensibel markierte Medien bleiben unter einer Zeile wie „Sensibles Bild“ verborgen, bis du „Anzeigen“ wählst. Ein Link in einem Beitrag wird als Karte angezeigt.
 
-<!-- source: writing-an-article 3bc498986329 -->
+<!-- source: writing-an-article 7abd5d8b1ffd -->
 ## Einen Artikel schreiben
 
 „Artikel schreiben“ unter dem Formular für neue Beiträge öffnet den Artikeleditor, eine eigene Seite. Gib dem Artikel einen Titel, wenn du magst eine Zusammenfassung (bleibt sie leer, wird sie aus dem Anfang des Textes erstellt), ein Titelbild mit seiner Beschreibung und den Text, geschrieben in Markdown: `#` beginnt eine Überschrift, `**text**` ist fett, und „Fett“ und „Link“ über dem Text tun dasselbe für den Text, den du markierst (Strg+B und Strg+K, oder Cmd auf einem Mac). Ziehe Bilder in den Text oder füge sie ein, oder wähle sie mit „Bilder hinzufügen“: Jedes wird hochgeladen und an der Stelle des Cursors als `![](media:…)` eingefügt; schreibe seine Beschreibung zwischen die eckigen Klammern. Nur Bilder, die du hochlädst, werden in einem Artikel angezeigt; ein Bild von einer anderen Adresse wird zu einem Link mit seiner Beschreibung.
@@ -114,7 +114,7 @@ Bilder, GIFs, Videos und Audio werden im Beitrag angezeigt. Wähle ein Bild, um 
 - „Vorschau“ zeigt den Artikel so, wie Lesende ihn sehen werden, vom Server genau so gerendert, wie er veröffentlicht wird, mit der Größe des Textes und der Zahl seiner Bilder im Verhältnis zu den Grenzen dieses Servers.
 - „Als sensibel markieren“ zeigt Lesenden zuerst Titel und Zusammenfassung und klappt das Titelbild und den Text ein. Ein Artikel kann nicht „Direkt“ sein.
 - Während du schreibst, wird der Artikel bei jeder Pause als Entwurf gespeichert („Entwurf gespeichert“), sodass er sich auf jedem Gerät über „Entwürfe und geplante Beiträge“ öffnen lässt, wo „Bearbeiten“ ihn zurück in den Editor bringt. Wurde der Entwurf inzwischen auf einem anderen Gerät geändert, wird nichts überschrieben: Dein Text bleibt im Editor, und „Als neuen Entwurf speichern“ behält ihn als weiteren Entwurf.
-- „Veröffentlichen“ veröffentlicht den Artikel jetzt und öffnet seine Seite; „Planen“ veröffentlicht ihn zu der Zeit, die du wählst, wie bei einem Beitrag.
+- „Veröffentlichen“ veröffentlicht den Artikel jetzt und öffnet seine Seite; „Planen“ veröffentlicht ihn zu der Zeit, die du wählst, wie bei einem Beitrag. Ein Artikel, den die automatische Prüfung abgelehnt hat, bietet „Einspruch einlegen“ wie ein Beitrag an und sendet seinen Text, nicht seinen Titel oder seine Zusammenfassung.
 - Um einen veröffentlichten Artikel zu ändern, wähle „Bearbeiten“ in seinem Menü „Weitere Aktionen“. Der Editor öffnet sich mit dem, was du geschrieben hast; „Änderungen speichern“ ersetzt es, und die frühere Version bleibt in seinem „Bearbeitungsverlauf“. Wer einen Artikel sehen kann, ändert sich nicht.
 
 Ein Server kann nur manchen Leuten erlauben, neue Artikel zu schreiben; dann wird „Artikel schreiben“ den anderen nicht angezeigt, die aber die Artikel, die sie veröffentlicht haben, weiterhin bearbeiten können.
