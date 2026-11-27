@@ -1,2 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/operations/captcha.md"]
+docs: ["docs/adr/0015-testing-strategy.md#11-web-push-の-ssrf-ガード"]
+userdocs: ["docs/developers/web-push.md", "docs/operations/key-management.md#web-push-vapid-key"]

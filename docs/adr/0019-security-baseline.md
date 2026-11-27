@@ -96,7 +96,6 @@
   [`net/http.CrossOriginProtection`](https://pkg.go.dev/net/http#CrossOriginProtection)（Go 1.25 以降。`Sec-Fetch-Site` / `Origin` で非安全メソッドのクロスオリジン要求を拒否）を適用し、
   さらに `SameSite=Lax` で二重化する。Fetch Metadata を送らない古いブラウザ向けにはシンクロナイザートークンを併用する（出典: [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)）。
 - Web クライアントでのトークン保管は [ADR-0090](0090-third-party-oauth-apps.md) に従う（アクセストークンはメモリ、リフレッシュトークンは HttpOnly の `__Host-` Cookie）。
-  Tauri ではリフレッシュトークンを OS のセキュアストレージ（Keychain / Keystore）に置く（要検証: #31 の spike で確認）。
 
 ### 5. レート制限（NFR-SEC-5）
 
@@ -203,7 +202,6 @@ upgrade-insecure-requests
 | `X-Frame-Options` | `DENY`（`frame-ancestors` 非対応ブラウザ向け） |
 
 - HTTPS 化はリバースプロキシ / ロードバランサ / `my` 自身の ACME による証明書の取得（ADR-0163）のどれでもよいが、アプリは HSTS を自分で付ける。`http` での提供は開発プロファイルのみ。
-- Tauri アプリは `tauri.conf.json` の CSP に同じポリシーを設定する（`connect-src` はログイン先インスタンスのオリジン）。
 
 ### 10. 依存関係の脆弱性スキャン（NFR-SEC-8）
 
@@ -322,6 +320,5 @@ Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06（有効・無効�
 - Argon2id（m = 19 MiB, t = 2, p = 1）の 1 vCPU（Cloud Run / ECS Fargate / 1 GB VM）での所要時間とメモリの実測（M1）
 - `kv/db` でのレート制限の書き込み負荷（SQLite / PostgreSQL、NFR-PERF-1 の想定負荷）
 - Trusted Types と `require-trusted-types-for` の主要ブラウザでの対応状況
-- Tauri でのリフレッシュトークンのセキュアストレージ（#31 の spike で確認）
 - Cloud Run・ECS Fargate からの 1 回の Decrypt の遅延（公式の文書に目安がない。M6 のデプロイで計測し、§13 のキャッシュの既定の有効期間を見直す）
 - Cloud KMS の Decrypt が AAD の不一致と鍵の無効化に返すエラーのコード（KMS の文書に書かれていない。`INVALID_ARGUMENT`・`FAILED_PRECONDITION` は他のサービスの文書と実例による見込みで、実装の PR で実際の KMS に対して確かめる）

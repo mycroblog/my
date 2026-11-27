@@ -168,4 +168,4 @@ Allow: /
 ## Open Questions / 要検証
 
 - IETF AI Preferences と Content Signals に対応すると表明した大手のクローラーがあるか（要検証）。
-- Tauri のアプリ（`/.well-known/assetlinks.json` と `apple-app-site-association`）と `/.well-known/change-password` は、それぞれの機能の Issue で扱う。
+- `/.well-known/change-password` は、その機能の Issue で扱う。
