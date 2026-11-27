@@ -340,11 +340,64 @@ func (q *Queries) GetOAuthClientState(ctx context.Context, id string) (GetOAuthC
 	return i, err
 }
 
+const getTokenRotation = `-- name: GetTokenRotation :one
+SELECT r.reason AS rotated_reason, r.revoked_at AS rotated_at,
+  t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+  t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at, t.replay_pair,
+  EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id) AS revoked
+FROM oauth_access_tokens t
+JOIN oauth_token_revocations r ON r.token_id = t.rotated_from_token_id
+WHERE t.rotated_from_token_id = $1
+`
+
+type GetTokenRotationRow struct {
+	RotatedReason      string
+	RotatedAt          time.Time
+	ID                 string
+	FamilyID           string
+	OauthClientID      string
+	UserID             string
+	AccessTokenHash    []byte
+	RefreshTokenHash   []byte
+	Scope              string
+	RotatedFromTokenID *string
+	IssuedAt           time.Time
+	ExpiresAt          time.Time
+	RefreshExpiresAt   *time.Time
+	ReplayPair         []byte
+	Revoked            bool
+}
+
+// GetTokenRotation returns the revocation of a token whose refresh token was rotated and the
+// token the rotation issued, with its replay pair and whether it has a revocation (ADR-0090 section 18).
+func (q *Queries) GetTokenRotation(ctx context.Context, rotatedFromTokenID *string) (GetTokenRotationRow, error) {
+	row := q.db.QueryRow(ctx, getTokenRotation, rotatedFromTokenID)
+	var i GetTokenRotationRow
+	err := row.Scan(
+		&i.RotatedReason,
+		&i.RotatedAt,
+		&i.ID,
+		&i.FamilyID,
+		&i.OauthClientID,
+		&i.UserID,
+		&i.AccessTokenHash,
+		&i.RefreshTokenHash,
+		&i.Scope,
+		&i.RotatedFromTokenID,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.RefreshExpiresAt,
+		&i.ReplayPair,
+		&i.Revoked,
+	)
+	return i, err
+}
+
 const insertAccessToken = `-- name: InsertAccessToken :exec
 INSERT INTO oauth_access_tokens (
   id, family_id, oauth_client_id, user_id, access_token_hash, refresh_token_hash, scope, rotated_from_token_id,
-  issued_at, expires_at, refresh_expires_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+  issued_at, expires_at, refresh_expires_at, replay_pair
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 `
 
 type InsertAccessTokenParams struct {
@@ -359,6 +412,7 @@ type InsertAccessTokenParams struct {
 	IssuedAt           time.Time
 	ExpiresAt          time.Time
 	RefreshExpiresAt   *time.Time
+	ReplayPair         []byte
 }
 
 func (q *Queries) InsertAccessToken(ctx context.Context, arg InsertAccessTokenParams) error {
@@ -374,6 +428,7 @@ func (q *Queries) InsertAccessToken(ctx context.Context, arg InsertAccessTokenPa
 		arg.IssuedAt,
 		arg.ExpiresAt,
 		arg.RefreshExpiresAt,
+		arg.ReplayPair,
 	)
 	return err
 }

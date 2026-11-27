@@ -130,9 +130,14 @@ func TestOAuthWebClientFlow(t *testing.T) {
 	if rotated == cookie || rotated == "" {
 		t.Fatal("refreshing did not rotate the cookie")
 	}
-	newest := body["access_token"].(string)
 
-	// The used cookie value coming back revokes the family.
+	// Once the rotated cookie value was used, the first one coming back revokes the family.
+	resp, body = refresh(map[string]string{oauth.HeaderRefresh: "1"})
+	if resp.StatusCode != http.StatusOK || body["access_token"] == nil {
+		t.Fatalf("refresh with the rotated cookie = %d %v", resp.StatusCode, body)
+	}
+	rotated = c.cookies[oauth.CookieRefreshToken]
+	newest := body["access_token"].(string)
 	c.cookies[oauth.CookieRefreshToken] = cookie
 	if resp, body := refresh(map[string]string{oauth.HeaderRefresh: "1"}); resp.StatusCode != http.StatusBadRequest || body["error"] != identity.OAuthInvalidGrant {
 		t.Fatalf("reused refresh = %d %v", resp.StatusCode, body)

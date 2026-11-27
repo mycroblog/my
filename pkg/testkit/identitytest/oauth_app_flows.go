@@ -218,12 +218,16 @@ func oauthAppsIssueTokensToTheirOwner(t *testing.T, e *AccountEnv) {
 		t.Errorf("AuthenticateBearer = %+v, %v; want alice through a third-party app", bearer, err)
 	}
 
-	// The refresh token rotates, and a used one revokes the whole family.
+	// The refresh token rotates, and a used one whose successor was used revokes the whole family.
 	rotated, err := e.Identity.RefreshAccessToken(ctx, appidentity.RefreshRequest{ClientCredentials: creds, RefreshToken: got.RefreshToken})
 	if err != nil || rotated.Token.FamilyID != got.Token.FamilyID || rotated.Token.RotatedFromTokenID != got.Token.ID {
 		t.Fatalf("RefreshAccessToken = %+v, %v; want a rotation in the family", rotated.Token, err)
 	}
 	e.WantAccess(t, got.AccessToken, false, "the access token a refresh replaced")
+	rotated, err = e.Identity.RefreshAccessToken(ctx, appidentity.RefreshRequest{ClientCredentials: creds, RefreshToken: rotated.RefreshToken})
+	if err != nil {
+		t.Fatalf("RefreshAccessToken(rotated) = %v", err)
+	}
 	e.WantAccess(t, rotated.AccessToken, true, "the rotated access token")
 	_, err = e.Identity.RefreshAccessToken(ctx, appidentity.RefreshRequest{ClientCredentials: creds, RefreshToken: got.RefreshToken})
 	wantOAuthError(t, err, appidentity.OAuthInvalidGrant, "reusing a refresh token")

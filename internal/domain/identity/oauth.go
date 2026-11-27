@@ -167,6 +167,11 @@ type AccessToken struct {
 	ExpiresAt time.Time
 	// RefreshExpiresAt is when the refresh token expires; zero when there is none.
 	RefreshExpiresAt time.Time
+	// ReplayPair is the access token and the refresh token of a rotation's token, encrypted
+	// under a key derived from the refresh token it replaced, so that a retry of the rotation
+	// gets them again (ADR-0090 §18); nil for the first token of a family. Only the store's
+	// insert and its read of a rotation carry it.
+	ReplayPair []byte
 }
 
 // AccessExpired reports whether the access token has expired at now.
