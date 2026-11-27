@@ -185,3 +185,67 @@ test("a Store failure is tried again", async () => {
   }
   for (const n of [read, mark, fine]) expect(handled.get(n.id)).toBe(1);
 });
+
+/** A MemoryStore whose save of older waits for the save of newer, or for wait ms when none comes. */
+class PositionStore extends MemoryStore {
+  readonly saves: string[] = [];
+  #newerSaved!: () => void;
+  readonly #newer: Promise<void>;
+  readonly older: string;
+  readonly newer: string;
+  readonly wait: number;
+
+  constructor(older: string, newer: string, wait: number) {
+    super();
+    this.older = older;
+    this.newer = newer;
+    this.wait = wait;
+    this.#newer = new Promise<void>((resolve) => {
+      this.#newerSaved = resolve;
+    });
+  }
+
+  override async setPosition(id: string): Promise<void> {
+    this.saves.push(id);
+    if (id === this.older) await Promise.race([this.#newer, delay(this.wait)]);
+    await super.setPosition(id);
+    if (id === this.newer) this.#newerSaved();
+  }
+}
+
+// Two notifications that finish at once move the position at once: the older position, saved slowly, never lands
+// after the newer one.
+test("the position never moves back", async () => {
+  const f = new FakeServer();
+  // Two senders: the mentions of one sender are handled one at a time.
+  const older = mention(10, account(1, "alice"), "first");
+  const newer = mention(11, account(2, "bob"), "second");
+  const store = new PositionStore(older.id, newer.id, 200);
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const running = new Set<string>();
+  f.stream = (conn) => {
+    f.add(older);
+    conn.send("notification", older);
+    f.add(newer);
+    conn.send("notification", newer);
+  };
+  const bot = new Bot(f.options({ mode: "streaming", store }));
+  bot.onMention(async (ctx) => {
+    running.add(ctx.notification?.id ?? "");
+    await released;
+  });
+  const stop = start(bot);
+  await eventually("both mentions running", () => running.size === 2);
+  release();
+  await eventually("both mentions processed", () => processed(store, older.id, newer.id));
+  await eventually("both positions saved", () => store.saves.length === 2);
+  // The older position was computed first, so the saves could race.
+  expect(store.saves).toEqual([older.id, newer.id]);
+  await eventually("the position", async () => (await store.position()) === newer.id);
+  await delay(store.wait + 50);
+  await stop();
+  expect(await store.position()).toBe(newer.id);
+});

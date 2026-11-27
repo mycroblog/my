@@ -285,6 +285,8 @@ export class Bot {
   readonly #budget: Budget;
   readonly #replies: ReplyLimiter;
   readonly #tracker = new Tracker();
+  /** The last save of the position: each save waits for it, so an older one never lands after a newer. */
+  #positionSaved: Promise<void> = Promise.resolve();
   readonly #now: () => number;
   readonly #sleep: Sleep;
   readonly #fetch: (input: Request) => Promise<Response>;
@@ -943,8 +945,16 @@ export class Bot {
     if (p !== null) await this.#setPosition(p);
   }
 
-  /** Saves the position when it is newer than the saved one. */
-  async #setPosition(p: string): Promise<void> {
+  /**
+   * Saves the position when it is newer than the saved one. Two notifications that finish at once move the position
+   * at once; the saves go one at a time, so the older, when it comes last, finds the newer saved.
+   */
+  #setPosition(p: string): Promise<void> {
+    this.#positionSaved = this.#positionSaved.then(() => this.#savePosition(p));
+    return this.#positionSaved;
+  }
+
+  async #savePosition(p: string): Promise<void> {
     try {
       const current = await this.store.position();
       if (current !== null && current >= p) return;
