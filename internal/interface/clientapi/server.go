@@ -472,6 +472,9 @@ type Server struct {
 	home *homeGate
 	// deleted decides which streams of the process, of every kind, send the deletion of a status.
 	deleted *audienceGate
+	// edited decides which streams of the process, of every kind, send the edit of a status that
+	// they are not told of as a mentioned account.
+	edited *audienceGate
 	// monitor checks the tokens of the open streams of the process on every heartbeat; nil
 	// leaves each stream to check its own.
 	monitor *streamMonitor
@@ -509,7 +512,7 @@ func New(o Options) *Server {
 	}
 	meter := kernel.MeterOrNop(o.Meter)
 	s := &Server{o: o, streams: meter.UpDownCounter(StreamConnections), signals: meter.Counter(StreamSignals),
-		home: newHomeGate(), deleted: newAudienceGate(), public: newPublicDispatch()}
+		home: newHomeGate(), deleted: newAudienceGate(), edited: newAudienceGate(), public: newPublicDispatch()}
 	if b, ok := o.Authenticator.(bearerBatch); ok {
 		every := o.StreamHeartbeat
 		if every <= 0 {

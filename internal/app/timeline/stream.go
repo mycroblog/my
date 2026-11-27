@@ -20,7 +20,7 @@ import (
 // local or remote, also signals a public timeline entry (ADR-0013 §20), whose streams ask
 // LocalEntry or PublicEntry. A direct post signals its conversation to each of its parties,
 // whose streams ask StreamConversation. A deletion that the streams tell (StatusDeleted.Streamed)
-// signals the deleted status, whose streams ask DeletedAudience.
+// signals the deleted status, whose streams ask DeletedAudience, and so does an edit (content.status_revised).
 func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	r.OnCommit(appcontent.EventStatusCreated, func(_ context.Context, e uow.Event) {
 		st := e.(appcontent.StatusCreated).Status
@@ -47,6 +47,44 @@ func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 			publishDeleted(pub, d)
 		}
 	})
+	r.OnCommit(appcontent.EventStatusRevised, func(_ context.Context, e uow.Event) {
+		publishEdited(pub, e.(appcontent.StatusRevised))
+	})
+}
+
+// publishEdited signals the edit e, local or remote, to the streams: once for every stream,
+// whose streams ask DeletedAudience whether their viewers may see the status, and, for a private
+// or direct status, once for each account it mentions, which may see it for that reason alone.
+// The edit of a reply shown to its author alone (StatusRevised.Unpublished) goes to the author
+// only.
+func publishEdited(pub stream.Publisher, e appcontent.StatusRevised) {
+	st := e.Status
+	if st.ID == "" || e.Revision.ID == "" {
+		return
+	}
+	domain, err := domainOf(st.IsLocal, st.URI)
+	if err != nil {
+		return // a remote status without a host was never stored
+	}
+	ev := stream.Event{
+		Kind: stream.KindStatusEdited, EntryID: st.ID, RevisionID: e.Revision.ID, AuthorAccountID: st.AuthorAccountID,
+		AuthorDomain: domain, Visibility: string(st.Visibility),
+	}
+	if e.Unpublished() {
+		ev.AccountID = st.AuthorAccountID
+		pub.Publish(ev)
+		return
+	}
+	pub.Publish(ev)
+	if st.Visibility != appcontent.VisibilityPrivate && st.Visibility != appcontent.VisibilityDirect {
+		return
+	}
+	for _, id := range uniq(slices.Clone(e.Revision.MentionedAccountIDs)) {
+		if id != st.AuthorAccountID {
+			ev.AccountID = id
+			pub.Publish(ev)
+		}
+	}
 }
 
 // publishDeleted signals the deletion d to the streams when they tell their viewers of it
@@ -133,7 +171,8 @@ type DeletedStatus struct {
 	Visibility   appcontent.Visibility
 }
 
-// DeletedFrom returns the deleted status of a stream.KindStatusDeleted signal.
+// DeletedFrom returns the deleted status of a stream.KindStatusDeleted signal, and the edited
+// status of a stream.KindStatusEdited one, whose broadcast audience is the same.
 func DeletedFrom(e stream.Event) DeletedStatus {
 	return DeletedStatus{
 		ID: e.EntryID, AuthorAccountID: e.AuthorAccountID, AuthorDomain: e.AuthorDomain, Visibility: appcontent.Visibility(e.Visibility),

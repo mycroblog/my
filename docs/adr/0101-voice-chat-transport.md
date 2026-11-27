@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-26
 - Deciders: @rosylilly
-- Issue: #1349, #1350, #2863, #3559
+- Issue: #1349, #1350, #2863, #3559, #3569
 
 ## Decision（決定）
 
@@ -165,8 +165,8 @@ ADR-0100 §14 の形に、接続のための次の操作を加える（細部は
 
 - 音声を運ぶものは `@my/rtc`（[ADR-0025](0025-web-client-stack.md) §2）に置く。mycroblog を知らない `RoomSession` が、接続・マイクの公開・ミュート・出力の選択と、参加者・発話・通信の品質のイベントを持つ。
   実装は Web の 2 つ（P2P と SFU）で、どちらもブラウザの WebRTC の API だけを使い、依存を足さない。P2P のシグナリングはポートとして外から渡し、SFU はノードとの WebSocket（§11）を自分で持つ。
-- ネイティブのアプリ（別のリポジトリ）は、どちらの方式も libwebrtc と WebSocket だけで実装できる。v0.1.0 では作らない。
-  iOS では WKWebView と CallKit が両立せず（Apple の DTS、Developer Forums の thread 767949、2026-11-12 に確認）、Android で画面のロックを越える通話には foreground service と Jetpack の Telecom が要る（Android の文書、2026-11-12 に確認）。画面のロックや電話の着信を越えて続く通話には、ネイティブの音声が要る。
+- 公式のモバイルアプリ（別のリポジトリのネイティブのアプリ）は、どちらの方式も libwebrtc と WebSocket だけで実装できる。
+  画面のロックや電話の着信を越えて続く通話は、iOS では CallKit、Android では foreground service と Jetpack の Telecom が持つ（Android の文書、2026-11-12 に確認）。
 - 通話の安定（回線が替わったときの ICE の再起動、つなぎ直し、デバイスの切り替え）は `RoomSession` の実装が持つ。`app-features` の通話は、ホスト・挙手・発話の許可などルームの状態だけを持つ。通話は、シェルが残すスロットに出て、画面を移っても続く。
 - 実装は通信の品質（RTT・ジッタ・パケットロス）を ADR-0167 の計測に送る。
 - マイクは `getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })`。映像は求めない。HTTPS（secure context）が要る。
@@ -272,7 +272,7 @@ P2P は、UDP を受けられない構成（Cloud Run だけ）と小さなイ�
 - ノードの容量をつながっている数で数える: 台数は少なく済むが、置いた後にルームが育つとノードが容量を超える。
 - drain でルームの終わりを待つ: 途切れはないが、デプロイが通話の長さ（最長 4 時間）に縛られる。
 - SFU に TURN を組み込む: 外部のサービスが要らないが、443 番で受けるには WebSocket とは別の IP かポートと TLS が要り、P2P と共通の §5 があるので足さない。
-- ネイティブのアプリでは SFU だけにし、P2P は WebView に残すか使えなくする: 決定者は、v0.1.0 では作らないがネイティブの P2P もできる設計を選んだ（#2863）。どちらの方式も libwebrtc だけで実装できる。
+- ネイティブのアプリでは SFU だけにし、P2P を使えなくする: アプリの実装が 1 つ減るが、P2P のサーバーではアプリで通話できない。どちらの方式も libwebrtc だけで実装できる（#2863）。
 
 ## Consequences（影響）
 

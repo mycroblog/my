@@ -134,7 +134,3 @@ Mastodon Client API に互換させれば既存クライアント（Ivory, Tusky
 - 生成物の `api/openapi.yaml` は競合する。解き方は作り直しで機械的だが、なくなりはしない。PR の差分は、編集したファイルとバンドルの両方に出る。
 - 約 470 ファイルになり、ルートは 470 行ほどの `$ref` の一覧になる。spec 全体の検索は `api/openapi.yaml` で行える。
 - `api:generate` が `bunx` で Redocly CLI を取得する（`api:lint` と同じ）。オフラインでは、キャッシュがないと生成できない。
-
-## Open Questions / 要検証
-
-- TS クライアント生成（openapi-typescript + openapi-fetch）の Tauri での動作
