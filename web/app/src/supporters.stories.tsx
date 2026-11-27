@@ -3,8 +3,7 @@
 // The supporter's side (ADR-0072, ADR-0162, ADR-0070 §13; FR-911, FR-914, FR-918), on the fake server (app.samples.tsx):
 // the supporters' page with the plans, the tip and the list, for a reader without a plan, for a member (Switch), for a
 // visitor, for a reader who may not subscribe nor tip (each reason the server says, with the program and on a server
-// of tips alone), on a server of tips alone, in the native shell (the list
-// alone), on a server that takes no support, and loading, failing, with an empty list and long names; the settings'
+// of tips alone), on a server of tips alone, on a server that takes no support, and loading, failing, with an empty list and long names; the settings'
 // Supporter in every state of a subscription (none, its first payment not made, renewing, yearly, ending after a
 // cancel, a change scheduled, a failed payment in its grace and past it), with the listing, for a reader who may not
 // subscribe, back from the provider's checkout (paid, not settled yet, left unpaid), loading and failing; and the tip,
