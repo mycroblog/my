@@ -17,6 +17,10 @@ vars:
 env:
   TF_PLUGIN_CACHE_DIR: "{{.TF_PLUGIN_CACHE_DIR}}"
   TF_IN_AUTOMATION: "1"
+  # init reads each provider's SHA256SUMS from its GitHub release through the registry client, whose defaults (one
+  # retry, 10 s) lose to a slow response from GitHub: give it more attempts and time.
+  TF_REGISTRY_DISCOVERY_RETRY: "5"
+  TF_REGISTRY_CLIENT_TIMEOUT: "60"
 
 tasks:
   check:
