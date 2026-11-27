@@ -4344,8 +4344,8 @@ export interface paths {
          *     down; nothing is replayed, so after reconnecting read the home timeline, the open list
          *     timelines, the notifications, and the conversations again for what was missed. Announcements whose window starts later
          *     arrive with no event: list the announcements again from time to time. A user may hold a limited number of streams
-         *     open at once; past it the answer is 429 with type
-         *     `/api/v1/problems/too-many-streams`. While the server cannot receive updates (its
+         *     open at once; a new one past it ends the user's oldest. Past the server's own limit the
+         *     answer is 429 with type `/api/v1/problems/too-many-streams`. While the server cannot receive updates (its
          *     broker is not ready, or it is shutting down) the answer is 503 with `Retry-After`; try
          *     again after that many seconds. The server may also end an open stream when it may have
          *     missed updates; reconnect and read again, as after any other end.
@@ -4403,8 +4403,9 @@ export interface paths {
          *     the access token stops being valid, when the setting of the timeline becomes `off`, when
          *     the client does not keep up, and when it shuts down; nothing is replayed, so after
          *     reconnecting read the first page of the timeline again for what was missed. The stream
-         *     counts toward the streams a user may hold open at once, with `GET /api/v1/streaming`; past
-         *     the limit the answer is 429 with type `/api/v1/problems/too-many-streams`. While the server
+         *     counts toward the streams a user may hold open at once, with `GET /api/v1/streaming`: a new
+         *     one past the limit ends the user's oldest. Past the server's own limit the answer is 429
+         *     with type `/api/v1/problems/too-many-streams`. While the server
          *     cannot receive updates (its broker is not ready, or it is shutting down) the answer is 503
          *     with `Retry-After`; try again after that many seconds. The server may also end an open
          *     stream when it may have missed updates; reconnect and read again, as after any other end.
@@ -17871,8 +17872,8 @@ export interface components {
          *       its format.
          *     - `/api/v1/problems/media-attached` (409): the media file is attached to a post and can
          *       no longer be changed on its own.
-         *     - `/api/v1/problems/too-many-streams` (429): the user already has as many streams
-         *       (`GET /streaming`) open as the server allows. Close one first.
+         *     - `/api/v1/problems/too-many-streams` (429): the server holds as many streams
+         *       (`GET /streaming`) open as it allows. Try again after `Retry-After`.
          *     - `/api/v1/problems/missing-permission` (403): the user's roles lack the permission
          *       that an admin operation needs.
          *     - `/api/v1/problems/already-appealed` (422): the user already appealed the moderation

@@ -15,7 +15,8 @@ From the top of the diagram down, between the client and the server:
 
 1. **Opening a stream.** The client sends `GET /api/v1/streaming` with `Authorization: Bearer <access_token>`. The server
    refuses with `429` (`/api/v1/problems/too-many-streams`) or with `503` and `Retry-After`, or answers `200` with
-   `text/event-stream` and the comment line `: connected`.
+   `text/event-stream` and the comment line `: connected`. A user who already holds as many streams as the server allows
+   gets the new one, and their oldest stream ends.
 2. **While it is open.** The server sends events (`update`, `list_update`, `notification`, `announcement`, ...). Every 30
    seconds it checks the access token again and sends the comment line `: heartbeat`.
 3. **The stream ends** when the token is no longer valid, the client fell behind, the server shuts down, or the server may

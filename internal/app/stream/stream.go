@@ -172,8 +172,8 @@ type Publisher interface {
 
 // Errors of Subscriber.Subscribe.
 var (
-	// ErrTooManySubscriptions reports that the account, or the process, has as many open
-	// subscriptions as it allows.
+	// ErrTooManySubscriptions reports that the process has as many open subscriptions as it
+	// allows. An account at its own limit is never refused: its oldest subscription ends.
 	ErrTooManySubscriptions = errors.New("stream: too many open subscriptions")
 	// ErrClosed reports a broker that is shutting down.
 	ErrClosed = errors.New("stream: the broker is closed")

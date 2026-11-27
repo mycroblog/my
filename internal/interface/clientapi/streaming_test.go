@@ -187,25 +187,49 @@ func TestStreamingBrokerUnavailable(t *testing.T) {
 	// The recovery of the broker is Relay's (stream.TestRelayUnavailable, on a fake clock).
 }
 
-func TestStreamingLimitsStreamsPerAccount(t *testing.T) {
+func TestStreamingEndsTheOldestStreamOfAnAccountAtItsLimit(t *testing.T) {
 	hub := stream.NewHub(stream.HubOptions{MaxPerAccount: 1})
 	e := newAuthEnv(t, func(o *clientapi.Options) { o.Streams = hub })
 	srv := httptest.NewServer(e.h)
 	t.Cleanup(srv.Close)
 
-	_, _, r := openStream(t.Context(), t, srv, "read")
-	readLine(t, r)
-	res := e.get(t, "/streaming", map[string]string{"Authorization": "Bearer read"})
-	if res.StatusCode != http.StatusTooManyRequests {
-		t.Fatalf("second stream = %d, want 429", res.StatusCode)
+	_, _, first := openStream(t.Context(), t, srv, "read")
+	readLine(t, first)
+	// A client that left may hold the slot: the stream that opens now is the one that is there.
+	if _, _, r := openStream(t.Context(), t, srv, "read"); readLine(t, r) != ": connected" {
+		t.Fatal("the second stream did not open")
 	}
-	p := decodeProblem(t, res)
-	if p.Type != clientapi.ProblemTypeTooManyStreams || p.Detail == nil || res.Header.Get("Content-Language") != "ja" {
-		t.Errorf("problem = %+v (%s), want too-many-streams in alice's locale", p, res.Header.Get("Content-Language"))
+	ended := make(chan error, 1)
+	go func() {
+		_, err := io.Copy(io.Discard, first)
+		ended <- err
+	}()
+	select {
+	case <-ended:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the oldest stream did not end")
 	}
 	// Another account has its own streams.
 	if _, _, r := openStream(t.Context(), t, srv, "bob"); readLine(t, r) != ": connected" {
 		t.Error("bob's stream did not open")
+	}
+}
+
+func TestStreamingLimitsTheStreamsOfTheProcess(t *testing.T) {
+	hub := stream.NewHub(stream.HubOptions{MaxTotal: 1})
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.Streams = hub })
+	srv := httptest.NewServer(e.h)
+	t.Cleanup(srv.Close)
+
+	_, _, r := openStream(t.Context(), t, srv, "bob")
+	readLine(t, r)
+	res := e.get(t, "/streaming", map[string]string{"Authorization": "Bearer read"})
+	if res.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("a stream past the process's limit = %d, want 429", res.StatusCode)
+	}
+	p := decodeProblem(t, res)
+	if p.Type != clientapi.ProblemTypeTooManyStreams || p.Detail == nil || res.Header.Get("Content-Language") != "ja" {
+		t.Errorf("problem = %+v (%s), want too-many-streams in alice's locale", p, res.Header.Get("Content-Language"))
 	}
 }
 
