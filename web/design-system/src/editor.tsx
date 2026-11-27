@@ -227,9 +227,12 @@ function ValuePlugin({ value, onChange }: { value: string; onChange: (value: str
 /**
  * The focus an editor takes once drawn, its caret at the end of what it holds (a reply's mentions, a draft), so that
  * what is typed follows it: the browser puts the caret at the start of a text box it focuses, and Lexical reads it from
- * there, so the caret is set again once the text box has the focus. Drawn late (`late`), as its chunk comes, it takes
- * the focus only while it is on the page or on what holds the editor (the dialog that took it while the chunk came); a
- * control the reader has gone to meanwhile (a menu's trigger, which its menu gave the focus back to) keeps it.
+ * there, so the caret is set again once the text box has the focus, where it holds something (in an empty one the
+ * start is the end). The text box takes the focus at once, in this effect, which runs before those of what holds the
+ * editor: a dialog around it (React Aria's) focuses itself as it mounts unless the focus is inside it already, and
+ * the focus moves once. Drawn late (`late`), as its chunk comes, it takes the focus only while it is on the page or on
+ * what holds the editor (the dialog that took it while the chunk came); a control the reader has gone to meanwhile (a
+ * menu's trigger, which its menu gave the focus back to) keeps it.
  */
 function FocusPlugin({ late }: { late: boolean }) {
   const [editor] = useLexicalComposerContext();
@@ -238,9 +241,11 @@ function FocusPlugin({ late }: { late: boolean }) {
     const active = document.activeElement;
     if (root === null) return;
     if (late && !(active === null || active === document.body || active.contains(root))) return;
+    if (!root.contains(document.activeElement)) root.focus({ preventScroll: true });
     editor.focus(
       () => {
         if (!root.contains(document.activeElement)) root.focus({ preventScroll: true });
+        if (editor.getEditorState().read(() => $getRoot().getTextContentSize()) === 0) return;
         editor.update(() => {
           $getRoot().selectEnd();
         });

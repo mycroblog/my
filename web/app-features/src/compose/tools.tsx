@@ -164,13 +164,28 @@ export function Language({
         </ToolText>
       }
     >
-      <MenuGroup chosen={shown} onChoose={onChoose}>
-        {tags.map((tag) => (
-          <MenuItem key={tag} id={tag} icon="translate">
-            {ownName(tag)}
-          </MenuItem>
-        ))}
-      </MenuGroup>
+      <LanguageItems tags={tags} shown={shown} onChoose={onChoose} />
     </MenuSurface>
+  );
+}
+
+/** The language menu's items, each by its own name: drawn, and named, only while the menu is. */
+function LanguageItems({
+  tags,
+  shown,
+  onChoose,
+}: {
+  tags: readonly string[];
+  shown: string;
+  onChoose: (language: string) => void;
+}) {
+  return (
+    <MenuGroup chosen={shown} onChoose={onChoose}>
+      {tags.map((tag) => (
+        <MenuItem key={tag} id={tag} icon="translate">
+          {ownName(tag)}
+        </MenuItem>
+      ))}
+    </MenuGroup>
   );
 }

@@ -21,10 +21,22 @@ function byScript(tag: string): string {
   return `zh-${locale.maximize().script}`;
 }
 
+/** The names of languages in each locale, made once per locale: making one costs more than naming with it. */
+const namers = new Map<string, Intl.DisplayNames>();
+
+function namerIn(locale: string): Intl.DisplayNames {
+  let namer = namers.get(locale);
+  if (namer === undefined) {
+    namer = new Intl.DisplayNames([locale], { type: "language", languageDisplay: "dialect" });
+    namers.set(locale, namer);
+  }
+  return namer;
+}
+
 /** The name of the language `tag` in the language `locale` (English, 日本語, 繁體中文); none for a malformed tag. */
 export function languageName(tag: string, locale: string): string | undefined {
   try {
-    return new Intl.DisplayNames([locale], { type: "language", languageDisplay: "dialect" }).of(byScript(tag));
+    return namerIn(locale).of(byScript(tag));
   } catch {
     return undefined;
   }

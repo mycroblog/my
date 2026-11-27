@@ -12,10 +12,15 @@ import { rail } from "./viewport";
 /** The composer open over the screen: its dialog, and its text once the editor has come. */
 export type Composer = { dialog: HTMLElement; text: HTMLElement };
 
-/** The composer whose dialog is named `name` ("New post", "Reply", "Edit post"), once its text is in place. */
+/**
+ * The composer whose dialog is named `name` ("New post", "Reply", "Edit post"), once its text is in place, and its
+ * tools, which come once the text has painted (Add images is in every composer's).
+ */
 export async function composerOf(name: string): Promise<Composer> {
   const dialog = await screen.findByRole("dialog", { name });
-  return { dialog, text: await within(dialog).findByRole("textbox", { name: "Text" }) };
+  const text = await within(dialog).findByRole("textbox", { name: "Text" });
+  await within(dialog).findByRole("button", { name: "Add images" });
+  return { dialog, text };
 }
 
 /** Opens the composer of a new post from the rail's New post. */
@@ -73,12 +78,13 @@ export async function replace(app: TestApp, box: HTMLElement, text: string): Pro
 
 /**
  * The composer whose dialog is named `name` once its text holds `text`: opening a draft in the composer puts a new
- * one in its place, so the test finds it again.
+ * one in its place, so the test finds it again; and once its tools have come, as `composerOf`.
  */
 export const composerHolding = (name: string, text: string): Promise<Composer> =>
   waitFor(() => {
     const dialog = screen.getByRole("dialog", { name });
     const box = within(dialog).getByRole("textbox", { name: "Text" });
     if (heldBy(box) !== text) throw new Error(`test: the composer ${name} holds "${heldBy(box)}", not "${text}"`);
+    within(dialog).getByRole("button", { name: "Add images" });
     return { dialog, text: box };
   });
