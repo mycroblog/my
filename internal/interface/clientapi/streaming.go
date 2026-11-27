@@ -85,7 +85,8 @@ func (s *Server) registerStreaming(r Router) {
 // Conversation), announcements (event announcement, data an Announcement, and event
 // announcement_removed, data its ID), the counts of the notification requests when they
 // change (event notification_requests, data a NotificationRequestSummary), the reads of the
-// notifications on a device (event notifications_read, data a NotificationsRead), and the deletions of
+// notifications on a device (event notifications_read, data a NotificationsRead), the edits of the statuses that the viewer may see
+// (event status_update, data a Status, or delete when a hide filter now matches it), and the deletions of
 // the statuses that the viewer may have seen (event delete, data the status's ID). The stream subscribes to the signals of stream.Subscriber and reads
 // each change back through the use cases, as the viewer would see it in the home timeline or
 // the notification list. It ends when the client goes, the subscription ends (the broker shuts
@@ -110,6 +111,7 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 	defer sub.Close()
 	defer s.home.register(v.AccountID)()
 	defer s.deleted.register(v.AccountID)()
+	defer s.edited.register(v.AccountID)()
 
 	home, err := s.timelineQuery(ctx, &v, nil, nil, true)
 	if err != nil {
@@ -118,7 +120,7 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 	}
 	st := &streamState{
 		s: s, w: w, rc: http.NewResponseController(w), viewer: v, home: home,
-		sentEntries: newRecentIDs(streamRecentEntries),
+		sentEntries: newRecentIDs(streamRecentEntries), sentEdits: newRecentIDs(streamRecentEntries),
 		// Notifications from the moment the stream opens; earlier ones are in the list.
 		lastNotification: kernel.UUIDv7Floor(time.Now()),
 	}
@@ -266,6 +268,8 @@ type streamState struct {
 	lastNotification string
 	// sentEntries holds the IDs of the home timeline entries recently sent.
 	sentEntries *recentIDs
+	// sentEdits holds the revisions of the edited statuses recently sent.
+	sentEdits *recentIDs
 	// requests is the last counts of the notification requests that the stream sent or read
 	// when it opened; nil without NotificationPolicies.
 	requests *notification.RequestSummary
@@ -294,6 +298,8 @@ func (st *streamState) handle(ctx context.Context, e stream.Event) error {
 		return st.announcement(ctx, e.AnnouncementID)
 	case stream.KindStatusDeleted:
 		return st.deleted(ctx, e)
+	case stream.KindStatusEdited:
+		return st.edited(ctx, e, timeline.FilterContextHome)
 	}
 	return nil
 }
@@ -334,6 +340,75 @@ func (st *streamState) deleted(ctx context.Context, e stream.Event) error {
 		return nil
 	}
 	return st.event("delete", statusDeleted{ID: e.EntryID})
+}
+
+// edited sends the status of the edit e as the viewer sees it now (event status_update), with the
+// keyword filters of c, or its removal (event delete) when a hide filter of c matches it. A signal
+// for every stream goes to the viewers that may see the status (DeletedAudience), which the
+// streams of the process decide once together; one for a mentioned account goes to the streams of
+// that account alone. Each reads the status back as its viewer may see it, so a viewer that may
+// not gets nothing. A token without read:direct gets no edit of a direct post. The stream sends
+// a revision once: a mentioned account that also follows the author gets two signals, and a
+// cross-process broker may deliver one twice.
+func (st *streamState) edited(ctx context.Context, e stream.Event, c timeline.FilterContext) error {
+	if st.s.o.TimelineReader == nil || e.EntryID == "" || e.RevisionID == "" || e.AuthorAccountID == "" || st.sentEdits.has(e.RevisionID) {
+		return nil
+	}
+	viewer := localContentViewer(st.viewer)
+	if appcontent.Visibility(e.Visibility) == appcontent.VisibilityDirect && viewer.DirectDenied {
+		return nil
+	}
+	id := st.viewer.AccountID
+	if e.AccountID == "" {
+		da := st.s.o.DeletedAudience
+		if da == nil {
+			return nil
+		}
+		d := apptimeline.DeletedFrom(e)
+		audience := func(ctx context.Context, ids []string) (map[string]bool, error) {
+			return da.DeletedAudience(ctx, d, ids)
+		}
+		ok, err := st.s.edited.decide(ctx, e.RevisionID, id, audience)
+		if errors.Is(err, errNotAsked) {
+			// The stream opened after the decision: it decides for its viewer alone.
+			var m map[string]bool
+			m, err = audience(ctx, []string{id})
+			ok = m[id]
+		}
+		if err != nil {
+			return fmt.Errorf("the audience of the edited status %s: %w", e.EntryID, err)
+		}
+		if !ok {
+			return nil
+		}
+	} else if e.AccountID != id {
+		return nil
+	}
+	views, err := st.s.o.TimelineReader.Views(ctx, viewer, []string{e.EntryID})
+	if err != nil {
+		return fmt.Errorf("the edited status %s: %w", e.EntryID, err)
+	}
+	if len(views) == 0 {
+		return nil // the viewer may not see it, or it is gone
+	}
+	f, err := st.s.statusFilter(ctx, viewer, c)
+	if err != nil {
+		return err
+	}
+	status, err := st.s.presentStatus(ctx, views[0])
+	if err != nil {
+		return err
+	}
+	if applyJudgement(&status, f.Judge(views[0], ""), false) {
+		err = st.event("status_update", status)
+	} else {
+		err = st.event("delete", statusDeleted{ID: e.EntryID})
+	}
+	if err != nil {
+		return err
+	}
+	st.sentEdits.add(e.RevisionID)
+	return nil
 }
 
 // conversation sends the conversation of e as the viewer's list of direct messages shows it

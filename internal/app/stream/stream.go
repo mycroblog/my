@@ -48,6 +48,13 @@ const (
 	// subscription, each of which decides from AuthorDomain and Visibility whether its viewer may
 	// have seen the status: the status is no longer there to read back.
 	KindStatusDeleted Kind = "status_deleted"
+	// KindStatusEdited signals that the status EntryID of AuthorAccountID has the new revision
+	// RevisionID: its local author edited it, or a remote Update did. Without AccountID it goes,
+	// as KindStatusDeleted does, to every account and timeline subscription, each of which
+	// decides from AuthorDomain and Visibility whether its viewer may see the status. With
+	// AccountID, an account the status mentions that may see it for that reason alone (of a
+	// private or direct status), it goes to the account subscriptions of AccountID.
+	KindStatusEdited Kind = "status_edited"
 
 	// The signals of a voice chat room (ADR-0101 §3) go to the room subscriptions of their
 	// RoomID only. KindVoiceRoom signals that the room or its participants changed: each
@@ -107,7 +114,8 @@ func (k Kind) IsInternal() bool { return k == KindTLSCertificate }
 type Event struct {
 	Kind Kind
 	// AccountID is the account whose notifications or direct messages changed
-	// (KindNotifications, KindNotificationsRead, KindConversation).
+	// (KindNotifications, KindNotificationsRead, KindConversation), and the mentioned account
+	// that a KindStatusEdited signal is for ("" for every subscription).
 	AccountID string
 	// ConversationID is the conversation of KindConversation.
 	ConversationID string
@@ -115,14 +123,17 @@ type Event struct {
 	// read marker moved.
 	NotificationID string
 	// EntryID is the ID of the new timeline entry (KindHomeEntry, KindPublicEntry): a status ID
-	// for a post, a boost ID for a boost; and the deleted status of KindStatusDeleted.
+	// for a post, a boost ID for a boost; and the deleted or edited status of KindStatusDeleted
+	// and KindStatusEdited.
 	EntryID string
+	// RevisionID is the new revision of the status of KindStatusEdited.
+	RevisionID string
 	// AuthorAccountID is the account of a KindHomeEntry entry: the author of the post, or the
 	// booster. "" for a signal of a process that did not send it, which every stream checks. It
-	// is the author of the status of KindStatusDeleted.
+	// is the author of the status of KindStatusDeleted and KindStatusEdited.
 	AuthorAccountID string
 	// AuthorDomain ("" for a local author) and Visibility are those of the status of
-	// KindStatusDeleted.
+	// KindStatusDeleted and KindStatusEdited.
 	AuthorDomain string
 	Visibility   string
 	// OnLocal and OnFederated name the public timelines that may list the post of a

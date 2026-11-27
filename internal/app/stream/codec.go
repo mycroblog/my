@@ -27,7 +27,9 @@ var (
 // {"v":1,"o":"<process id>","k":"public_entry","e":"<entry id>","tl":["local","federated"]}
 // ("tl" names the timelines that may list the post, at least one), or
 // {"v":1,"o":"<process id>","k":"status_deleted","e":"<status id>","u":"<author>","d":"<author domain>","vis":"public"}
-// ("d" absent for a local author), and the signals of the
+// ("d" absent for a local author), or
+// {"v":1,"o":"<process id>","k":"status_edited","e":"<status id>","rv":"<revision id>","u":"<author>","d":"<author domain>","vis":"private","a":"<mentioned account>"}
+// ("a" absent for every subscription), and the signals of the
 // voice chat rooms (ADR-0101 §3), which carry the room as "r":
 // {"v":1,"o":…,"k":"voice_room","r":"<room>"},
 // {"v":1,"o":…,"k":"voice_signal","r":…,"m":"<message id>","t":"<session>"},
@@ -46,9 +48,11 @@ type signal struct {
 	// Author is the "u" of a home_entry signal, the account of its entry, and of a status_deleted
 	// one, the author of its status.
 	Author string `json:"u,omitempty"`
-	// Domain and Visibility are the "d" and the "vis" of a status_deleted signal.
+	// Domain and Visibility are the "d" and the "vis" of a status_deleted or status_edited signal.
 	Domain     string `json:"d,omitempty"`
 	Visibility string `json:"vis,omitempty"`
+	// RevisionID is the "rv" of a status_edited signal.
+	RevisionID string `json:"rv,omitempty"`
 	// AnnouncementID is the "n" of an announcement signal.
 	AnnouncementID string `json:"n,omitempty"`
 	RoomID         string `json:"r,omitempty"`
@@ -72,6 +76,7 @@ func encodeSignal(origin string, e Event) ([]byte, error) {
 		Version: signalVersion, Origin: origin, Kind: e.Kind, AccountID: e.AccountID, E: e.EntryID, Author: e.AuthorAccountID, AnnouncementID: e.AnnouncementID,
 		RoomID: e.RoomID, MessageID: e.MessageID, To: e.To, ParticipantID: e.ParticipantID, SessionID: e.SessionID, By: e.By,
 		Host: e.Host, CertificateID: e.CertificateID, Domain: e.AuthorDomain, Visibility: e.Visibility,
+		RevisionID: e.RevisionID,
 	}
 	switch e.Kind {
 	case KindPublicEntry:
@@ -133,6 +138,11 @@ func decodeSignal(payload []byte) (origin string, e Event, err error) {
 		return s.Origin, Event{Kind: KindAnnouncement, AnnouncementID: s.AnnouncementID}, nil
 	case s.Kind == KindStatusDeleted && s.E != "" && s.Author != "" && s.Visibility != "":
 		return s.Origin, Event{Kind: KindStatusDeleted, EntryID: s.E, AuthorAccountID: s.Author, AuthorDomain: s.Domain, Visibility: s.Visibility}, nil
+	case s.Kind == KindStatusEdited && s.E != "" && s.RevisionID != "" && s.Author != "" && s.Visibility != "":
+		return s.Origin, Event{
+			Kind: KindStatusEdited, EntryID: s.E, RevisionID: s.RevisionID, AuthorAccountID: s.Author,
+			AuthorDomain: s.Domain, Visibility: s.Visibility, AccountID: s.AccountID,
+		}, nil
 	case s.Kind == KindPublicEntry && s.E != "":
 		e := Event{Kind: KindPublicEntry, EntryID: s.E}
 		for _, t := range s.Timelines {

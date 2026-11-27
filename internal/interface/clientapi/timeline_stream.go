@@ -46,7 +46,9 @@ var publicTimelineStreams = map[string]publicTimelineStream{
 
 // serveTimelineStream serves GET /api/v1/streaming/timelines/{timeline}: a Server-Sent Events
 // stream of the new posts of the local or the federated timeline (ADR-0013), event update with
-// a Status, and event delete with the ID of a deleted status that it may have listed, for
+// a Status, event status_update with the Status of an edited status that it may list, and event
+// delete with the ID of a deleted status that it may have listed (or of an edited one that a hide
+// filter now matches), for
 // logged-in users only. It sends a post when the REST timeline (GET
 // /timelines/local or /timelines/federated) lists it for the viewer at that moment, which
 // LocalEntry and PublicEntry decide with the same policy, and nothing is replayed. It is a 404
@@ -88,14 +90,18 @@ func (s *Server) serveTimelineStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ts := &timelineStream{
-		streamState: streamState{s: s, w: w, rc: http.NewResponseController(w), viewer: v, home: q, sentEntries: newRecentIDs(streamRecentEntries)},
-		timeline:    tl.timeline,
+		streamState: streamState{
+			s: s, w: w, rc: http.NewResponseController(w), viewer: v, home: q,
+			sentEntries: newRecentIDs(streamRecentEntries), sentEdits: newRecentIDs(streamRecentEntries),
+		},
+		timeline: tl.timeline,
 	}
 	if s.public != nil {
 		s.public.add(ts)
 		defer s.public.remove(ts)
 	}
 	defer s.deleted.register(v.AccountID)()
+	defer s.edited.register(v.AccountID)()
 	alive := func(ctx context.Context) bool {
 		denied, err := s.timelineDenied(ctx, tl.access)
 		return err != nil || denied == nil // a failed read keeps the stream until the next heartbeat
@@ -112,13 +118,20 @@ type timelineStream struct {
 
 // handle sends the post of a public timeline entry when the viewer's timeline lists it and the
 // stream has not sent it recently: a cross-process broker may deliver its signal twice. It sends
-// the deletion of a status that the timeline may have listed as the user stream does.
+// the deletion of a status that the timeline may have listed, and the edit of one it may list, as
+// the user stream does, with the keyword filters of the public timelines.
 func (ts *timelineStream) handle(ctx context.Context, e stream.Event) error {
 	if e.Kind == stream.KindStatusDeleted {
 		if !apptimeline.DeletedFrom(e).OnTimeline(ts.timeline) {
 			return nil
 		}
 		return ts.deleted(ctx, e)
+	}
+	if e.Kind == stream.KindStatusEdited {
+		if e.AccountID != "" || !apptimeline.DeletedFrom(e).OnTimeline(ts.timeline) {
+			return nil
+		}
+		return ts.edited(ctx, e, timeline.FilterContextPublic)
 	}
 	if e.Kind != stream.KindPublicEntry || ts.sentEntries.has(e.EntryID) {
 		return nil
