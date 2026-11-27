@@ -27,7 +27,7 @@
   Cloudflare Containers 上での実行は v0 の対象外とし、需要があれば別 ADR で検討する。
 - 言語・ツールチェーン:
   - サーバー: Go（バージョンは `.tool-versions` で固定）。lint は `golangci-lint`。
-  - Web クライアント・Tauri の UI: TypeScript。ツールチェーンは Bun（ADR-0028）。
+  - Web クライアント: TypeScript。ツールチェーンは Bun（ADR-0028）。
   - 共有物（i18n カタログ・API スキーマ）は言語非依存のファイル形式（ICU MessageFormat の JSON、OpenAPI 等）で持ち、両言語から読む / 生成する。
 
 ## 経緯
@@ -49,7 +49,7 @@ RDB・キュー・ストレージ・実行環境を利用者が差し替えら�
 - 抽象化の分だけボイラープレートは増える。
 - Self-hosted / Cloud Run / ECS Fargate / k8s で軽量に動き、メモリは数十 MB、配布は単一の静的バイナリになる。サーバーは単一バイナリの中で `serve` / `worker` / `cli` を切り替える構成にでき、Self-hosted の最小構成は「バイナリ + SQLite ファイル」になる。
 - 連合ライブラリは `go-ap` 程度で、採用実績のある汎用ライブラリは少ない。相互運用の細部は自前で詰める（GoToSocial は参考実装として有用）。連合の署名ライブラリと自前実装の範囲は ADR-0006、SQL ツールとドライバ（いずれも cgo 不要）は ADR-0003 に定める。
-- Web / Tauri の UI は TypeScript になるため 2 言語体制で、i18n カタログと API 型の共有は生成ツールで行う。
+- Web クライアントは TypeScript になるため 2 言語体制で、i18n カタログと API 型の共有は生成ツールで行う。
 - `CGO_ENABLED=0` の静的ビルドを維持する。
 
 ## Open Questions / 要検証
