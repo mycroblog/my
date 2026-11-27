@@ -391,7 +391,9 @@ CREATE TABLE oauth_authorization_code_redemptions (
 CREATE UNIQUE INDEX oauth_authorization_code_redemptions_token_id ON oauth_authorization_code_redemptions (token_id);
 
 -- Resource: an access token with its refresh token. A rotation issues a new row in the same
--- family (family_id is the id of the family's first row).
+-- family (family_id is the id of the family's first row). replay_pair is the pair a rotation
+-- issued, encrypted under a key derived from the refresh token it replaced, so that a retry of
+-- that rotation gets the same pair (ADR-0090 §18); the database alone cannot open it.
 CREATE TABLE oauth_access_tokens (
   id uuid NOT NULL PRIMARY KEY,
   family_id uuid NOT NULL,
@@ -404,6 +406,7 @@ CREATE TABLE oauth_access_tokens (
   issued_at timestamptz NOT NULL,
   expires_at timestamptz NOT NULL,
   refresh_expires_at timestamptz,
+  replay_pair bytea,
   CONSTRAINT oauth_access_tokens_refresh_pair CHECK ((refresh_token_hash IS NULL) = (refresh_expires_at IS NULL))
 );
 CREATE UNIQUE INDEX oauth_access_tokens_access_token_hash ON oauth_access_tokens (access_token_hash);
@@ -411,6 +414,7 @@ CREATE UNIQUE INDEX oauth_access_tokens_refresh_token_hash ON oauth_access_token
 CREATE INDEX oauth_access_tokens_family_id ON oauth_access_tokens (family_id);
 CREATE INDEX oauth_access_tokens_user_id ON oauth_access_tokens (user_id);
 CREATE INDEX oauth_access_tokens_oauth_client_id ON oauth_access_tokens (oauth_client_id);
+CREATE INDEX oauth_access_tokens_rotated_from_token_id ON oauth_access_tokens (rotated_from_token_id);
 
 -- Event: a token row (its access and refresh token) stopped working.
 CREATE TABLE oauth_token_revocations (

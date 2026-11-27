@@ -383,10 +383,9 @@ func writeError(w http.ResponseWriter, status int, oe *appidentity.OAuthError) {
 }
 
 func writeTokens(w http.ResponseWriter, issued appidentity.IssuedTokens, refreshToken string) {
-	t := issued.Token
 	writeJSON(w, http.StatusOK, tokenResponse{
-		AccessToken: issued.AccessToken, TokenType: "Bearer", ExpiresIn: int64(t.ExpiresAt.Sub(t.IssuedAt).Seconds()),
-		RefreshToken: refreshToken, Scope: string(t.Scope),
+		AccessToken: issued.AccessToken, TokenType: "Bearer", ExpiresIn: int64(issued.ExpiresIn().Seconds()),
+		RefreshToken: refreshToken, Scope: string(issued.Token.Scope),
 	})
 }
 

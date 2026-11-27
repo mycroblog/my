@@ -145,8 +145,11 @@ There is no `client_credentials` (every operation is done as a user; authorize a
 | Access token (`my_at_...`) | 1 hour | |
 | Refresh token (`my_rt_...`) | 30 days | **Rotated on every use**: each `refresh_token` grant returns a new access token and a new refresh token, and the old ones stop working. |
 
-- Always store the newest refresh token. Presenting a refresh token that was already used (or revoked) **revokes the whole token family**, so serialize refreshes
-  and do not send two at once; the user has to authorize again.
+- Always store the newest refresh token. Presenting a refresh token that was already used (or revoked) **revokes the whole token family**, so serialize refreshes;
+  the user has to authorize again.
+- If a refresh response never arrives, retry with the same refresh token. Within 24 hours of the rotation, and while the new refresh token has not been used,
+  the server returns the same new pair again, with `expires_in` counting what is left of the access token. Two refreshes sent at once with the same token get
+  that same pair too. An older refresh token, or a retry after that, revokes the whole token family.
 - `POST /oauth/revoke` ([RFC 7009](https://www.rfc-editor.org/rfc/rfc7009)) revokes a token and its whole family.
 - A user can list and revoke authorized apps in the settings of the first-party web client. An administrator can disable an app (and deny a metadata document host):
   its tokens stop working at once and the app cannot be authorized.

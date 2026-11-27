@@ -102,7 +102,7 @@ func (r *Repository) InsertAccessToken(ctx context.Context, tx uow.Tx, t identit
 		ID: t.ID, FamilyID: t.FamilyID, OauthClientID: t.ClientID, UserID: t.UserID,
 		AccessTokenHash: t.AccessTokenHash, RefreshTokenHash: t.RefreshTokenHash, Scope: string(t.Scope),
 		RotatedFromTokenID: postgres.ToNullString(t.RotatedFromTokenID), IssuedAt: t.IssuedAt,
-		ExpiresAt: t.ExpiresAt, RefreshExpiresAt: refreshExpires,
+		ExpiresAt: t.ExpiresAt, RefreshExpiresAt: refreshExpires, ReplayPair: t.ReplayPair,
 	})
 	return postgres.Wrap(err, "insert access token")
 }
@@ -301,6 +301,28 @@ func (r *Repository) FindAccessTokenByRefreshHash(ctx context.Context, hash []by
 		Revoked: row.Revoked, Client: identity.OAuthClientState{Disabled: row.ClientDisabled, Deleted: row.ClientDeleted},
 	}
 	return accessTokenFromRow(identitygen.GetAccessTokenByAccessHashRow(row)), state, nil
+}
+
+// FindTokenRotation implements identity.Repository.
+func (r *Repository) FindTokenRotation(ctx context.Context, tx uow.Tx, tokenID string) (appidentity.TokenRotation, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return appidentity.TokenRotation{}, err
+	}
+	row, err := q.GetTokenRotation(ctx, &tokenID)
+	if err != nil {
+		return appidentity.TokenRotation{}, postgres.NotFound(err, appidentity.ErrNotFound, "token rotation")
+	}
+	t := accessTokenFromRow(identitygen.GetAccessTokenByAccessHashRow{
+		ID: row.ID, FamilyID: row.FamilyID, OauthClientID: row.OauthClientID, UserID: row.UserID,
+		AccessTokenHash: row.AccessTokenHash, RefreshTokenHash: row.RefreshTokenHash, Scope: row.Scope,
+		RotatedFromTokenID: row.RotatedFromTokenID, IssuedAt: row.IssuedAt, ExpiresAt: row.ExpiresAt, RefreshExpiresAt: row.RefreshExpiresAt,
+	})
+	t.ReplayPair = row.ReplayPair
+	return appidentity.TokenRotation{
+		Reason: identity.TokenRevocationReason(row.RotatedReason), RotatedAt: postgres.UTC(row.RotatedAt),
+		Successor: t, SuccessorRevoked: row.Revoked,
+	}, nil
 }
 
 func oauthClientFromRow(row identitygen.OauthClient) identity.OAuthClient {

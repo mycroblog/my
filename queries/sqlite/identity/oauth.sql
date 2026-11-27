@@ -77,8 +77,8 @@ SELECT code_hash, token_id, redeemed_at FROM oauth_authorization_code_redemption
 -- name: InsertAccessToken :exec
 INSERT INTO oauth_access_tokens (
   id, family_id, oauth_client_id, user_id, access_token_hash, refresh_token_hash, scope, rotated_from_token_id,
-  issued_at, expires_at, refresh_expires_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+  issued_at, expires_at, refresh_expires_at, replay_pair
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- AccessTokenByAccessHash returns a token, whether it has a revocation, and whether its client is disabled
 -- or deleted (ADR-0090 section 1).
@@ -140,6 +140,17 @@ SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.r
   EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = t.oauth_client_id) AS client_deleted
 FROM oauth_access_tokens t
 WHERE t.refresh_token_hash = ?;
+
+-- GetTokenRotation returns the revocation of a token whose refresh token was rotated and the
+-- token the rotation issued, with its replay pair and whether it has a revocation (ADR-0090 section 18).
+-- name: GetTokenRotation :one
+SELECT r.reason AS rotated_reason, r.revoked_at AS rotated_at,
+  t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+  t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at, t.replay_pair,
+  EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id) AS revoked
+FROM oauth_access_tokens t
+JOIN oauth_token_revocations r ON r.token_id = t.rotated_from_token_id
+WHERE t.rotated_from_token_id = ?;
 
 -- name: InsertTokenRevocationIfAbsent :execrows
 INSERT INTO oauth_token_revocations (token_id, reason, revoked_at) VALUES (?, ?, ?)

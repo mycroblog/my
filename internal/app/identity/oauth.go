@@ -19,7 +19,8 @@ import (
 // The OAuth 2.0 authorization server (ADR-0016, ADR-0019 §4, ADR-0090): the authorization code
 // grant with PKCE S256 only (RFC 7636), redirect URIs matched exactly, one-time codes, refresh
 // tokens rotated on every use with the whole family revoked when a used one comes back
-// (RFC 9700 §4.14.2), and revocation (RFC 7009).
+// (RFC 9700 §4.14.2) unless it is the retry of a rotation whose response was lost (ADR-0090
+// §18), and revocation (RFC 7009).
 
 // Token prefixes mark the server's secrets for secret scanners (ADR-0019 §4).
 const (
@@ -33,6 +34,9 @@ const (
 	AuthorizationCodeTTL = 60 * time.Second
 	AccessTokenTTL       = time.Hour
 	RefreshTokenTTL      = 30 * 24 * time.Hour
+	// RefreshReplayWindow is how long after a rotation the refresh token it replaced gets the
+	// same pair again, while that pair's refresh token is unused (ADR-0090 §18).
+	RefreshReplayWindow = 24 * time.Hour
 )
 
 // DefaultWebClientID is the client_id of the first-party web client.
@@ -221,6 +225,22 @@ type OAuthRepository interface {
 	// ExistingOAuthClients returns the clients among clientIDs that exist, with one query.
 	ExistingOAuthClients(ctx context.Context, clientIDs []string) (map[string]bool, error)
 	FindAccessTokenByRefreshHash(ctx context.Context, hash []byte) (identity.AccessToken, identity.TokenState, error)
+	// FindTokenRotation returns, read in tx, the rotation that replaced the refresh token of the
+	// token with the ID; ErrNotFound when the token was not rotated.
+	FindTokenRotation(ctx context.Context, tx uow.Tx, tokenID string) (TokenRotation, error)
+}
+
+// TokenRotation is the rotation of a token's refresh token: the revocation of the token and the
+// token the rotation issued.
+type TokenRotation struct {
+	// Reason and RotatedAt are those of the rotated token's revocation.
+	Reason    identity.TokenRevocationReason
+	RotatedAt time.Time
+	// Successor is the token the rotation issued, with its ReplayPair.
+	Successor identity.AccessToken
+	// SuccessorRevoked reports whether Successor has a revocation: it was rotated in turn, or
+	// revoked.
+	SuccessorRevoked bool
 }
 
 // WebClientID returns the client_id of the first-party web client; "" when there is none.
@@ -552,6 +572,19 @@ type IssuedTokens struct {
 	RefreshToken string
 	Token        identity.AccessToken
 	Client       identity.OAuthClient
+	// ReplayedAt is when a refresh returned the pair of an earlier rotation again (ADR-0090
+	// §18); zero for a pair issued by this request.
+	ReplayedAt time.Time
+}
+
+// ExpiresIn is how long the access token works from the response: its lifetime, or what is
+// left of it for a replayed pair, never below zero.
+func (t IssuedTokens) ExpiresIn() time.Duration {
+	from := t.Token.IssuedAt
+	if !t.ReplayedAt.IsZero() {
+		from = t.ReplayedAt
+	}
+	return max(t.Token.ExpiresAt.Sub(from), 0)
 }
 
 // authenticateClient returns the client of creds. A confidential client must present its
@@ -666,9 +699,11 @@ type RefreshRequest struct {
 }
 
 // RefreshAccessToken exchanges a refresh token for a new access token and a new refresh token
-// and revokes the old ones. Presenting a refresh token that was already used (or revoked)
-// revokes its whole family and fails with invalid_grant (RFC 9700 §4.14.2). The web client may
-// not use this grant: its refresh token is only accepted by RefreshWebClient.
+// and revokes the old ones. A refresh token used within RefreshReplayWindow whose successor's
+// refresh token is still unused gets that successor pair again, unchanged (ADR-0090 §18).
+// Presenting any other refresh token that was already used (or revoked) revokes its whole
+// family and fails with invalid_grant (RFC 9700 §4.14.2). The web client may not use this
+// grant: its refresh token is only accepted by RefreshWebClient.
 func (s *Service) RefreshAccessToken(ctx context.Context, in RefreshRequest) (IssuedTokens, error) {
 	client, err := s.authenticateClient(ctx, in.ClientCredentials)
 	if err != nil {
@@ -708,7 +743,7 @@ func (s *Service) rotate(ctx context.Context, client identity.OAuthClient, refre
 		return IssuedTokens{}, errInvalidGrant
 	}
 	if state.Revoked {
-		return IssuedTokens{}, s.revokeFamily(ctx, old.UserID, old.FamilyID, identity.TokenRevokedRefreshReuse)
+		return s.replayOrRevoke(ctx, client, old, refreshToken)
 	}
 	now := s.d.Clock.Now()
 	if old.RefreshExpired(now) {
@@ -726,8 +761,14 @@ func (s *Service) rotate(ctx context.Context, client identity.OAuthClient, refre
 	}
 	issued := s.newTokens(client, old.UserID, narrowed, old.FamilyID, now)
 	issued.Token.RotatedFromTokenID = old.ID
+	if issued.Token.ReplayPair, err = sealReplayPair(refreshToken, issued); err != nil {
+		return IssuedTokens{}, err
+	}
 	rev := identity.TokenRevocation{TokenID: old.ID, Reason: identity.TokenRevokedRotation, RevokedAt: now}
-	var reused bool
+	var (
+		out     IssuedTokens
+		revoked bool
+	)
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		// Under the lock, a revocation of the family that committed first makes the insert below
 		// find the old token revoked, and one that comes later sees the new token.
@@ -735,19 +776,87 @@ func (s *Service) rotate(ctx context.Context, client identity.OAuthClient, refre
 			return err
 		}
 		ok, err := s.d.Repository.InsertTokenRevocation(ctx, tx, rev)
-		if err != nil || !ok {
-			reused = !ok
+		if err != nil {
 			return err
 		}
+		if !ok { // a concurrent refresh with the same token won the race, or the token was revoked
+			out, revoked, err = s.replayOrRevokeTx(ctx, tx, client, old, refreshToken)
+			return err
+		}
+		out = issued
+		out.Token.ReplayPair = nil
 		return s.d.Repository.InsertAccessToken(ctx, tx, issued.Token)
 	})
 	if err != nil {
 		return IssuedTokens{}, err
 	}
-	if reused { // a concurrent refresh with the same token won the race
-		return IssuedTokens{}, s.revokeFamily(ctx, old.UserID, old.FamilyID, identity.TokenRevokedRefreshReuse)
+	if revoked {
+		return IssuedTokens{}, errInvalidGrant
 	}
-	return issued, nil
+	return out, nil
+}
+
+// replayOrRevoke answers a refresh token that has a revocation: with the pair of its rotation
+// again when the rotation qualifies (ADR-0090 §18), or by revoking its whole family and failing
+// with invalid_grant (RFC 9700 §4.14.2).
+func (s *Service) replayOrRevoke(ctx context.Context, client identity.OAuthClient, old identity.AccessToken, refreshToken string) (IssuedTokens, error) {
+	var (
+		out     IssuedTokens
+		revoked bool
+	)
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := s.d.Repository.LockTokenGrants(ctx, tx, old.UserID); err != nil {
+			return err
+		}
+		var err error
+		out, revoked, err = s.replayOrRevokeTx(ctx, tx, client, old, refreshToken)
+		return err
+	})
+	if err != nil {
+		return IssuedTokens{}, err
+	}
+	if revoked {
+		return IssuedTokens{}, errInvalidGrant
+	}
+	return out, nil
+}
+
+// replayOrRevokeTx is replayOrRevoke inside tx, which holds the lock of the user's grants: it
+// returns the pair of the rotation that replaced refreshToken when that rotation is a rotation
+// within RefreshReplayWindow whose successor has no revocation; otherwise it revokes the family
+// of old and reports revoked.
+func (s *Service) replayOrRevokeTx(ctx context.Context, tx uow.Tx, client identity.OAuthClient, old identity.AccessToken, refreshToken string) (IssuedTokens, bool, error) {
+	now := s.d.Clock.Now()
+	rot, err := s.d.Repository.FindTokenRotation(ctx, tx, old.ID)
+	switch {
+	case err == nil:
+		if out, ok := replayRotation(rot, client, refreshToken, now); ok {
+			return out, false, nil
+		}
+	case !errors.Is(err, ErrNotFound):
+		return IssuedTokens{}, false, err
+	}
+	if err := s.d.Repository.RevokeTokenFamily(ctx, tx, old.FamilyID, identity.TokenRevokedRefreshReuse, now); err != nil {
+		return IssuedTokens{}, false, err
+	}
+	return IssuedTokens{}, true, nil
+}
+
+// replayRotation returns the pair of rot again when rot qualifies for a replay at now: it is a
+// rotation less than RefreshReplayWindow ago, its successor has no revocation and an unexpired
+// refresh token, and refreshToken, the token it replaced, opens the successor's ReplayPair.
+func replayRotation(rot TokenRotation, client identity.OAuthClient, refreshToken string, now time.Time) (IssuedTokens, bool) {
+	t := rot.Successor
+	if rot.Reason != identity.TokenRevokedRotation || !now.Before(rot.RotatedAt.Add(RefreshReplayWindow)) ||
+		rot.SuccessorRevoked || t.RefreshExpired(now) || t.ReplayPair == nil {
+		return IssuedTokens{}, false
+	}
+	at, rt, ok := openReplayPair(refreshToken, t.ID, t.ReplayPair)
+	if !ok || subtle.ConstantTimeCompare(HashToken(at), t.AccessTokenHash) != 1 || subtle.ConstantTimeCompare(HashToken(rt), t.RefreshTokenHash) != 1 {
+		return IssuedTokens{}, false
+	}
+	t.ReplayPair = nil
+	return IssuedTokens{AccessToken: at, RefreshToken: rt, Token: t, Client: client, ReplayedAt: now}, true
 }
 
 // newTokens returns a new access token and refresh token for the user; familyID "" starts a
