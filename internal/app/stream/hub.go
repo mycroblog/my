@@ -151,7 +151,8 @@ func remove(m map[string]map[*subscription]struct{}, key string, s *subscription
 // Publish implements Publisher. A signal of KindNotifications, KindNotificationsRead, or
 // KindConversation goes to the account subscriptions of its account, one of KindHomeEntry or
 // KindAnnouncement to every account subscription, one of KindPublicEntry to the timeline subscriptions of the timelines it names,
-// one of KindStatusDeleted to every account and timeline subscription, and a voice signal to the subscriptions of its room. An internal signal (Kind.IsInternal) goes
+// one of KindStatusDeleted, and one of KindStatusEdited without AccountID, to every account and timeline subscription
+// (one of KindStatusEdited with AccountID to the account subscriptions of AccountID), and a voice signal to the subscriptions of its room. An internal signal (Kind.IsInternal) goes
 // to none.
 func (h *Hub) Publish(e Event) {
 	if e.Kind.IsInternal() {
@@ -171,7 +172,9 @@ func (h *Hub) Publish(e Event) {
 		}
 	case e.Kind.IsVoice():
 		h.deliverLocked(h.byRoom[e.RoomID], e)
-	case e.Kind == KindStatusDeleted:
+	case e.Kind == KindStatusEdited && e.AccountID != "":
+		h.deliverLocked(h.byAccount[e.AccountID], e)
+	case e.Kind == KindStatusDeleted, e.Kind == KindStatusEdited:
 		h.deliverLocked(h.accounts, e)
 		for _, subs := range h.byTimeline {
 			h.deliverLocked(subs, e)
@@ -255,13 +258,15 @@ type subscription struct {
 	done    chan struct{}
 }
 
-// wants reports whether a subscription takes a signal: a timeline subscription no notifications
-// or direct messages of its account, and a room subscription no voice signal for another session;
+// wants reports whether a subscription takes a signal: a timeline subscription no notifications,
+// direct messages, or edits for a mentioned account of its account, and a room subscription no voice signal for another session;
 // a room subscription without a session (a media node's) takes the mute of every session.
 func (s *subscription) wants(e Event) bool {
 	switch e.Kind {
 	case KindNotifications, KindNotificationsRead, KindConversation:
 		return s.timeline == ""
+	case KindStatusEdited:
+		return e.AccountID == "" || s.timeline == ""
 	case KindVoiceSignal:
 		return e.To == "" || e.To == s.session
 	case KindVoiceMute:
