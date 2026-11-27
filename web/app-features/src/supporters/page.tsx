@@ -7,8 +7,7 @@
 // switch to (after a question that says whether the change applies now, the difference charged, or at the period's
 // end), their own plan marked, and why the reader is not offered to subscribe in one sentence where they are not; the
 // way to tip the server once, where it takes tips, with what a tip is; and the supporters who chose to be listed,
-// under their plans, where the instance shows the list to the reader. In the native shell nothing of a purchase shows
-// (ADR-0072 §14), and the list alone does. What came of a change is said under the plans, in the page's one polite
+// under their plans, where the instance shows the list to the reader. What came of a change is said under the plans, in the page's one polite
 // live region, which takes the focus once the question has left.
 
 import { AccountLine, supporterSettingsPath, supporterTipPath } from "@my/app-components";
@@ -89,8 +88,8 @@ export function SupportersScreen({ signedIn, signInHref, leave }: Props): ReactN
     ) : (
       <FeedNotice lead>{t("supporters.loading")}</FeedNotice>
     );
-  const plans = access.program && !access.app;
-  const tips = access.tips === true && !access.app;
+  const plans = access.program;
+  const tips = access.tips === true;
   const list = access.program && visibility !== undefined && visibility !== "off";
   if (!plans && !tips && !list) return <FeedNotice lead>{t("supporters.none")}</FeedNotice>;
   return (

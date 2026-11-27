@@ -21,7 +21,6 @@ import {
   type Permission,
 } from "@my/app-data";
 import type { IconName } from "@my/design-system";
-import { inNativeShell } from "@my/platform";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
 import { AccountSettings, loadAccountSettings, useAppealableActions } from "./account";
@@ -113,8 +112,8 @@ export type SettingsFacts = {
   /** Whether the server has voice chat (ADR-0100 §2); false until the server said so. */
   readonly voice: boolean;
   /**
-   * Whether the server takes the readers' support here: its supporter program or its tips are on, and the app is no
-   * native shell, which shows no purchase (ADR-0072 §14, ADR-0162 §3); false until the server said so.
+   * Whether the server takes the readers' support here: its supporter program or its tips are on; false until the
+   * server said so.
    */
   readonly supporters: boolean;
 };
@@ -200,7 +199,7 @@ export const settingsEntries: readonly SettingsEntry[] = [
     load: loadCustomEmojiSettings,
   },
   {
-    // The reader's subscription, the plans and the tips, while the server takes them, never in the native shell.
+    // The reader's subscription, the plans and the tips, while the server takes them.
     path: "supporter",
     group: "general",
     icon: "funding",
@@ -276,10 +275,10 @@ function useSettingsFacts(): SettingsFacts {
   };
 }
 
-/** Whether the server takes the readers' support in this app: its program or its tips are on, out of the native shell. */
+/** Whether the server takes the readers' support: its program or its tips are on. */
 function useSupportersOffered(): boolean {
   const instance = useInstance();
-  return !inNativeShell() && (instance?.supporters_enabled === true || instance?.tips_enabled === true);
+  return instance?.supporters_enabled === true || instance?.tips_enabled === true;
 }
 
 /**

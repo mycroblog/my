@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Supporter, the entry of the settings at /settings/supporter while the server takes the readers' support, never in
-// the native shell (ADR-0072 §6–§8, §14, ADR-0162, ADR-0070 §13; FR-911, FR-914, FR-918): the reader's subscription,
+// Supporter, the entry of the settings at /settings/supporter while the server takes the readers' support
+// (ADR-0072 §6–§8, ADR-0162, ADR-0070 §13; FR-911, FR-914, FR-918): the reader's subscription,
 // its plan and period and where it stands (renewing, ending after a cancel, a change scheduled for the period's end,
 // a payment not made yet, a failed payment in its grace or past it), what they may do with it (keep the plan a change
 // would replace, resume a cancelled one, the provider's portal of payment methods and invoices, cancel it, after a
@@ -94,7 +94,7 @@ function useSaid(): {
 export function SupporterSettings({ back, search, onSearchRead, leave }: SettingsEntryProps) {
   const { t } = stringsIn(useLocale().locale);
   const access = useSupporterAccess(true);
-  const program = access.program === true && !access.app;
+  const program = access.program === true;
   const [returned] = useState<SupporterReturn | null>(() => {
     const r = supporterReturnOf(search ?? "");
     // A tip's return is its own screen's.
@@ -149,7 +149,7 @@ export function SupporterSettings({ back, search, onSearchRead, leave }: Setting
       )}
       {read && program && <Plans subscription={own.subscription} t={t} />}
       {read && program && <Listing subscription={own.subscription} t={t} />}
-      {read && access.tips === true && !access.app && (
+      {read && access.tips === true && (
         <SettingsSection heading={t("settings.supporter.tip")}>
           <SettingsList label={t("settings.supporter.tip")}>
             <SettingsListRow

@@ -9,7 +9,6 @@
 import { costsPagePath, supportersPagePath } from "@my/app-components";
 import type { Instance, Rights } from "@my/app-data";
 import type { IconName } from "@my/design-system";
-import { inNativeShell } from "@my/platform";
 import type { MessageId } from "../messages.gen";
 
 /** A place of the navigation; `count` names what its badge counts. */
@@ -81,12 +80,12 @@ const funding: Place = { href: costsPagePath, icon: "funding", label: "app.fundi
 const supporters: Place = { href: supportersPagePath, icon: "funding", label: "app.supporters" };
 
 /**
- * Whether the supporters' page has something for the reader: the plans or the tips, out of the native shell, which
- * shows no purchase (ADR-0072 §14, ADR-0162 §3), or the supporters list the instance shows.
+ * Whether the supporters' page has something for the reader: the plans or the tips, or the supporters list the
+ * instance shows.
  */
-export function supportersPageShows(instance: Instance | undefined, nativeShell = inNativeShell()): boolean {
+export function supportersPageShows(instance: Instance | undefined): boolean {
   if (instance === undefined) return false;
-  const offers = !nativeShell && (instance.supporters_enabled || instance.tips_enabled);
+  const offers = instance.supporters_enabled || instance.tips_enabled;
   const list = instance.supporters_enabled && instance.supporter_list_visibility !== "off";
   return offers || list;
 }
