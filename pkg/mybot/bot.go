@@ -194,8 +194,10 @@ type Bot struct {
 	budget  *budget
 	replies *replyLimiter
 	tracker *tracker
-	now     func() time.Time
-	sleep   func(ctx context.Context, d time.Duration) error
+	// positionMu makes the saves of the position one at a time, so that an older one never lands after a newer.
+	positionMu sync.Mutex
+	now        func() time.Time
+	sleep      func(ctx context.Context, d time.Duration) error
 
 	running sync.Mutex
 	started bool
@@ -781,8 +783,11 @@ func (b *Bot) logIdle() {
 	}
 }
 
-// setPosition saves the position when it is newer than the saved one.
+// setPosition saves the position when it is newer than the saved one. Two notifications that finish at once move
+// the position at once; the saves go one at a time, so the older, when it comes last, finds the newer saved.
 func (b *Bot) setPosition(p string) {
+	b.positionMu.Lock()
+	defer b.positionMu.Unlock()
 	ctx := context.Background()
 	cur, err := b.store.Position(ctx)
 	if err == nil && cur >= p {
