@@ -128,7 +128,7 @@
 | Web クライアントの SPA と静的なアセット（JS・CSS・`sw.js`・`manifest.webmanifest`） | — | 503 | 出さない。メンテナンスのページが自己完結（インライン CSS・スクリプトなし）なので要らない |
 | 上に当たらない `POST` などの非安全メソッド | 残り | 503 | メンテナンスのページ（`Accept` が JSON なら Problem） |
 
-- **Web クライアントと Tauri アプリ**: Problem の `type` が `/api/v1/problems/maintenance` なら、画面全体をメンテナンスの表示（`message`・`until`・ステータスページへのリンク）に替え、
+- **Web クライアントと公式のモバイルアプリ**: Problem の `type` が `/api/v1/problems/maintenance` なら、画面全体をメンテナンスの表示（`message`・`until`・ステータスページへのリンク）に替え、
   `Retry-After` の後か利用者の操作で再読み込みする。**503 でトークンを捨てない・サインアウトしない**。キャッシュ済みの Service Worker が古いシェルを出しても、API の応答で同じ表示になる。
   ブラウザは `sw.js` の更新の取得が 2xx でなければ更新をやめ、登録済みの Service Worker を使い続ける（2026-10-23 に [Service Workers の Update 手順](https://w3c.github.io/ServiceWorker/#update-algorithm)で確認。登録を消すのは既存の worker が無いときだけ）。
 - **連合先**: 503 と `Retry-After` は、こちらの配送の分類と同じく、送り手から見て「再試行する失敗」に当たる。

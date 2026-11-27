@@ -77,7 +77,7 @@
 
 ### 8. フォントの出所と版
 
-Noto Color Emoji を COLRv1 と sbix の 2 つの形式で自前で分割して配り、ブラウザーが `tech()` で選ぶ。対象のブラウザー（Chrome・Firefox・Safari、Tauri の WebView の iOS の WKWebView と Android の WebView）で同じ形にする。
+Noto Color Emoji を COLRv1 と sbix の 2 つの形式で自前で分割して配り、ブラウザーが `tech()` で選ぶ。対象のブラウザー（Chrome・Firefox・Safari）で同じ形にする。
 `font-src 'self'`（ADR-0019 §9、ADR-0059）を変えず、第三者のオリジンに閲覧を知らせない。絵文字を含まない画面ではフォントを読まず、読むのは画面にある絵文字の分だけにする。
 
 - **COLRv1**: `googlefonts/noto-emoji` のリリース `v2026-09-24-unicode18_0`（2D v2.057、Unicode 18.0）の `2D/fonts/Noto-COLRv1.ttf`（5.0 MB）を使う。
@@ -224,7 +224,7 @@ ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強�
 ### 覆る条件
 
 - CLDR の版が `EMOJI_VERSION` に追いつかない期間が長く、名前の無い絵文字が目立つ場合は、`emojibase-data` を見直す。
-- 端末をまたいで「よく使う」と肌の色をそろえる要望が多い場合、または Tauri のアプリで端末が増える場合は、サーバーの利用者の設定（`GET /preferences` に肌の色、よく使う絵文字は新しい現在値の表）を見直す。
+- 端末をまたいで「よく使う」と肌の色をそろえる要望が多い場合は、サーバーの利用者の設定（`GET /preferences` に肌の色、よく使う絵文字は新しい現在値の表）を見直す。
 - 仮想化してもピッカーを開くのが遅い（ミドルレンジの Android で 100 ms を超える）場合は、全集合をタブごとに分けて描く（タブを APG の tabs にする）形を見直す。
 - TanStack Virtual の版の更新で、`rangeExtractor` や `scrollToIndex` の振る舞いが変わり、フォーカスを保てなくなった場合は、React Aria の `Virtualizer` と自作の `Layout` を見直す。
 - React Aria Components の `GridLayout` が節を配置するようになった場合は、キー操作を React Aria に戻せるかを見直す。
@@ -249,7 +249,7 @@ ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強�
 - 画像（Twemoji など）: 形がそろうが、画像の配信（数千枚または大きなスプライト）、帰属表示（Twemoji の画像は CC-BY 4.0）、本文とのずれが生じる。
 - 「よく使う」と肌の色をサーバーの設定に持つ: 端末をまたぐが、API とスキーマが増え、使った絵文字の履歴をサーバーが持つ。
 - 開くボタンを道具の行に置いたままにする: 変更は小さいが、320 px の道具の行がきついままで、本文から離れる。
-- COLRv1 だけを配る: 配る量が最小（1.96 MB）で出所も 1 つだが、Safari と iOS（Tauri を含む）は OS の絵文字のままになる。
+- COLRv1 だけを配る: 配る量が最小（1.96 MB）で出所も 1 つだが、Safari と iOS は OS の絵文字のままになる。
 - OS のフォントのまま: 転送量も作業も無いが、端末で形が違い、古い OS で豆腐になる。
 - Google Fonts から読む: 生成と保守が要らないが、`font-src 'self'`（ADR-0019 §9、ADR-0059）を緩める必要があり、閲覧のたびに Google に要求が届き、版を固定できない。
 - CBDT（`NotoColorEmoji.ttf`）: 10.7 MB と最も大きく、macOS で描けるのは Chrome だけ（2026-10-23 に noto-emoji の README で確認）。
@@ -285,7 +285,7 @@ ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強�
   - グリッドのキー操作・フォーカスの移動・ARIA の属性を自前で持つ。`GridList` が持っていた細かな扱い（typeahead など）は持たない。テスト（Testing Library のキー操作と Storybook の実ブラウザ）で固める。
   - React Compiler から外すフックが `Feed` のほかにもう 1 つある。
   - ブラウザーのページ内検索（Ctrl+F）は、描いていない絵文字を見つけない。名前で探すのはピッカーの検索欄が受け持つ。
-  - WKWebView で sbix を、Android の WebView で COLRv1 を描く速さは実機で測っていない（#1150 は Playwright の計測で閉じ、Tauri のアプリは v0 の外）。ピッカーの分割の読み込みは、仮想化の後の本物の画面では計測しておらず（#1213 は必要になるまで閉じた）、§11 の値は静的なページでの計測で、WebKit は未計測である。Chromium は、仮想化しても初回に 11 分割のうち 9 分割を読む。
+  - iOS の Safari で sbix を、Android の Chrome で COLRv1 を描く速さは実機で測っていない（#1150 は Playwright の計測で閉じた）。ピッカーの分割の読み込みは、仮想化の後の本物の画面では計測しておらず（#1213 は必要になるまで閉じた）、§11 の値は静的なページでの計測で、WebKit は未計測である。Chromium は、仮想化しても初回に 11 分割のうち 9 分割を読む。
 
 ## Open Questions / 要検証
 
