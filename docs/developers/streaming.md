@@ -5,7 +5,7 @@ The server pushes new posts, notifications, direct messages, and announcements a
 | Endpoint | Scopes | Events |
 | --- | --- | --- |
 | `GET /api/v1/streaming` | `read:statuses` and `read:notifications` | The user's home and list timelines, notifications, conversations of the direct messages (with `read:direct`), and announcements. |
-| `GET /api/v1/streaming/timelines/{timeline}` | `read:statuses` | New posts (`update` only) of the local or federated timeline. |
+| `GET /api/v1/streaming/timelines/{timeline}` | `read:statuses` | New posts of the local or federated timeline (`update`), and the edits and deletions of its posts. |
 
 Open a stream with `fetch` and the `Authorization: Bearer` header, like any other call. The browser's `EventSource` cannot send the header, so it cannot be used.
 
@@ -36,9 +36,10 @@ From the top of the diagram down, between the client and the server:
 | `conversation` | A `Conversation`, as `GET /api/v1/conversations` shows it: a direct post the user sent or received arrived in it, or the user read it on a device. A token without `read:direct` receives none, and a conversation that the user hid receives none until a newer post arrives. |
 | `announcement` | An `Announcement` that was published or changed. |
 | `announcement_removed` | `{"id": "..."}`: an announcement no longer shows. |
-| `delete` | `{"id": "..."}`: a status that the user may see was deleted by its author, a moderator, or its server. Remove it, and the boosts of it, wherever they show. The timeline streams send it too, for the statuses of their timeline. |
+| `status_update` | A `Status`: a status that the user may see was edited, by its author here or on its server, as the user sees it now. Replace it, and the status inside the boosts of it, wherever it shows. The timeline streams send it too, for the statuses of their timeline. |
+| `delete` | `{"id": "..."}`: remove a status, and the boosts of it, wherever they show. Either the status that the user may see was deleted by its author, a moderator, or its server, or it was edited and a filter with the action `hide` now matches it. The timeline streams send it too, for the statuses of their timeline. |
 
-The user's keyword filters apply to the events as to the timelines and notifications they come from: a post that a filter with the action `hide` matches is never sent, nor is its notification, and a post that only `warn` filters match arrives with them in its `filtered`.
+The user's keyword filters apply to the events as to the timelines and notifications they come from: a post that a filter with the action `hide` matches is never sent, nor is its notification, and a post that only `warn` filters match arrives with them in its `filtered`. An edited post is judged again: one that a `hide` filter now matches arrives as a `delete`.
 
 The server sends a comment line (`: heartbeat`) every 30 seconds. Ignore events you do not know: new ones can appear ([stability](stability.md)).
 
