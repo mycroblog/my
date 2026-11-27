@@ -7,9 +7,8 @@
 // A cancellation, its taking back and the cancel of a scheduled change show from the press on; a change of the plan
 // shows once the server answered it, since a higher plan waits for its payment. The writes of the subscription go one
 // at a time, and after a refusal it is read again, since what made the server refuse (a payment, the period's end)
-// changed it. Nothing of this is offered in the native app's shell (ADR-0072 §14), nor to a reader the server says may
-// not: `useSupporterAccess` says who may subscribe and who may tip.
-import { inNativeShell } from "@my/platform";
+// changed it. Nothing of this is offered to a reader the server says may not: `useSupporterAccess` says who may
+// subscribe and who may tip.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
@@ -445,12 +444,11 @@ export function useSupporters(planId?: string, enabled = true): SupportersList {
 // ---- Who may ----------------------------------------------------------------------------------------------------------
 
 /**
- * Why the reader is not offered to subscribe or to tip: the program or the tips are off (`off`), the app runs in the
- * native shell (`app`, where nothing of it shows), no session (`signed-out`), a subscription that is not pending goes on
- * already (`subscribed`, subscribing only), or what the server says (`SupporterIneligibleReason`: `email_unverified`
- * for a primary address not confirmed).
+ * Why the reader is not offered to subscribe or to tip: the program or the tips are off (`off`), no session
+ * (`signed-out`), a subscription that is not pending goes on already (`subscribed`, subscribing only), or what the
+ * server says (`SupporterIneligibleReason`: `email_unverified` for a primary address not confirmed).
  */
-export type SupporterBar = "off" | "app" | "signed-out" | "subscribed" | SupporterIneligibleReason;
+export type SupporterBar = "off" | "signed-out" | "subscribed" | SupporterIneligibleReason;
 
 /** Whether the reader is offered something: `may` undefined until what it is from was read; `bar` why not, when not. */
 export type SupporterOffer = { readonly may: boolean | undefined; readonly bar: SupporterBar | undefined };
@@ -461,8 +459,6 @@ export type SupporterAccess = {
   readonly program: boolean | undefined;
   /** Whether the server takes tips (`tips_enabled`); undefined until the instance was read. */
   readonly tips: boolean | undefined;
-  /** Whether the app runs in the native shell, which shows no plan, no tip, and no way to them. */
-  readonly app: boolean;
   /** Subscribing to a plan (a local reader with a confirmed address, without a subscription that goes on). */
   readonly subscribe: SupporterOffer;
   /** Paying a tip (a local reader with a confirmed address; a subscription is no bar). */
@@ -483,12 +479,11 @@ const unknown: SupporterOffer = { may: undefined, bar: undefined };
  */
 export function useSupporterAccess(signedIn = true): SupporterAccess {
   const data = useAppData();
-  const app = inNativeShell();
   const instance = useQuery(instanceQuery(data));
   const program = instance.data?.supporters_enabled;
   const tips = instance.data?.tips_enabled;
-  const asksOwn = signedIn && !app && program === true;
-  const asksAmounts = signedIn && !app && tips === true;
+  const asksOwn = signedIn && program === true;
+  const asksAmounts = signedIn && tips === true;
   const own = useQuery({ ...ownSubscriptionQuery(data), enabled: asksOwn });
   const amounts = useQuery({ ...tipAmountsQuery(data), enabled: asksAmounts });
   const gone = (error: unknown) => error instanceof ProblemError && error.status === 404;
@@ -503,9 +498,9 @@ export function useSupporterAccess(signedIn = true): SupporterAccess {
     if (amountsUnread) void amounts.refetch();
   };
   if (instance.data === undefined)
-    return { program, tips, app, subscribe: unknown, tip: unknown, failed: instance.isError, retry };
+    return { program, tips, subscribe: unknown, tip: unknown, failed: instance.isError, retry };
   const before = (on: boolean | undefined): SupporterBar | undefined =>
-    on !== true ? "off" : app ? "app" : !signedIn ? "signed-out" : undefined;
+    on !== true ? "off" : !signedIn ? "signed-out" : undefined;
   const subscribeBar = before(program);
   const tipBar = before(tips);
   const going = own.data?.subscription;
@@ -522,7 +517,6 @@ export function useSupporterAccess(signedIn = true): SupporterAccess {
   return {
     program,
     tips,
-    app,
     subscribe,
     tip,
     failed: (ownUnread && own.isError) || (amountsUnread && amounts.isError),
@@ -536,7 +530,7 @@ export function useSupporterAccess(signedIn = true): SupporterAccess {
  */
 export async function loadSupporterAccess(data: AppData, signedIn = true): Promise<void> {
   const instance = await data.queryClient.query({ ...instanceQuery(data), staleTime: Infinity }).catch(() => undefined);
-  if (!signedIn || inNativeShell() || instance === undefined) return;
+  if (!signedIn || instance === undefined) return;
   await Promise.all([
     instance.supporters_enabled
       ? data.queryClient.query({ ...ownSubscriptionQuery(data), staleTime: Infinity }).catch(() => undefined)

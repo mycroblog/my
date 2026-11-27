@@ -73,7 +73,7 @@
   },
   "supporters.none": {
     "defaultMessage": "This server takes no support here.",
-    "description": "The supporters' page of a server whose plans, tips and supporters list are all off, or of the native app, which shows no purchase, where the list is off."
+    "description": "The supporters' page of a server whose plans, tips and supporters list are all off."
   },
   "supporters.plans.failed": {
     "defaultMessage": "The plans could not be loaded.",

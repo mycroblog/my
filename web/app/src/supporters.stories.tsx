@@ -37,14 +37,6 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Marks the page as the native app's shell (Tauri's global) for the story, and takes the mark off after. */
-function nativeShell() {
-  Reflect.set(globalThis, "isTauri", true);
-  return () => {
-    Reflect.deleteProperty(globalThis, "isTauri");
-  };
-}
-
 // ---- The supporters' page --------------------------------------------------------------------------------------------
 
 /** A reader without a plan: the plans, monthly, each Choose; the tip; the supporters under their plans. */
@@ -77,8 +69,6 @@ export const PageTipsOnlyNotLocal: Story = {
 export const PageTipsOnlyRestricted: Story = {
   parameters: at(page, { program: false, tips: {}, ineligible: "restricted" }),
 };
-/** In the native app's shell: no plan, no tip, no way to either; the list alone. */
-export const PageNativeShell: Story = { parameters: at(page, all), beforeEach: nativeShell };
 /** A server that takes no support. */
 export const PageOff: Story = { parameters: at(page, undefined) };
 export const PageLoading: Story = { parameters: at(page, all, { state: "loading" }) };

@@ -31,12 +31,11 @@ export function sentences(locale: string, parts: readonly string[]): string {
   return parts.join(unspaced.has(language) ? "" : " ");
 }
 
-/** The bars of `SupporterBar` a sentence says: the program or the tips off and the native shell say nothing. */
-export type SaidBar = Exclude<SupporterBar, "off" | "app">;
+/** The bars of `SupporterBar` a sentence says: the program or the tips off say nothing. */
+export type SaidBar = Exclude<SupporterBar, "off">;
 
-/** Whether the reader is told why they are not offered it: never for the program off, nor in the native shell. */
-export const barSaid = (bar: SupporterBar | undefined): bar is SaidBar =>
-  bar !== undefined && bar !== "off" && bar !== "app";
+/** Whether the reader is told why they are not offered it: never for the program off. */
+export const barSaid = (bar: SupporterBar | undefined): bar is SaidBar => bar !== undefined && bar !== "off";
 
 /** Why the reader is not offered to subscribe (`subscribe`) or to tip (`tip`), in one sentence. */
 export function barSentence(bar: SaidBar, of: "subscribe" | "tip", t: T): string {

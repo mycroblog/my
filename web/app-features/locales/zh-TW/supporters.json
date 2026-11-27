@@ -73,7 +73,7 @@
   },
   "supporters.none": {
     "defaultMessage": "此伺服器不在這裡接受支持。",
-    "description": "The supporters' page of a server whose plans, tips and supporters list are all off, or of the native app, which shows no purchase, where the list is off."
+    "description": "The supporters' page of a server whose plans, tips and supporters list are all off."
   },
   "supporters.plans.failed": {
     "defaultMessage": "無法載入方案。",

@@ -120,10 +120,8 @@ test("the menu leads to the supporters' page beside the costs while it has somet
     "/about/supporters",
     "/about/costs",
   ]);
-  // In the native shell the plans are no way in: the list is, where the instance shows it.
-  expect(supportersPageShows(supporting, true)).toBe(false);
-  expect(supportersPageShows(await instanceOf({ supporters: { list: "everyone" } }), true)).toBe(true);
-  expect(supportersPageShows(await instanceOf({ supporters: { program: false, tips: {} } }), false)).toBe(true);
+  expect(supportersPageShows(supporting)).toBe(true);
+  expect(supportersPageShows(await instanceOf({ supporters: { program: false, tips: {} } }))).toBe(true);
 });
 
 test("a visitor's menu leads to the sign-in, and to nothing that needs a session", async () => {

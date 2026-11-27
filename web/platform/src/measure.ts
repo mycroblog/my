@@ -2,8 +2,8 @@
 
 // What the browser measures of how fast the page responds (ADR-0167 §1, §2): the largest contentful paint, the time
 // from each interaction to its next paint (Event Timing, of which INP is the worst), and the long animation frames;
-// and how a report of them leaves the page, with `navigator.sendBeacon` while it is hidden. A browser or a WebView
-// (Tauri's) that lacks one of the entry types measures nothing of it, in the same form. Only the app imports this
+// and how a report of them leaves the page, with `navigator.sendBeacon` while it is hidden. A browser that lacks one of
+// the entry types measures nothing of it, in the same form. Only the app imports this
 // module (`@my/platform/measure`); it names what it hears by the route and sends it to the instance's own server.
 
 type Target = Pick<EventTarget, "addEventListener" | "removeEventListener">;

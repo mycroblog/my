@@ -7,7 +7,7 @@
 // the reader goes on; the return from the provider syncs once, takes its query off the address, and while the payment
 // settles reads again 2 s apart for the first 15 reads, then slower, and says so only while it is pending; a lost
 // answer reads the subscription again. Subscribing is a local reader's with a confirmed address, said in one sentence
-// otherwise, and never offered in the native shell; the tips are the operator's amounts, with what a tip is; the list
+// otherwise; the tips are the operator's amounts, with what a tip is; the list
 // holds the listed readers under their plans, and the reader's switch shows while they are a member and the list is
 // shown; the menu leads to the supporters beside the funding where the page has something to show.
 
@@ -32,14 +32,6 @@ const buttonsOf = (element: HTMLElement) =>
   within(element)
     .queryAllByRole("button")
     .map((button) => button.getAttribute("aria-label") ?? words(button));
-
-/** Marks the page as the native app's shell (Tauri's global) until the test ends. */
-function inTheNativeShell() {
-  Reflect.set(globalThis, "isTauri", true);
-  onTestFinished(() => {
-    Reflect.deleteProperty(globalThis, "isTauri");
-  });
-}
 
 /** Waits until nothing the app's data asked for is on its way, and a turn more. */
 async function atRest(app: TestApp) {
@@ -183,31 +175,6 @@ test.each([
     await atRest(app);
     expect(within(plans).queryAllByRole("button", { name: /^Choose / })).toHaveLength(0);
     expect(within(plans).getAllByText(why)).toHaveLength(1);
-  },
-);
-
-test("in the native shell the supporters' page offers no plan, no switch and no tip, and keeps the list", async () => {
-  inTheNativeShell();
-  const app = await renderApp("/about/supporters", { supporters: { ...all, subscription: "active" } });
-  await main().findByRole("list", { name: "Supporter" });
-  await atRest(app);
-  expect(main().queryAllByRole("button", { name: /^(Choose|Switch) / })).toHaveLength(0);
-  expect(main().queryAllByRole("link", { name: /^Tip/ })).toHaveLength(0);
-  expect(main().queryAllByRole("region", { name: "Plans" })).toHaveLength(0);
-});
-
-test.each(["/settings/supporter", "/settings/supporter/tip"])(
-  "in the native shell %s offers no subscription's action and no tip",
-  async (at) => {
-    inTheNativeShell();
-    const app = await renderApp(at, { supporters: { ...all, subscription: "active" } });
-    await main().findByRole("heading", { level: 1 });
-    await atRest(app);
-    const offered = buttonsOf(screen.getByRole("main"));
-    for (const name of ["Cancel subscription…", "Payments and invoices", "Tip ¥500"])
-      expect(offered).not.toContain(name);
-    expect(main().queryAllByRole("radio")).toHaveLength(0);
-    expect(main().queryAllByRole("link", { name: /^(Change your plan|See the plans|Tip the server)/ })).toHaveLength(0);
   },
 );
 
@@ -455,12 +422,3 @@ test.each([
     else expect(places.filter((place) => place.startsWith("Supporters"))).toHaveLength(0);
   },
 );
-
-test("in the native shell, with no list to show, the menu does not lead to the supporters", async () => {
-  inTheNativeShell();
-  onAPhone();
-  const app = await renderApp("/lists", { supporters: { tips: {}, list: "off" } });
-  const places = await menuPlaces(app);
-  expect(places).toContain("Funding → /about/costs");
-  expect(places.filter((place) => place.startsWith("Supporters"))).toHaveLength(0);
-});

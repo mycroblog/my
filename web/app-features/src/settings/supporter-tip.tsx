@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Tip the server, a screen under the settings' Supporter at /settings/supporter/tip, where the server takes tips and
-// never in the native shell (ADR-0162 §1, §3, §6, §7, §13; FR-918, FR-919): the operator's amounts, one chosen, beside
+// Tip the server, a screen under the settings' Supporter at /settings/supporter/tip, where the server takes tips
+// (ADR-0162 §1, §6, §7, §13; FR-918, FR-919): the operator's amounts, one chosen, beside
 // what a tip is (a thank-you for the server's service, not a donation, with no perks and no role), and the one primary
 // action, which starts the tip and leaves for the provider's checkout in the same tab. One tip is open at a time:
 // starting another ends the checkout the reader left open, which the screen says before. The server limits how often
@@ -122,7 +122,7 @@ function Returned({ tipId, paid, t }: { tipId: string; paid: boolean; t: T }) {
 export function SupporterTip({ onBack, search, onSearchRead, leave }: SettingsSubProps) {
   const { t } = stringsIn(useLocale().locale);
   const access = useSupporterAccess(true);
-  const offered = access.tips === true && !access.app;
+  const offered = access.tips === true;
   const amounts = useTipAmounts(offered);
   const writes = useSupporterWrites();
   const money = useMoney();
