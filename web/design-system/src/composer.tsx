@@ -54,8 +54,9 @@ const frame = tv({
       "pb-[calc(var(--entry-gap)+max(0px,env(safe-area-inset-bottom)-var(--keyboard-inset,env(keyboard-inset-height,0px))))]",
     ],
     // On the narrowest phones (under 360 px) the glyphs sit closer, and the language names itself by its tag
-    // (ToolText), so that the tools, the count and Post keep one line.
-    tools: "max-[22.5rem]:[--icon-button-padding-inline:0.25rem]",
+    // (ToolText), so that the tools, the count and Post keep one line. The row is a control's height before its tools
+    // are drawn (the composer draws them after its text), so that nothing above it moves as they come.
+    tools: "min-h-control-timeline max-[22.5rem]:[--icon-button-padding-inline:0.25rem]",
   },
   variants: {
     // From `tablet` a dialog of the main column's width over the dimmed page, which scrolls with what opens below it;

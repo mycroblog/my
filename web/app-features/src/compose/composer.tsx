@@ -61,7 +61,7 @@ import {
   WarningField,
 } from "@my/design-system";
 import type { EditorHandle } from "@my/design-system/editor";
-import { useId, useRef, useState } from "react";
+import { startTransition, useEffect, useId, useRef, useState } from "react";
 import { fieldError } from "../field-errors";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
@@ -250,6 +250,30 @@ function alertOf(c: Composer, t: T, reader: Reader): string | undefined {
   return undefined;
 }
 
+/**
+ * Whether what can wait for the first paint is drawn: at once unless `wait`, else once the frame after the mount has
+ * painted (a timer from that frame's callback), in a transition, which gives way to what the reader does meanwhile.
+ */
+function useAfterPaint(wait: boolean): boolean {
+  const [shown, setShown] = useState(!wait);
+  useEffect(() => {
+    if (shown) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const frame = requestAnimationFrame(() => {
+      timer = setTimeout(() => {
+        startTransition(() => {
+          setShown(true);
+        });
+      }, 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [shown]);
+  return shown;
+}
+
 export type ComposerViewProps = {
   c: Composer;
   /** Close or Escape: the reader means to leave. */
@@ -312,6 +336,9 @@ export function ComposerView({
   const [editorsFailed, setEditorsFailed] = useState(false);
   const [editorsTry, setEditorsTry] = useState(0);
   const editorsDown = unloaded === "editor" || editorsFailed;
+  // Over the page, the press that opens it draws the frame and the text, focused, alone; the tools come once that has
+  // painted, their row as tall meanwhile.
+  const toolsShown = useAfterPaint(layer);
   const failEditors = () => {
     setEditorsFailed(true);
   };
@@ -448,71 +475,73 @@ export function ComposerView({
         )
       }
       tools={
-        <>
-          <AttachButton
-            label={t("compose.attach")}
-            accept="image/*,video/*,audio/*"
-            isDisabled={draft.poll !== undefined || draft.attachments.length >= maxAttachments}
-            onFiles={c.addFiles}
-          />
-          {!editing && (
+        toolsShown && (
+          <>
+            <AttachButton
+              label={t("compose.attach")}
+              accept="image/*,video/*,audio/*"
+              isDisabled={draft.poll !== undefined || draft.attachments.length >= maxAttachments}
+              onFiles={c.addFiles}
+            />
+            {!editing && (
+              <IconButton
+                icon="poll"
+                label={t(draft.poll ? "compose.poll.off" : "compose.poll.on")}
+                pressed={draft.poll !== undefined}
+                isDisabled={draft.attachments.length > 0}
+                onPress={() => {
+                  c.change({ poll: draft.poll ? undefined : newPoll });
+                }}
+              />
+            )}
             <IconButton
-              icon="poll"
-              label={t(draft.poll ? "compose.poll.off" : "compose.poll.on")}
-              pressed={draft.poll !== undefined}
-              isDisabled={draft.attachments.length > 0}
+              icon="hidden"
+              label={t(draft.cw === undefined ? "compose.cw.on" : "compose.cw.off")}
+              pressed={draft.cw !== undefined}
               onPress={() => {
-                c.change({ poll: draft.poll ? undefined : newPoll });
+                // The field added takes the focus, to be written at once; taken out, the focus goes back to the text.
+                const adding = draft.cw === undefined;
+                setCwFocus(adding);
+                c.change({ cw: adding ? "" : undefined });
+                if (!adding) textRef.current?.focus();
               }}
             />
-          )}
-          <IconButton
-            icon="hidden"
-            label={t(draft.cw === undefined ? "compose.cw.on" : "compose.cw.off")}
-            pressed={draft.cw !== undefined}
-            onPress={() => {
-              // The field added takes the focus, to be written at once; taken out, the focus goes back to the text.
-              const adding = draft.cw === undefined;
-              setCwFocus(adding);
-              c.change({ cw: adding ? "" : undefined });
-              if (!adding) textRef.current?.focus();
-            }}
-          />
-          {!editing && !onBoard && <Audience c={c} t={t} open={audienceOpen} setOpen={setOpen} />}
-          {!editing && !onBoard && (
-            <Schedule
-              at={c.draft.scheduledAt}
-              limits={settings.schedule}
-              onSet={(scheduledAt) => {
-                c.change({ scheduledAt });
+            {!editing && !onBoard && <Audience c={c} t={t} open={audienceOpen} setOpen={setOpen} />}
+            {!editing && !onBoard && (
+              <Schedule
+                at={c.draft.scheduledAt}
+                limits={settings.schedule}
+                onSet={(scheduledAt) => {
+                  c.change({ scheduledAt });
+                }}
+                t={t}
+                locale={locale}
+                open={open === "schedule"}
+                setOpen={setSchedule}
+                trigger={
+                  <IconButton
+                    icon="schedule"
+                    label={t(scheduled === undefined ? "compose.schedule.tool" : "compose.schedule.tool_set")}
+                    pressed={scheduled !== undefined}
+                  />
+                }
+              />
+            )}
+            <Language
+              current={draft.language}
+              preferred={settings.language}
+              onChoose={(language) => {
+                c.change({ language });
               }}
               t={t}
-              locale={locale}
-              open={open === "schedule"}
-              setOpen={setSchedule}
-              trigger={
-                <IconButton
-                  icon="schedule"
-                  label={t(scheduled === undefined ? "compose.schedule.tool" : "compose.schedule.tool_set")}
-                  pressed={scheduled !== undefined}
-                />
-              }
+              lang={lang}
+              open={open === "language"}
+              setOpen={(o) => {
+                setOpen(o ? "language" : undefined);
+              }}
             />
-          )}
-          <Language
-            current={draft.language}
-            preferred={settings.language}
-            onChoose={(language) => {
-              c.change({ language });
-            }}
-            t={t}
-            lang={lang}
-            open={open === "language"}
-            setOpen={(o) => {
-              setOpen(o ? "language" : undefined);
-            }}
-          />
-        </>
+          </>
+        )
       }
       count={
         editorsDown ? undefined : (
