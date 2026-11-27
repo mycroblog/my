@@ -194,8 +194,11 @@ type Bot struct {
 	budget  *budget
 	replies *replyLimiter
 	tracker *tracker
-	now     func() time.Time
-	sleep   func(ctx context.Context, d time.Duration) error
+	// positionMu makes the moves of the position one at a time (movePosition), so that an older one never lands
+	// after a newer.
+	positionMu sync.Mutex
+	now        func() time.Time
+	sleep      func(ctx context.Context, d time.Duration) error
 
 	running sync.Mutex
 	started bool
@@ -677,10 +680,7 @@ func (b *Bot) missed(ctx context.Context) ([]mykit.Notification, error) {
 
 // releaseHold ends a hold of the tracker and saves the position it moves to.
 func (b *Bot) releaseHold() {
-	if p := b.tracker.release(); p != "" {
-		b.setPosition(p)
-	}
-	b.logIdle()
+	b.movePosition(b.tracker.release)
 }
 
 // submitNotification hands a notification to the dispatcher.
@@ -767,7 +767,16 @@ func (b *Bot) retryStore(ctx context.Context, what, id string, op func() error) 
 
 // completed moves the position after a processed notification.
 func (b *Bot) completed(id string) {
-	if p := b.tracker.complete(id); p != "" {
+	b.movePosition(func() string { return b.tracker.complete(id) })
+}
+
+// movePosition moves the tracker by move, saves the position it moves to, and logs when the bot is idle. The moves go
+// one at a time, from the tracker to the store: two notifications that finish at once save their positions in the
+// order the tracker computed them, and the idle log comes after the save of the position it names.
+func (b *Bot) movePosition(move func() string) {
+	b.positionMu.Lock()
+	defer b.positionMu.Unlock()
+	if p := move(); p != "" {
 		b.setPosition(p)
 	}
 	b.logIdle()
@@ -781,7 +790,7 @@ func (b *Bot) logIdle() {
 	}
 }
 
-// setPosition saves the position when it is newer than the saved one.
+// setPosition saves the position when it is newer than the saved one. It runs under positionMu (movePosition).
 func (b *Bot) setPosition(p string) {
 	ctx := context.Background()
 	cur, err := b.store.Position(ctx)
