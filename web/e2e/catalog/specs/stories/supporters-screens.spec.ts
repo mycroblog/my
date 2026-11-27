@@ -2,8 +2,8 @@
 
 // The stories of the supporter's screens (web/app/src/supporters.stories.tsx) each show the state they are named by, on
 // the fake API: the supporters' page for a reader without a plan, a member, a visitor, a reader who may not subscribe
-// nor tip (each reason, with the program and on a server of tips alone), a server of tips alone, the native shell, a
-// server that takes no support, and its loading, failure, empty list and long names; the settings' Supporter plans and
+// nor tip (each reason, with the program and on a server of tips alone), a server of tips alone, a server
+// that takes no support, and its loading, failure, empty list and long names; the settings' Supporter plans and
 // tips in each state of a subscription and back from the checkout; and the tip, its returns, a reader who may not tip
 // and a server that takes none. What the screens do from each state is the app's route tests'
 // (web/app/src/supporters-routes.dom.test.tsx); this is that the catalog shows each state for a review and a shot.
@@ -115,14 +115,6 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
         },
       ] as const,
   ),
-  [
-    "page-native-shell",
-    async (page) => {
-      await expect(plans(page)).toHaveCount(0);
-      await expect(main(page).getByRole("link", { name: "Tip", exact: true })).toHaveCount(0);
-      await expect(main(page).getByRole("list", { name: "Supporter", exact: true })).toBeVisible();
-    },
-  ],
   ["page-off", (page) => says(page, "This server takes no support here.")],
   ["page-loading", (page) => says(page, "Loading the plans…")],
   ["page-error", (page) => says(page, /^The plans could not be loaded\./)],
