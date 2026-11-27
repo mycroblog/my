@@ -27,7 +27,11 @@ get:
       their `local` posts; the federated timeline has the public posts of local and remote
       accounts, never `local` posts, and neither has boosts. A remote post arrives when the
       server stores it.
-    - `delete`: a status that the timeline may have listed for the user was deleted, as
+    - `status_update`: a status that the timeline may list for the user was edited, as
+      `GET /api/v1/streaming` sends it, with the keyword filters of the public timelines.
+      `data` is a `Status`.
+    - `delete`: a status that the timeline may have listed for the user was deleted, or was
+      edited and a hiding keyword filter of the public timelines now matches it, as
       `GET /api/v1/streaming` sends it. `data` is `{"id": "<status id>"}`.
 
     A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
