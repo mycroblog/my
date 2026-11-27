@@ -2,7 +2,7 @@
 
 // The composer closed by a swipe down on a phone: where a swipe starts, what closes and what springs back, and what
 // never moves it. The simulation lays nothing out: the motion is read from the styles the frame sets, and its time
-// from the events' own, so a slow drag waits for real.
+// from the events' own, which the test stamps, so no drag waits for real.
 
 import { afterEach, expect, test } from "bun:test";
 import { swipeClose, transition } from "@my/design-tokens";
@@ -40,30 +40,39 @@ afterEach(() => {
 /** The px of a rem in the simulation. */
 const rem = 16;
 
-/** A touch event of `type` with a finger at each of `at` (px), none for an end. */
+/**
+ * The gesture's clock, which is the events' `timeStamp`: the test stamps each touch itself, `feed` ms after the one
+ * before (a fast finger's feed), and `pause` moves it on. A busy machine stretches the real gaps between the
+ * dispatches, never these.
+ */
+let clock = 1000;
+const feed = 4;
+
+/** A touch event of `type` with a finger at each of `at` (px), none for an end, stamped by the gesture's clock. */
 function touch(target: Element, type: string, ...at: { x: number; y: number }[]) {
   const e = new Event(type, { bubbles: true, cancelable: true });
   Object.defineProperty(e, "touches", { value: at.map(({ x, y }) => ({ clientX: x, clientY: y })) });
+  clock += feed;
+  Object.defineProperty(e, "timeStamp", { value: clock });
   act(() => {
     target.dispatchEvent(e);
   });
 }
 
-/** Time passing between two touches, for the gesture's clock, which is the events'. */
-const pause = (ms: number) =>
-  act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, ms));
-  });
+/** Time passing between two touches, on the gesture's clock. */
+function pause(ms: number) {
+  clock += ms;
+}
 
 /**
- * A finger on `target` drawn down by each of `downs` rem from where it went down, waiting `rest` ms before it lets go:
+ * A finger on `target` drawn down by each of `downs` rem from where it went down, resting `rest` ms before it lets go:
  * a release after a rest past the velocity's window is a slow one.
  */
-async function drag(target: Element, downs: number[], { rest = 0, x = 20 }: { rest?: number; x?: number } = {}) {
+function drag(target: Element, downs: number[], { rest = 0, x = 20 }: { rest?: number; x?: number } = {}) {
   const y = 100;
   touch(target, "touchstart", { x, y });
   for (const down of downs) touch(target, "touchmove", { x, y: y + down * rem });
-  if (rest > 0) await pause(rest);
+  pause(rest);
   touch(target, "touchend");
 }
 
@@ -121,7 +130,7 @@ test("on a phone, a swipe down from the head follows the finger and closes the c
   expect(moved()).toEqual(["0 2.5rem"]);
   expect(faded().length).toBeGreaterThan(0);
   touch(head, "touchmove", { x: 20, y: 100 + 8 * rem });
-  await pause(slow);
+  pause(slow);
   touch(head, "touchend");
 
   expect(left).toEqual(["close"]);
@@ -131,7 +140,7 @@ test("a short fast flick down closes it", async () => {
   phone();
   const { left, head } = await composer();
 
-  await drag(head, [1, 2.5]);
+  drag(head, [1, 2.5]);
 
   expect(left).toEqual(["close"]);
 });
@@ -140,7 +149,7 @@ test("a drag short of the distance, let go slowly, springs back and closes nothi
   phone();
   const { left, head } = await composer();
 
-  await drag(head, [1, 2, 3, 4], { rest: slow });
+  drag(head, [1, 2, 3, 4], { rest: slow });
 
   expect(left).toEqual([]);
   expect(moved()).toEqual([]);
@@ -152,7 +161,7 @@ test("a drag past the distance, let go slowly, closes it", async () => {
   phone();
   const { left, head } = await composer();
 
-  await drag(head, [1, 4, swipeClose.distance + 1], { rest: slow });
+  drag(head, [1, 4, swipeClose.distance + 1], { rest: slow });
 
   expect(left).toEqual(["close"]);
 });
@@ -164,7 +173,7 @@ test("a flick back up keeps it open, even from past the distance", async () => {
   touch(head, "touchstart", { x: 20, y: 100 });
   touch(head, "touchmove", { x: 20, y: 100 + rem });
   touch(head, "touchmove", { x: 20, y: 100 + 8 * rem });
-  await pause(slow);
+  pause(slow);
   for (const down of [8, 7.5, 7, 6.5]) touch(head, "touchmove", { x: 20, y: 100 + down * rem });
   touch(head, "touchend");
 
@@ -188,7 +197,7 @@ test("a swipe also starts in the text, while it is at its top and nothing is sel
   phone();
   const { left, text } = await composer();
 
-  await drag(text, [1, swipeClose.distance + 2], { rest: slow });
+  drag(text, [1, swipeClose.distance + 2], { rest: slow });
 
   expect(left).toEqual(["close"]);
 });
@@ -198,7 +207,7 @@ test("a swipe in the text closes nothing while the text is scrolled down", async
   const { left, text, body } = await composer();
   body.scrollTop = 40;
 
-  await drag(text, [1, swipeClose.distance + 2], { rest: slow });
+  drag(text, [1, swipeClose.distance + 2], { rest: slow });
 
   expect(left).toEqual([]);
   expect(moved()).toEqual([]);
@@ -209,7 +218,7 @@ test("a swipe in the text closes nothing while something is selected", async () 
   const { left, text } = await composer();
   document.getSelection()?.selectAllChildren(text);
 
-  await drag(text, [1, swipeClose.distance + 2], { rest: slow });
+  drag(text, [1, swipeClose.distance + 2], { rest: slow });
 
   expect(left).toEqual([]);
   expect(moved()).toEqual([]);
@@ -221,7 +230,7 @@ test("a finger that rests in the text past the hold selects, and never swipes", 
   const { left, text } = await composer();
 
   touch(text, "touchstart", { x: 20, y: 100 });
-  await pause(swipeClose.hold + 50);
+  pause(swipeClose.hold + 50);
   touch(text, "touchmove", { x: 20, y: 100 + rem });
   touch(text, "touchmove", { x: 20, y: 100 + 10 * rem });
   touch(text, "touchend");
@@ -235,7 +244,7 @@ test("on the head a finger may rest before it swipes", async () => {
   const { left, head } = await composer();
 
   touch(head, "touchstart", { x: 20, y: 100 });
-  await pause(swipeClose.hold + 50);
+  pause(swipeClose.hold + 50);
   touch(head, "touchmove", { x: 20, y: 100 + rem });
   touch(head, "touchmove", { x: 20, y: 100 + 10 * rem });
   touch(head, "touchend");
@@ -278,7 +287,7 @@ test("while a post is in flight, a swipe neither moves nor closes it", async () 
   touch(head, "touchmove", { x: 20, y: 100 + 10 * rem });
   expect(moved()).toEqual([]);
   touch(head, "touchend");
-  await drag(text, [1, 10]);
+  drag(text, [1, 10]);
 
   expect(left).toEqual([]);
 });
@@ -292,7 +301,7 @@ test("the dialog from a tablet never moves", async () => {
   touch(head, "touchmove", { x: 20, y: 100 + 10 * rem });
   expect(moved()).toEqual([]);
   touch(head, "touchend");
-  await drag(text, [1, 10]);
+  drag(text, [1, 10]);
 
   expect(left).toEqual([]);
 });
