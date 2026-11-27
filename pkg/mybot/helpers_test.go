@@ -301,10 +301,13 @@ func runBot(t *testing.T, b *Bot) (stop func() error) {
 	return stop
 }
 
-// eventually polls cond, which nothing signals, until it holds, failing the test after a few seconds.
+// waitBound is how long a wait of a test lasts before it fails.
+const waitBound = 10 * time.Second
+
+// eventually polls cond, which nothing signals, until it holds, failing the test after waitBound.
 func eventually(t *testing.T, what string, cond func() bool) {
 	t.Helper()
-	deadline := time.NewTimer(10 * time.Second)
+	deadline := time.NewTimer(waitBound)
 	defer deadline.Stop()
 	tick := time.NewTicker(10 * time.Millisecond)
 	defer tick.Stop()

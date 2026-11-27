@@ -121,8 +121,7 @@ func TestFailedCatchUpHoldsThePosition(t *testing.T) {
 	if got := handled(); len(got) != 0 {
 		t.Fatalf("handled %q before the catch-up succeeded", got)
 	}
-	// The pruning and the retry of the catch-up sleep.
-	eventually(t, "the retry of the catch-up waiting", func() bool { return clock.sleepers() >= 2 })
+	clock.waitSleeping(t, "the retry of the catch-up", retryFirstWait, 1)
 	clock.Advance(retryFirstWait)
 	eventually(t, "both mentions processed", func() bool { return processed(cfg.Store, missed.Id, live.Id) })
 	eventually(t, "the position", func() bool {
@@ -200,6 +199,67 @@ func (s *flakyStore) MarkProcessed(ctx context.Context, id string, at time.Time)
 	return s.MemoryStore.MarkProcessed(ctx, id, at)
 }
 
+// positionStore is a MemoryStore whose SetPosition of hold waits, for a while, for the SetPosition of next: the
+// order of two moves of the position that finish at once.
+type positionStore struct {
+	*MemoryStore
+	hold, next     string
+	holding, moved chan struct{}
+	once           [2]sync.Once
+}
+
+func (s *positionStore) SetPosition(ctx context.Context, id string) error {
+	switch id {
+	case s.hold:
+		s.once[0].Do(func() { close(s.holding) })
+		select {
+		case <-s.moved:
+		case <-time.After(time.Second): // the bot moves the position one at a time
+		}
+	case s.next:
+		s.once[1].Do(func() { close(s.moved) })
+	}
+	return s.MemoryStore.SetPosition(ctx, id)
+}
+
+// Two moves of the position that finish at once leave it at the newer: an older one saved last never moves it
+// back.
+func TestThePositionNeverMovesBack(t *testing.T) {
+	f := newFakeServer(t)
+	older := mention(10, account(1, "alice"), "older", mykit.VisibilityPublic)
+	newer := mention(11, account(2, "bob"), "newer", mykit.VisibilityPublic)
+	f.add(older)
+	f.add(newer)
+	store := &positionStore{
+		MemoryStore: NewMemoryStore(),
+		hold:        older.Id,
+		next:        newer.Id,
+		holding:     make(chan struct{}),
+		moved:       make(chan struct{}),
+	}
+	cfg := f.config()
+	cfg.Store = store
+	bot, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bot.OnMention(func(c *Context) error {
+		if c.Notification.Id == newer.Id {
+			// The older one is done and moves the position to itself while the newer one runs.
+			select {
+			case <-store.holding:
+			case <-c.Done():
+			}
+		}
+		return nil
+	})
+	runBot(t, bot)
+	f.waitLog(logIdle, "position", newer.Id)
+	if pos, _ := store.Position(t.Context()); pos != newer.Id {
+		t.Errorf("position = %s, want %s", pos, newer.Id)
+	}
+}
+
 // A notification whose Store calls fail is tried again, without waiting for the server to send it again, and
 // holds the position until it is processed.
 func TestStoreFailureIsTriedAgain(t *testing.T) {
@@ -233,8 +293,8 @@ func TestStoreFailureIsTriedAgain(t *testing.T) {
 	})
 	runBot(t, bot)
 	eventually(t, "the newest mention processed", func() bool { return processed(store, fine.Id) })
-	// The pruning, the polling, and the two retries sleep.
-	eventually(t, "the retries waiting", func() bool { return clock.sleepers() >= 4 })
+	// Both retries sleep before the clock moves: a retry that sleeps after the Advance would wait for the next.
+	clock.waitSleeping(t, "the retries of the store", retryFirstWait, 2)
 	if pos, _ := store.Position(t.Context()); pos != "" {
 		t.Fatalf("position = %s while older notifications are pending, want none", pos)
 	}

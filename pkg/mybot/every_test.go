@@ -12,19 +12,26 @@ import (
 	"github.com/mycroblog/my/pkg/mykit"
 )
 
-// fakeClock is a Clock that moves when the test advances it.
+// fakeClock is a Clock that moves when the test advances it. A sleeper wakes when an Advance reaches its time, so
+// a test advances it only once the goroutines it means to wake sleep (waitSleeping): one that sleeps after the
+// Advance sleeps from the new time.
 type fakeClock struct {
 	mu      sync.Mutex
 	now     time.Time
 	waiters []clockWaiter
+	// slept is closed, and replaced, when a goroutine starts to sleep.
+	slept chan struct{}
 }
 
 type clockWaiter struct {
+	d     time.Duration
 	until time.Time
 	ch    chan struct{}
 }
 
-func newFakeClock(t *testing.T, at string) *fakeClock { return &fakeClock{now: mustTime(t, at)} }
+func newFakeClock(t *testing.T, at string) *fakeClock {
+	return &fakeClock{now: mustTime(t, at), slept: make(chan struct{})}
+}
 
 func (c *fakeClock) Now() time.Time {
 	c.mu.Lock()
@@ -37,8 +44,10 @@ func (c *fakeClock) Sleep(ctx context.Context, d time.Duration) error {
 		return ctx.Err()
 	}
 	c.mu.Lock()
-	w := clockWaiter{until: c.now.Add(d), ch: make(chan struct{})}
+	w := clockWaiter{d: d, until: c.now.Add(d), ch: make(chan struct{})}
 	c.waiters = append(c.waiters, w)
+	close(c.slept)
+	c.slept = make(chan struct{})
 	c.mu.Unlock()
 	select {
 	case <-w.ch:
@@ -72,11 +81,31 @@ func (c *fakeClock) Advance(d time.Duration) {
 	c.waiters = kept
 }
 
-// sleepers is how many goroutines sleep.
-func (c *fakeClock) sleepers() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return len(c.waiters)
+// waitSleeping waits, without polling, until n goroutines sleep for d, which names them apart from the other
+// sleepers of the bot: a count of every sleeper can be reached by another while one of them is yet to sleep.
+func (c *fakeClock) waitSleeping(t *testing.T, what string, d time.Duration, n int) {
+	t.Helper()
+	deadline := time.NewTimer(waitBound)
+	defer deadline.Stop()
+	for {
+		c.mu.Lock()
+		got := 0
+		for _, w := range c.waiters {
+			if w.d == d {
+				got++
+			}
+		}
+		slept := c.slept
+		c.mu.Unlock()
+		if got >= n {
+			return
+		}
+		select {
+		case <-slept:
+		case <-deadline.C:
+			t.Fatalf("timed out waiting for %s: %d of %d goroutines sleep for %v", what, got, n, d)
+		}
+	}
 }
 
 // newScheduledBot is a bot of f on clock with a job "greet" of expr that posts "hello".
@@ -127,8 +156,8 @@ func TestEveryCatchUpLatestRunsOnce(t *testing.T) {
 			}
 			bot, runs := newScheduledBot(t, f, clock, store, "0 9 * * *", EveryOptions{CatchUp: tc.catchUp})
 			stop := runBot(t, bot)
-			// The poll, the prune, and the job sleep once the start is over.
-			eventually(t, "the bot to sleep", func() bool { return clock.sleepers() >= 3 })
+			// The job sleeps until 09:00 once the start is over.
+			clock.waitSleeping(t, "the job to sleep", 21*time.Hour, 1)
 			if tc.want != nil {
 				eventually(t, "the catch-up run recorded", func() bool {
 					at, _ := store.LastRun(context.Background(), "greet")
@@ -174,8 +203,8 @@ func TestEveryTwoProcessesSendTheSameKey(t *testing.T) {
 	for _, b := range bots {
 		runBot(t, b)
 	}
-	eventually(t, "the bots to sleep", func() bool { return clock.sleepers() >= 6 })
 	// 09:00 in Tokyo is 00:00 UTC of the next day.
+	clock.waitSleeping(t, "the jobs to sleep", 15*time.Hour+30*time.Second, 2)
 	clock.Advance(15*time.Hour + time.Minute)
 	eventually(t, "two posts", func() bool { return len(f.postsSoFar()) == 2 })
 	posts := f.postsSoFar()
@@ -189,7 +218,7 @@ func TestEveryTwoProcessesSendTheSameKey(t *testing.T) {
 		}
 	}
 	// The next day's time runs next.
-	eventually(t, "the jobs to sleep again", func() bool { return clock.sleepers() >= 6 })
+	clock.waitSleeping(t, "the jobs to sleep again", 24*time.Hour-30*time.Second, 2)
 	clock.Advance(24 * time.Hour)
 	eventually(t, "four posts", func() bool { return len(f.postsSoFar()) == 4 })
 	if got := f.postsSoFar()[3].key; got != "mybot:every:greet:2026-10-27T00:00:00Z" {
