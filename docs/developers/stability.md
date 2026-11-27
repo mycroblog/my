@@ -24,3 +24,10 @@ says what each identifier means.
 - An identifier is listed only while the feature is on, so read the list again when you refresh the instance information.
 - Ignore the identifiers you do not know: new ones appear as the server gains features.
 - An identifier is never removed from the API or reused for something else while `/api/v1` lasts.
+
+## Web Push messages
+
+The plaintext of a [Web Push message](web-push.md) follows the same rules as `/api/v1`: fields can be added at any time.
+`notification_id` and `type` are not removed and keep their meaning while `/api/v1` lasts. Nothing is promised about
+the text of `title` or the format of `path`, which follows the pages of the web client; nor about the values of the
+`TTL`, `Urgency` and `Topic` headers.

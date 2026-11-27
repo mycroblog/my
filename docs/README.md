@@ -92,6 +92,7 @@ Guides for people who build clients and bots against the client API.
 - [Errors](developers/errors.md) (problem documents and the problem types to handle)
 - [Rate limits](developers/rate-limits.md) (what to read and how to back off)
 - [The event stream](developers/streaming.md) (Server-Sent Events, reconnecting, catching up)
+- [Web Push](developers/web-push.md) (subscribing, the message and its headers)
 - [Client libraries](developers/libraries.md) (getting started with mykit and mybot in Go and TypeScript)
 - [Stability of the API](developers/stability.md) (what changes without notice and what is announced)
 
