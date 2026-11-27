@@ -17,7 +17,8 @@ const (
 // HubOptions bound a Hub. Zero fields take the defaults above.
 type HubOptions struct {
 	// MaxPerAccount is the number of subscriptions one account may hold open at once (tabs and
-	// devices).
+	// devices). A new one past it ends the account's oldest: a client that left may hold a slot
+	// until its request is seen to end, and the client that connects now is the one that is there.
 	MaxPerAccount int
 	// MaxTotal is the number of subscriptions the process holds open at once.
 	MaxTotal int
@@ -42,7 +43,9 @@ type Hub struct {
 	byAccount  map[string]map[*subscription]struct{}
 	byTimeline map[string]map[*subscription]struct{}
 	byRoom     map[string]map[*subscription]struct{}
-	closed     bool
+	// opened numbers the subscriptions in the order they opened.
+	opened uint64
+	closed bool
 }
 
 var (
@@ -80,10 +83,11 @@ func (h *Hub) Subscribe(ctx context.Context, accountID string) (Subscription, er
 	if h.closed {
 		return nil, ErrClosed
 	}
-	if len(h.subs) >= h.o.MaxTotal || len(h.byAccount[accountID]) >= h.o.MaxPerAccount {
+	if !h.roomForAccountLocked(accountID) {
 		return nil, ErrTooManySubscriptions
 	}
-	s := &subscription{hub: h, accountID: accountID, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
+	h.opened++
+	s := &subscription{hub: h, accountID: accountID, opened: h.opened, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
 	h.subs[s] = struct{}{}
 	h.accounts[s] = struct{}{}
 	add(h.byAccount, accountID, s)
@@ -101,10 +105,11 @@ func (h *Hub) SubscribeTimeline(ctx context.Context, accountID string, t Timelin
 	if h.closed {
 		return nil, ErrClosed
 	}
-	if len(h.subs) >= h.o.MaxTotal || len(h.byAccount[accountID]) >= h.o.MaxPerAccount {
+	if !h.roomForAccountLocked(accountID) {
 		return nil, ErrTooManySubscriptions
 	}
-	s := &subscription{hub: h, accountID: accountID, timeline: t, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
+	h.opened++
+	s := &subscription{hub: h, accountID: accountID, timeline: t, opened: h.opened, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
 	h.subs[s] = struct{}{}
 	add(h.byAccount, accountID, s)
 	add(h.byTimeline, string(t), s)
@@ -128,6 +133,21 @@ func (h *Hub) SubscribeRoom(ctx context.Context, roomID, session string) (Subscr
 	h.subs[s] = struct{}{}
 	add(h.byRoom, roomID, s)
 	return s, nil
+}
+
+// roomForAccountLocked makes room for a new subscription of accountID, ending the account's oldest
+// ones past MaxPerAccount, and reports false when the process holds MaxTotal; h.mu is held.
+func (h *Hub) roomForAccountLocked(accountID string) bool {
+	for len(h.byAccount[accountID]) >= h.o.MaxPerAccount {
+		var oldest *subscription
+		for s := range h.byAccount[accountID] {
+			if oldest == nil || s.opened < oldest.opened {
+				oldest = s
+			}
+		}
+		h.removeLocked(oldest)
+	}
+	return len(h.subs) < h.o.MaxTotal
 }
 
 // add adds s to the set of key in m.
@@ -254,8 +274,10 @@ type subscription struct {
 	roomID    string
 	// session is the session of a room subscription.
 	session string
-	events  chan Event
-	done    chan struct{}
+	// opened is the order in which an account or timeline subscription opened (Hub.opened).
+	opened uint64
+	events chan Event
+	done   chan struct{}
 }
 
 // wants reports whether a subscription takes a signal: a timeline subscription no notifications,

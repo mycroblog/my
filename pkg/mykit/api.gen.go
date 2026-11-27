@@ -15818,8 +15818,8 @@ type PreviewDomainBlockImportRequest struct {
 //     its format.
 //   - `/api/v1/problems/media-attached` (409): the media file is attached to a post and can
 //     no longer be changed on its own.
-//   - `/api/v1/problems/too-many-streams` (429): the user already has as many streams
-//     (`GET /streaming`) open as the server allows. Close one first.
+//   - `/api/v1/problems/too-many-streams` (429): the server holds as many streams
+//     (`GET /streaming`) open as it allows. Try again after `Retry-After`.
 //   - `/api/v1/problems/missing-permission` (403): the user's roles lack the permission
 //     that an admin operation needs.
 //   - `/api/v1/problems/already-appealed` (422): the user already appealed the moderation

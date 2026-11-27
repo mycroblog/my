@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -296,16 +297,19 @@ func TestTimelineStreamAccess(t *testing.T) {
 
 func TestTimelineStreamCountsTowardTheStreamLimit(t *testing.T) {
 	e := newTimelineStreamEnv(t, stream.HubOptions{MaxPerAccount: 2}, nil)
-	_, _, _ = e.open(t.Context(), t, "/streaming", "read")
-	_, _, _ = e.open(t.Context(), t, "/streaming/timelines/local", "read")
-	for _, path := range []string{"/streaming/timelines/federated", "/streaming"} {
-		res := e.get(t, path, map[string]string{"Authorization": "Bearer read"})
-		if res.StatusCode != http.StatusTooManyRequests {
-			t.Fatalf("%s past the limit = %d, want 429", path, res.StatusCode)
-		}
-		if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeTooManyStreams || res.Header.Get("Content-Language") != "ja" {
-			t.Errorf("problem = %+v (%s), want too-many-streams in alice's locale", p, res.Header.Get("Content-Language"))
-		}
+	_, _, home := e.open(t.Context(), t, "/streaming", "read")
+	e.open(t.Context(), t, "/streaming/timelines/local", "read")
+	// A third stream of alice opens and ends her oldest, the home stream.
+	e.open(t.Context(), t, "/streaming/timelines/federated", "read")
+	ended := make(chan error, 1)
+	go func() {
+		_, err := io.Copy(io.Discard, home)
+		ended <- err
+	}()
+	select {
+	case <-ended:
+	case <-time.After(5 * time.Second):
+		t.Fatal("alice's oldest stream did not end")
 	}
 	// Another account has its own streams.
 	e.open(t.Context(), t, "/streaming/timelines/federated", "bob")

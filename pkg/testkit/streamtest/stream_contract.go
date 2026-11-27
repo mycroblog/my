@@ -718,38 +718,48 @@ func brokerRoutesTimelines(t *testing.T, b StreamBroker) {
 }
 
 func brokerLimitsTimelines(t *testing.T, b StreamBroker) {
-	brokerSubscribe(t, b, testkit.NamedID("alice"))
+	first := brokerSubscribe(t, b, testkit.NamedID("alice"))
 	local := brokerSubscribeTimeline(t, b, testkit.NamedID("alice"), stream.TimelineLocal)
 	timelines := b.Subscriber.(stream.TimelineSubscriber)
-	if _, err := timelines.SubscribeTimeline(t.Context(), testkit.NamedID("alice"), stream.TimelineFederated); !errors.Is(err, stream.ErrTooManySubscriptions) {
-		t.Errorf("third subscription of alice: %v, want ErrTooManySubscriptions", err)
+	// A third subscription of alice opens and ends her oldest.
+	brokerSubscribeTimeline(t, b, testkit.NamedID("alice"), stream.TimelineFederated)
+	if !brokerDone(first, 0) {
+		t.Error("alice's oldest subscription did not end for her third")
+	}
+	if brokerDone(local, 0) {
+		t.Error("alice's second subscription ended for her third")
 	}
 	brokerSubscribeTimeline(t, b, testkit.NamedID("bob"), stream.TimelineFederated)
 	if _, err := timelines.SubscribeTimeline(t.Context(), testkit.NamedID("carol"), stream.TimelineLocal); !errors.Is(err, stream.ErrTooManySubscriptions) {
 		t.Errorf("fourth subscription: %v, want ErrTooManySubscriptions", err)
 	}
 	local.Close()
-	brokerSubscribeTimeline(t, b, testkit.NamedID("alice"), stream.TimelineFederated)
+	brokerSubscribeTimeline(t, b, testkit.NamedID("carol"), stream.TimelineLocal)
 }
 
 func brokerLimits(t *testing.T, b StreamBroker) {
 	first := brokerSubscribe(t, b, testkit.NamedID("alice"))
+	second := brokerSubscribe(t, b, testkit.NamedID("alice"))
+	// A third subscription of alice opens and ends her oldest: a client that left may hold a slot.
 	brokerSubscribe(t, b, testkit.NamedID("alice"))
-	if _, err := b.Subscriber.Subscribe(t.Context(), testkit.NamedID("alice")); !errors.Is(err, stream.ErrTooManySubscriptions) {
-		t.Errorf("third subscription of alice: %v, want ErrTooManySubscriptions", err)
+	if !brokerDone(first, 0) {
+		t.Error("alice's oldest subscription did not end for her third")
+	}
+	if brokerDone(second, 0) {
+		t.Error("alice's second subscription ended for her third")
 	}
 	brokerSubscribe(t, b, testkit.NamedID("bob"))
 	if _, err := b.Subscriber.Subscribe(t.Context(), testkit.NamedID("carol")); !errors.Is(err, stream.ErrTooManySubscriptions) {
 		t.Errorf("fourth subscription: %v, want ErrTooManySubscriptions", err)
 	}
 	// Closing releases the slot, once.
-	first.Close()
-	first.Close()
-	if !brokerDone(first, 0) {
+	second.Close()
+	second.Close()
+	if !brokerDone(second, 0) {
 		t.Error("a closed subscription is not done")
 	}
-	brokerSubscribe(t, b, testkit.NamedID("alice"))
-	if _, err := b.Subscriber.Subscribe(t.Context(), testkit.NamedID("carol")); !errors.Is(err, stream.ErrTooManySubscriptions) {
+	brokerSubscribe(t, b, testkit.NamedID("carol"))
+	if _, err := b.Subscriber.Subscribe(t.Context(), testkit.NamedID("dave")); !errors.Is(err, stream.ErrTooManySubscriptions) {
 		t.Errorf("a subscription past the limit after Close: %v, want ErrTooManySubscriptions", err)
 	}
 }
