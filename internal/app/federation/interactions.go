@@ -432,7 +432,8 @@ func (h interactionHandlers) undoLike(ctx context.Context, in *InboxActivity) er
 }
 
 // boosted returns the post that an Announce boosts (ADR-0006 §11). A local post
-// and a stored remote post are found by the object's id. A remote post that is not stored is
+// and a stored remote post are found by the object's id, a local post also by its Create's
+// (localStatusIRI). A remote post that is not stored is
 // stored only when a local account follows the booster: from the Announce when it embeds the
 // post from the booster's origin, fetched from the post's origin otherwise. Anything else drops
 // the Announce.
@@ -442,7 +443,7 @@ func (h *StatusHandlers) boosted(ctx context.Context, in *InboxActivity) (appcon
 	if ref.ID == "" {
 		return appcontent.Status{}, fmt.Errorf("%w: Announce without an object", ErrDropActivity)
 	}
-	st, err := h.d.Statuses.FindStatusByURI(ctx, string(ref.ID))
+	st, err := h.d.Statuses.FindStatusByURI(ctx, string(h.localStatusIRI(ref.ID)))
 	switch {
 	case err == nil:
 		return st, nil
