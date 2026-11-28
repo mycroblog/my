@@ -342,6 +342,16 @@ func remoteInteractsWithLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 			}
 		})
 	}
+	// Bonfire names a local post by this server's Create of it when it learned the post from that
+	// Create: the Announce boosts the post.
+	t.Run("Announce/of the Create", func(t *testing.T) {
+		const actor = "https://bonfire.example/pub/actors/bonnie"
+		booster := e.actor(t, actor)
+		e.expect(t, remoteAnnounce(t, actor+"/announces/create", actor, post.URI+"/activity"), appfederation.InboxHandled)
+		if _, ok := e.liveBoost(t, booster, post.ID); !ok {
+			t.Fatal("no boost of the post whose Create the Announce names")
+		}
+	})
 
 	const mastodonPost = "https://remote.example/objects/eb92579d-3417-42a8-8652-2492c2d4f454"
 	for _, tc := range []struct {

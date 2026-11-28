@@ -625,14 +625,20 @@ func (h *StatusHandlers) resolveMentions(ctx context.Context, m *postMentions) e
 
 func (h *StatusHandlers) isLocal(iri federation.IRI) bool { return iri.Origin() == h.origin }
 
-// inReplyTo returns the post that obj replies to. Bonfire names a local status by this server's
-// Create of it, the status's IRI with /activity (createURI, ADR-0018), when it learned the status
-// from that Create: such an IRI is taken as the status's.
+// inReplyTo returns the post that obj replies to (localStatusIRI).
 func (h *StatusHandlers) inReplyTo(obj *federation.Object) federation.IRI {
-	if status, ok := strings.CutSuffix(string(obj.InReplyTo), "/activity"); ok && h.isLocal(obj.InReplyTo) {
+	return h.localStatusIRI(obj.InReplyTo)
+}
+
+// localStatusIRI returns the IRI of the post that iri names. Bonfire names a local status by this
+// server's Create of it, the status's IRI with /activity (createURI, ADR-0018), when it learned the
+// status from that Create, in a reply's inReplyTo and in an Announce's object: such an IRI is taken
+// as the status's.
+func (h *StatusHandlers) localStatusIRI(iri federation.IRI) federation.IRI {
+	if status, ok := strings.CutSuffix(string(iri), "/activity"); ok && h.isLocal(iri) {
 		return federation.IRI(status)
 	}
-	return obj.InReplyTo
+	return iri
 }
 
 // input maps a normalized post that activity a carried to what the content module stores.
